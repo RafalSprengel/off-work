@@ -1,0 +1,21 @@
+.header {
+  background-color: #0d0d0d;
+  border-bottom: 1px solid #2d2d2d;
+}
+
+.logo {
+  color: #fff;
+  font-weight: 800;
+  font-size: 20px;
+}
+
+.sidebar {
+  background-color: #0d0d0d;
+  border-right: 1px solid #2d2d2d;
+}
+
+.main {
+  background-color: #121212;
+  color: #fff;
+  min-height: 100vh;
+}

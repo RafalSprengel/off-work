@@ -16,6 +16,7 @@
     "@mantine/modals": "^9.4.1",
     "@mantine/notifications": "^9.4.1",
     "@mantine/nprogress": "^9.4.1",
+    "@tabler/icons-react": "^3.45.0",
     "next": "16.2.10",
     "react": "19.2.4",
     "react-dom": "19.2.4"

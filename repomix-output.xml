@@ -43,15 +43,246 @@ The content is organized as follows:
 <directory_structure>
 src/
   app/
+    (app)/
+      calendar/
+        page.tsx
+      components/
+        AppShellClient/
+          AppShellClient.tsx
+          AppStyles.module.css
+        SidebarContent/
+          SibebarContent.tsx
+          SidebarContent.module.css
+      dashboard/
+        page.tsx
+      layout.tsx
+    (marketing)/
+      page.module.css
+      page.tsx
     favicon.ico
     globals.css
     layout.tsx
-    page.module.css
-    page.tsx
 </directory_structure>
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="src/app/(app)/calendar/page.tsx">
+export default function Calendar() {
+    return (<>Calendar content</>)
+}
+</file>
+
+<file path="src/app/(app)/components/AppShellClient/AppShellClient.tsx">
+'use client'
+import { useState } from 'react';
+import { AppShell, Burger, Group, Drawer, Box, Center, Text } from '@mantine/core';
+import SidebarContent from "../SidebarContent/SibebarContent";
+import styles from "./AppStyles.module.css";
+
+export default function AppShellClient({ children }: { children: React.ReactNode }) {
+    const [isOpen, setIsOpen] = useState(false);
+    let toggle = () => setIsOpen(prev => !prev);
+
+    return (
+        <AppShell
+        layout="alt"
+            padding="md"
+            header={{ height: 60 }}
+            navbar={{
+                width: 280,
+                breakpoint: 'sm',
+                collapsed: { mobile: true }
+            }}
+        >
+            <AppShell.Header>
+                <Group h="100%" px="md">
+                    <Burger
+                        opened={isOpen}
+                        onClick={toggle}
+                        hiddenFrom="sm"
+                        size="sm"
+                    />
+                    <Box hiddenFrom="sm" className={styles.logo}>OFF-WORK</Box>
+                </Group>
+            </AppShell.Header>
+
+            <AppShell.Navbar >
+                <SidebarContent />
+            </AppShell.Navbar>
+
+            <Drawer.Root
+                opened={isOpen}
+                onClose={toggle}
+                size={280}
+                transitionProps={{ duration: 200, transition: 'slide-right' }}
+                styles={{
+                    content: { backgroundColor: '#0d0d0d' },
+                    header: { backgroundColor: '#0d0d0d' },
+                }}
+            >
+                <Drawer.Overlay />
+                <Drawer.Content>
+                    <Drawer.Header>
+                        <Drawer.Title>
+                            <Group>
+                                <Group>
+                                    <span style={{ color: 'green' }}>●</span>
+                                    <Text style={{color: 'white'}}>OFF-DESK</Text>
+                                </Group>
+                            </Group>
+                        </Drawer.Title>
+                        <Drawer.CloseButton />
+                    </Drawer.Header>
+                    <Drawer.Body>Drawer content</Drawer.Body>
+                </Drawer.Content>
+            </Drawer.Root>
+
+            {children}
+        </AppShell >
+    )
+}
+</file>
+
+<file path="src/app/(app)/components/AppShellClient/AppStyles.module.css">
+.logo {
+  color: #333;
+  font-weight: 800;
+  font-size: 20px;
+}
+</file>
+
+<file path="src/app/(app)/components/SidebarContent/SibebarContent.tsx">
+import { Group, Text, UnstyledButton, Box } from '@mantine/core';
+import {IconX} from '@tabler/icons-react'; 
+import styles from "./SidebarContent.module.css"
+
+export default function SidebarContent() {
+
+    return (
+        <div className={styles.wrapper}>
+            <div className={styles.topSection}>
+                <Box visibleFrom="sm" className={styles.logo}>OFF-WORK</Box>
+            </div>
+        </div>
+    )
+}
+</file>
+
+<file path="src/app/(app)/components/SidebarContent/SidebarContent.module.css">
+.wrapper {
+    background-color: #888;
+    box-sizing: border-box;
+    height: 100%;
+}
+
+.closeBtn{
+color:#868e96;
+}
+</file>
+
+<file path="src/app/(app)/dashboard/page.tsx">
+export default function Dashboard() {
+    return (
+        <>
+            Dashboard
+        </>
+    )
+}
+</file>
+
+<file path="src/app/(app)/layout.tsx">
+import AppShellClient from './components/AppShellClient/AppShellClient';
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+    return (
+        <div>
+            <AppShellClient>
+                {children}
+            </AppShellClient>
+
+        </div>
+    )
+}
+</file>
+
+<file path="src/app/(marketing)/page.module.css">
+.heroTitle {
+    background: linear-gradient(45deg, var(--mantine-color-blue-6), var(--mantine-color-cyan-6));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-align: center;
+}
+
+.buttonGroup {
+    width: 100%;
+    max-width: 320px;
+}
+
+.homeButton {
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.homeButton:hover {
+    transform: translateY(-2px);
+}
+</file>
+
+<file path="src/app/(marketing)/page.tsx">
+import { Button, Container, Flex, Group, Stack, Center, Title } from "@mantine/core";
+import styles from "./page.module.css";
+
+export default function Home() {
+  return (
+    <Container size="xs" px="md">
+      <Flex
+        direction="column"
+        align="center"
+        justify="center"
+        mih="100vh"
+        gap="xl"
+      >
+        <Stack gap="0" align="center" w="100%" pb='md'>
+          <Title
+            order={1}
+            // fw={900}
+            fw={{ base: '600', sm: '700' }}
+            fz={{ base: '4rem', sm: '4.5rem' }}
+            m={0}
+            className={styles.heroTitle}
+          >
+            Off-Work
+          </Title>
+          <Center
+            c="var(--mantine-color-blue-6)"
+          >
+            Leave Management System
+          </Center>
+        </Stack>
+
+        <Group gap="md" grow className={styles.buttonGroup}>
+          <Button
+            variant="filled"
+            size="lg"
+            radius="md"
+            className={styles.homeButton}
+          >
+            Register
+          </Button>
+          <Button
+            variant="light"
+            size="lg"
+            radius="md"
+            className={styles.homeButton}
+          >
+            Login
+          </Button>
+        </Group>
+      </Flex>
+    </Container>
+  );
+}
+</file>
 
 <file path="src/app/globals.css">
 
@@ -59,42 +290,25 @@ This section contains the contents of the repository's files.
 
 <file path="src/app/layout.tsx">
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { ColorSchemeScript, MantineProvider, mantineHtmlProps } from '@mantine/core';
+import '@mantine/core/styles.css';
 import "./globals.css";
-
-
 
 export const metadata: Metadata = {
   title: "Off Work",
   description: "Application for tracking annual leave and planning holiday days.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode; }>) {
   return (
-    <html lang="en" >
-      <body>{children}</body>
+    <html lang="en" {...mantineHtmlProps}>
+      <head>
+        <ColorSchemeScript />
+      </head>
+      <body>
+        <MantineProvider>{children}</MantineProvider>
+      </body>
     </html>
-  );
-}
-</file>
-
-<file path="src/app/page.module.css">
-
-</file>
-
-<file path="src/app/page.tsx">
-import Image from "next/image";
-import styles from "./page.module.css";
-
-export default function Home() {
-  return (
-    <div >
-      
-    </div>
   );
 }
 </file>
