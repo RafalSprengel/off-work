@@ -10,7 +10,7 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
 
   return (
     <AppShell
-     layout="alt"
+      layout="alt"
       header={{ height: 60 }}
       navbar={{
         width: 280,
@@ -27,7 +27,7 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
               onClick={toggle}
               hiddenFrom="sm"
               size="sm"
-              color="#fff"
+              className={styles.burger}
             />
             <Box hiddenFrom="sm" className={styles.logo}>OFF-WORK</Box>
           </Group>

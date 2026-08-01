@@ -1,8 +1,13 @@
-import { Stack, Group, UnstyledButton, Text, Avatar, Divider } from '@mantine/core';
-import { 
-  IconX, IconLayoutDashboard, IconCalendar, 
-  IconUsers, IconFileDescription, IconSettings, IconLogout 
-} from '@tabler/icons-react'; 
+'use client';
+
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { Stack, Group, UnstyledButton, Text, Avatar, Divider, ActionIcon, useMantineColorScheme } from '@mantine/core';
+import {
+  IconX, IconLayoutDashboard, IconCalendar,
+  IconUsers, IconFileDescription, IconSettings, IconLogout,
+  IconSun, IconMoon
+} from '@tabler/icons-react';
 import styles from './SidebarContent.module.css';
 
 interface SidebarContentProps {
@@ -11,6 +16,15 @@ interface SidebarContentProps {
 }
 
 export default function SidebarContent({ onClose, isMobile }: SidebarContentProps) {
+  const pathname = usePathname();
+  const { colorScheme, setColorScheme } = useMantineColorScheme();
+
+  const isActive = (path: string) => pathname.startsWith(path) ? true : undefined;
+
+  const toggleColorScheme = () => {
+    setColorScheme(colorScheme === 'dark' ? 'light' : 'dark');
+  };
+
   return (
     <div className={styles.wrapper}>
       <div className={styles.topSection}>
@@ -29,7 +43,7 @@ export default function SidebarContent({ onClose, isMobile }: SidebarContentProp
           <Group justify="space-between" w="100%">
             <Group gap="xs">
               <span className={styles.companyIcon}>🏢</span>
-              <Text size="sm" fw={500}>Firma Krzak</Text>
+              <Text size="sm" fw={500}>Company X</Text>
             </Group>
             <span className={styles.arrow}>↕</span>
           </Group>
@@ -39,41 +53,41 @@ export default function SidebarContent({ onClose, isMobile }: SidebarContentProp
       <div className={styles.scrollSection}>
         <Stack gap="xs" px="md">
           <Text size="xs" fw={700} c="dimmed" lts="1px">MENU</Text>
-          
-          <UnstyledButton className={`${styles.menuItem} ${styles.active}`}>
+
+          <UnstyledButton className={styles.menuItem} data-active={isActive("/dashboard")} component={Link} href="/dashboard">
             <Group gap="sm">
               <IconLayoutDashboard size={18} />
               <Text size="sm">Dashboard</Text>
             </Group>
           </UnstyledButton>
 
-          <UnstyledButton className={styles.menuItem}>
+          <UnstyledButton className={styles.menuItem} data-active={isActive("/leave-requests")} component={Link} href="/leave-requests">
             <Group gap="sm">
               <IconFileDescription size={18} />
-              <Text size="sm">Wnioski o nieobecność</Text>
+              <Text size="sm">Leave Requests</Text>
             </Group>
           </UnstyledButton>
 
-          <UnstyledButton className={styles.menuItem}>
+          <UnstyledButton className={styles.menuItem} data-active={isActive("/calendar")} component={Link} href="/calendar">
             <Group gap="sm">
               <IconCalendar size={18} />
-              <Text size="sm">Twój kalendarz</Text>
+              <Text size="sm">Calendar</Text>
             </Group>
           </UnstyledButton>
 
-          <Text size="xs" fw={700} c="dimmed" lts="1px" mt="md">ADMINISTRACJA</Text>
+          <Text size="xs" fw={700} c="dimmed" lts="1px" mt="md">SETTINGS</Text>
 
-          <UnstyledButton className={styles.menuItem}>
+          <UnstyledButton className={styles.menuItem} data-active={isActive("/calendar")} component={Link} href="/departments">
             <Group gap="sm">
               <IconUsers size={18} />
-              <Text size="sm">Struktura firmy</Text>
+              <Text size="sm">Departments</Text>
             </Group>
           </UnstyledButton>
 
           <UnstyledButton className={styles.menuItem}>
             <Group gap="sm">
               <IconSettings size={18} />
-              <Text size="sm">Ustawienia</Text>
+              <Text size="sm">Settings</Text>
             </Group>
           </UnstyledButton>
         </Stack>
@@ -89,9 +103,19 @@ export default function SidebarContent({ onClose, isMobile }: SidebarContentProp
               <Text size="xs" c="dimmed" truncate>rafal@sprengel.com</Text>
             </div>
           </Group>
-          <UnstyledButton className={styles.logoutBtn}>
-            <IconLogout size={18} />
-          </UnstyledButton>
+          <Group gap={4} wrap="nowrap">
+            <ActionIcon
+              onClick={toggleColorScheme}
+              variant="subtle"
+              aria-label="Toggle color scheme"
+              className={styles.themeBtn}
+            >
+              {colorScheme === 'dark' ? <IconSun size={18} /> : <IconMoon size={18} />}
+            </ActionIcon>
+            <UnstyledButton className={styles.logoutBtn}>
+              <IconLogout size={18} />
+            </UnstyledButton>
+          </Group>
         </Group>
       </div>
     </div>

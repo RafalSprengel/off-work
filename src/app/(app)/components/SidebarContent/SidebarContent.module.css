@@ -72,14 +72,23 @@
   color: #fff;
 }
 
-.menuItem.active {
-  background-color: #212529;
+.menuItem[data-active] {
+  background-color: #2a2a2a;
   color: #fff;
   font-weight: 600;
 }
 
 .bottomSection {
   padding-bottom: 20px;
+}
+
+.themeBtn {
+  color: #868e96;
+}
+
+.themeBtn:hover {
+  background-color: #1a1a1a;
+  color: #ffd43b;
 }
 
 .logoutBtn {
