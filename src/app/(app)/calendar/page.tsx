@@ -1,3 +1,3 @@
 export default function Calendar() {
-    return (<>Calendar content</>)
+  return "Calendar content";
 }

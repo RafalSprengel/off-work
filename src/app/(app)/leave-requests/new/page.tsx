@@ -1,32 +1,42 @@
-'use client';
+"use client";
 
 import {
-  Container,
-  Stack,
-  Title,
-  Paper,
-  Select,
-  Text,
   Button,
+  Container,
   Divider,
   Flex,
-} from '@mantine/core';
-import { DateInput } from '@mantine/dates';
-import { useForm } from '@mantine/form';
-import { IconCalendar } from '@tabler/icons-react';
-import dayjs from 'dayjs';
-import '@mantine/dates/styles.css';
+  Paper,
+  Select,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
+import { DateInput } from "@mantine/dates";
+import { useForm } from "@mantine/form";
+import { IconCalendar } from "@tabler/icons-react";
+import dayjs from "dayjs";
+import "@mantine/dates/styles.css";
 
 const usersData = [
-  { value: 'self', label: 'For myself' },
-  { value: '1', label: 'Adam Pietrzak', department: 'Kitchen', email: 'adam@demo.com' },
-  { value: '2', label: 'Artur Pawlak', department: 'Floor', email: 'artur@demo.com' },
+  { value: "self", label: "For myself" },
+  {
+    value: "1",
+    label: "Adam Pietrzak",
+    department: "Kitchen",
+    email: "adam@demo.com",
+  },
+  {
+    value: "2",
+    label: "Artur Pawlak",
+    department: "Floor",
+    email: "artur@demo.com",
+  },
 ];
 
 export default function NewLeaveRequestPage() {
   const form = useForm({
     initialValues: {
-      employee: 'self',
+      employee: "self",
       startDate: null as Date | null,
       endDate: null as Date | null,
       daysRequested: 0,
@@ -34,11 +44,14 @@ export default function NewLeaveRequestPage() {
     },
   });
 
-  const calculateDays = (start: Date | string | null, end: Date | string | null): number => {
+  const calculateDays = (
+    start: Date | string | null,
+    end: Date | string | null,
+  ): number => {
     if (!start || !end) return 0;
 
-    let currentDate = dayjs(start).startOf('day');
-    const endDate = dayjs(end).startOf('day');
+    let currentDate = dayjs(start).startOf("day");
+    const endDate = dayjs(end).startOf("day");
 
     if (!currentDate.isValid() || !endDate.isValid()) {
       return 0;
@@ -50,30 +63,33 @@ export default function NewLeaveRequestPage() {
 
     let workingDays = 0;
 
-    while (currentDate.isBefore(endDate) || currentDate.isSame(endDate, 'day')) {
+    while (
+      currentDate.isBefore(endDate) ||
+      currentDate.isSame(endDate, "day")
+    ) {
       const dayOfWeek = currentDate.day();
       if (dayOfWeek !== 0 && dayOfWeek !== 6) {
         workingDays++;
       }
-      currentDate = currentDate.add(1, 'day');
+      currentDate = currentDate.add(1, "day");
     }
 
     return workingDays;
   };
 
   const handleStartDateChange = (date: Date | null) => {
-    form.setFieldValue('startDate', date);
+    form.setFieldValue("startDate", date);
     const days = calculateDays(date, form.values.endDate);
-    form.setFieldValue('daysRequested', days);
+    form.setFieldValue("daysRequested", days);
   };
 
   const handleEndDateChange = (date: Date | null) => {
-    form.setFieldValue('endDate', date);
+    form.setFieldValue("endDate", date);
     const days = calculateDays(form.values.startDate, date);
-    form.setFieldValue('daysRequested', days);
+    form.setFieldValue("daysRequested", days);
   };
 
-  const handleSubmit = (values: typeof form.values) => {
+  const handleSubmit = (_values: typeof form.values) => {
     // Submit handling logic
   };
 
@@ -90,26 +106,33 @@ export default function NewLeaveRequestPage() {
                 data={usersData}
                 searchable
                 nothingFoundMessage="Nothing found..."
-                {...form.getInputProps('employee')}
+                {...form.getInputProps("employee")}
                 renderOption={({ option }) => {
                   const user = usersData.find((u) => u.value === option.value);
-                  if (option.value === 'self') {
-                    return <Text size="sm" fw={500}>For myself</Text>;
+                  if (option.value === "self") {
+                    return (
+                      <Text size="sm" fw={500}>
+                        For myself
+                      </Text>
+                    );
                   }
                   return (
                     <div>
-                      <Text size="sm" fw={600}>{user?.label}</Text>
-                      <Text size="xs" c="dimmed">🏢 {user?.department}</Text>
-                      <Text size="xs" c="dimmed">✉️ {user?.email}</Text>
+                      <Text size="sm" fw={600}>
+                        {user?.label}
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        🏢 {user?.department}
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        ✉️ {user?.email}
+                      </Text>
                     </div>
                   );
                 }}
               />
 
-              <Flex
-                direction={{ base: 'column', sm: 'row' }}
-                gap="md"
-              >
+              <Flex direction={{ base: "column", sm: "row" }} gap="md">
                 <DateInput
                   label="1st Day of Holiday"
                   placeholder="Select start date"
@@ -137,9 +160,9 @@ export default function NewLeaveRequestPage() {
               <Divider my="xs" />
 
               <Flex
-                direction={{ base: 'column', xs: 'row' }}
+                direction={{ base: "column", xs: "row" }}
                 justify="space-between"
-                align={{ base: 'flex-start', sm: 'center' }}
+                align={{ base: "flex-start", sm: "center" }}
                 gap="sm"
               >
                 <div>
@@ -147,7 +170,8 @@ export default function NewLeaveRequestPage() {
                     No of Days Requested
                   </Text>
                   <Text size="sm" fw={600}>
-                    {form.values.daysRequested} {form.values.daysRequested === 1 ? 'day' : 'days'}
+                    {form.values.daysRequested}{" "}
+                    {form.values.daysRequested === 1 ? "day" : "days"}
                   </Text>
                 </div>
 
@@ -158,7 +182,7 @@ export default function NewLeaveRequestPage() {
                   <Flex gap={6} align="center">
                     <IconCalendar size={16} style={{ opacity: 0.7 }} />
                     <Text size="sm" fw={500}>
-                      {dayjs(form.values.completedDate).format('YYYY-MM-DD')}
+                      {dayjs(form.values.completedDate).format("YYYY-MM-DD")}
                     </Text>
                   </Flex>
                 </div>

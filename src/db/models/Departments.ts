@@ -1,27 +1,44 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import mongoose, { type Document, type Model, Schema } from "mongoose";
+import type { IDepartment } from "@/types/department";
 
-export interface IDepartment extends Document {
-    name: string;
-    createdAt: Date;
-    updatedAt: Date;
+export interface IDepartmentDocument
+  extends Omit<IDepartment, "_id" | "createdAt" | "updatedAt">,
+    Document {
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-const DepartmentSchema = new Schema<IDepartment>(
-    {
-        name: {
-            type: String,
-            required: [true, 'Department name is required'],
-            trim: true,
-            unique: true,
-        },
+const DepartmentSchema = new Schema<IDepartmentDocument>(
+  {
+    name: {
+      type: String,
+      required: [true, "Department name is required"],
+      trim: true,
     },
-    {
-        timestamps: true,
-    }
+    manager: {
+      type: String,
+      trim: true,
+    },
+  },
+  {
+    timestamps: true,
+    collation: {
+      locale: "en",
+      strength: 2,
+    },
+  },
 );
 
-const Department: Model<IDepartment> =
-    (mongoose.models.Department as Model<IDepartment>) ||
-    mongoose.model<IDepartment>('Department', DepartmentSchema);
+DepartmentSchema.index(
+  { name: 1 },
+  {
+    unique: true,
+    collation: { locale: "en", strength: 2 },
+  },
+);
+
+const Department: Model<IDepartmentDocument> =
+  (mongoose.models.Department as Model<IDepartmentDocument>) ||
+  mongoose.model<IDepartmentDocument>("Department", DepartmentSchema);
 
 export default Department;

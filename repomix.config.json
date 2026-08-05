@@ -1,0 +1,23 @@
+{
+  "include": [
+    "**/*"
+  ],
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultIgnore": true,
+    "customPatterns": [
+      ".git/**",
+      ".next/**",
+      "node_modules/**",
+      "out/**",
+      "build/**",
+      "dist/**",
+      ".vercel/**",
+      "coverage/**",
+      "*.log",
+      "package-lock.json",
+      "pnpm-lock.yaml",
+      "yarn.lock"
+    ]
+  }
+}

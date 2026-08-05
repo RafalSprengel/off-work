@@ -1,11 +1,15 @@
 "use client";
 
-import { AppShell, Burger, Group, Drawer, Box } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
-import SidebarContent from '../SidebarContent/SidebarContent';
-import styles from './AppShellClient.module.css';
+import { AppShell, Box, Burger, Drawer, Group } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import SidebarContent from "../SidebarContent/SidebarContent";
+import styles from "./AppShellClient.module.css";
 
-export default function LayoutClient({ children }: { children: React.ReactNode }) {
+export default function LayoutClient({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [opened, { toggle, close }] = useDisclosure();
 
   return (
@@ -14,7 +18,7 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
       header={{ height: 60 }}
       navbar={{
         width: 280,
-        breakpoint: 'sm',
+        breakpoint: "sm",
         collapsed: { mobile: true },
       }}
       padding="md"
@@ -29,7 +33,9 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
               size="sm"
               className={styles.burger}
             />
-            <Box hiddenFrom="sm" className={styles.logo}>OFF-WORK</Box>
+            <Box hiddenFrom="sm" className={styles.logo}>
+              OFF-WORK
+            </Box>
           </Group>
         </Group>
       </AppShell.Header>
@@ -43,19 +49,17 @@ export default function LayoutClient({ children }: { children: React.ReactNode }
         onClose={close}
         size={280}
         withCloseButton={false}
-        transitionProps={{ duration: 200, transition: 'slide-right' }}
+        transitionProps={{ duration: 200, transition: "slide-right" }}
         styles={{
-          body: { padding: 0, height: '100%' },
-          content: { backgroundColor: '#0d0d0d', color: '#fff' },
-          overlay: { backdropFilter: 'blur(4px)' }
+          body: { padding: 0, height: "100%" },
+          content: { backgroundColor: "#0d0d0d", color: "#fff" },
+          overlay: { backdropFilter: "blur(4px)" },
         }}
       >
         <SidebarContent onClose={close} isMobile={true} />
       </Drawer>
 
-      <AppShell.Main className={styles.main}>
-        {children}
-      </AppShell.Main>
+      <AppShell.Main className={styles.main}>{children}</AppShell.Main>
     </AppShell>
   );
 }

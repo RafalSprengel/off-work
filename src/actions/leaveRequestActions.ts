@@ -1,9 +1,7 @@
 export type Idata = {
-    employeeId: String,
-    startDate: Date,
-    endDate: Date,
-}
+  employeeId: string;
+  startDate: Date;
+  endDate: Date;
+};
 
-export async function createLeaveRequest(data: Idata) {
-
-}
+export async function createLeaveRequest(_data: Idata) {}

@@ -1,35 +1,34 @@
-'use client';
+"use client";
 
 import {
-  Container,
-  Stack,
-  Group,
-  Title,
-  Text,
-  Button,
-  Paper,
-  TextInput,
-  Select,
-  Badge,
-  Avatar,
-  Checkbox,
   ActionIcon,
+  Avatar,
+  Badge,
+  Button,
+  Checkbox,
+  Container,
   Divider,
-} from '@mantine/core';
+  Group,
+  Paper,
+  Select,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+} from "@mantine/core";
 import {
-  IconSearch,
-  IconPlus,
-  IconDownload,
   IconChevronLeft,
   IconChevronRight,
-} from '@tabler/icons-react';
-import Link from 'next/link';
+  IconDownload,
+  IconPlus,
+  IconSearch,
+} from "@tabler/icons-react";
+import Link from "next/link";
 
 export default function RequestsPage() {
   return (
     <Container size="xl" py="lg">
       <Stack gap="lg">
-        {/* 1. NAGŁÓWEK */}
         <Group justify="space-between" align="flex-start">
           <div>
             <Title order={2} fw={700}>
@@ -55,18 +54,24 @@ export default function RequestsPage() {
           </Group>
         </Group>
 
-        {/* 2. PANEL FILTRÓW */}
         <Paper p="md" radius="md" withBorder>
           <Stack gap="sm">
-            {/* Wiersz z opcjami wyboru */}
             <Group grow gap="xs">
-              <Select placeholder="Pending" data={['Pending', 'Approved', 'Rejected']} />
-              <Select placeholder="All types" data={['All types', 'Annual Leave']} />
-              <Select placeholder="All employees" data={['All employees']} />
-              <Select placeholder="All departments" data={['All departments', 'Bar', 'Kitchen']} />
+              <Select
+                placeholder="Pending"
+                data={["Pending", "Approved", "Rejected"]}
+              />
+              <Select
+                placeholder="All types"
+                data={["All types", "Annual Leave"]}
+              />
+              <Select placeholder="All employees" data={["All employees"]} />
+              <Select
+                placeholder="All departments"
+                data={["All departments", "Bar", "Kitchen"]}
+              />
             </Group>
 
-            {/* Wiersz z nawigacją daty */}
             <Group gap="xs">
               <ActionIcon variant="default" size="input-sm">
                 <IconChevronLeft size={16} />
@@ -82,7 +87,6 @@ export default function RequestsPage() {
               </Button>
             </Group>
 
-            {/* Pole wyszukiwania umieszczone na samym dole */}
             <TextInput
               placeholder="Search..."
               leftSection={<IconSearch size={16} />}
@@ -90,10 +94,8 @@ export default function RequestsPage() {
           </Stack>
         </Paper>
 
-        {/* 3. LISTA WNIOSKÓW */}
         <Paper radius="md" withBorder p={0}>
           <Stack gap={0}>
-            {/* Wiersz 1 */}
             <Paper p="md" radius={0}>
               <Group justify="space-between" wrap="nowrap">
                 <Group gap="md" wrap="nowrap">
@@ -127,7 +129,6 @@ export default function RequestsPage() {
 
             <Divider />
 
-            {/* Wiersz 2 */}
             <Paper p="md" radius={0}>
               <Group justify="space-between" wrap="nowrap">
                 <Group gap="md" wrap="nowrap">

@@ -1,5 +1,5 @@
-import { createTheme } from '@mantine/core';
-import classes from './classes.module.css';
+import { createTheme } from "@mantine/core";
+import classes from "./classes.module.css";
 
 export const theme = createTheme({
   components: {
