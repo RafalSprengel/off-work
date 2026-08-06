@@ -11,6 +11,7 @@ import {
   Group,
   Paper,
   Select,
+  SimpleGrid,
   Stack,
   Text,
   TextInput,
@@ -27,9 +28,9 @@ import Link from "next/link";
 
 export default function RequestsPage() {
   return (
-    <Container size="xl" py="lg">
+    <Container size="xl" py="lg" px={{ base: "xs", sm: "md" }}>
       <Stack gap="lg">
-        <Group justify="space-between" align="flex-start">
+        <Group justify="space-between" align="center" wrap="wrap" gap="md">
           <div>
             <Title order={2} fw={700}>
               Leave Requests
@@ -39,12 +40,17 @@ export default function RequestsPage() {
             </Badge>
           </div>
 
-          <Group gap="sm">
-            <Button variant="default" leftSection={<IconDownload size={16} />}>
+          <Group gap="sm" justify="flex-start">
+            <Button
+              variant="default"
+              size="sm"
+              leftSection={<IconDownload size={16} />}
+            >
               Export CSV
             </Button>
             <Button
               color="green"
+              size="sm"
               component={Link}
               href="/leave-requests/new"
               leftSection={<IconPlus size={16} />}
@@ -54,9 +60,9 @@ export default function RequestsPage() {
           </Group>
         </Group>
 
-        <Paper p="md" radius="md" withBorder>
+        <Paper p={{ base: "sm", sm: "md" }} radius="md" withBorder>
           <Stack gap="sm">
-            <Group grow gap="xs">
+            <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} gap="xs">
               <Select
                 placeholder="Pending"
                 data={["Pending", "Approved", "Rejected"]}
@@ -70,18 +76,20 @@ export default function RequestsPage() {
                 placeholder="All departments"
                 data={["All departments", "Bar", "Kitchen"]}
               />
-            </Group>
+            </SimpleGrid>
 
-            <Group gap="xs">
-              <ActionIcon variant="default" size="input-sm">
-                <IconChevronLeft size={16} />
-              </ActionIcon>
-              <Button variant="default" size="xs">
-                August 2026
-              </Button>
-              <ActionIcon variant="default" size="input-sm">
-                <IconChevronRight size={16} />
-              </ActionIcon>
+            <Group gap="xs" wrap="wrap">
+              <Group gap="xs" wrap="nowrap">
+                <ActionIcon variant="default" size="input-sm">
+                  <IconChevronLeft size={16} />
+                </ActionIcon>
+                <Button variant="default" size="xs">
+                  August 2026
+                </Button>
+                <ActionIcon variant="default" size="input-sm">
+                  <IconChevronRight size={16} />
+                </ActionIcon>
+              </Group>
               <Button variant="subtle" size="xs">
                 Entire period
               </Button>
@@ -96,11 +104,11 @@ export default function RequestsPage() {
 
         <Paper radius="md" withBorder p={0}>
           <Stack gap={0}>
-            <Paper p="md" radius={0}>
-              <Group justify="space-between" wrap="nowrap">
-                <Group gap="md" wrap="nowrap">
-                  <Checkbox />
-                  <Avatar color="gray" radius="xl">
+            <Paper p={{ base: "sm", sm: "md" }} radius={0}>
+              <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
+                <Group gap="sm" wrap="nowrap" align="flex-start">
+                  <Checkbox mt={4} />
+                  <Avatar color="gray" radius="xl" size="md">
                     BB
                   </Avatar>
                   <div>
@@ -116,7 +124,7 @@ export default function RequestsPage() {
                   </div>
                 </Group>
 
-                <Group gap="md">
+                <Group gap="xs" align="center" justify="space-between" style={{ width: "100%", sm: "auto" }}>
                   <Text size="xs" c="dimmed">
                     01/07/2026
                   </Text>
@@ -129,11 +137,11 @@ export default function RequestsPage() {
 
             <Divider />
 
-            <Paper p="md" radius={0}>
-              <Group justify="space-between" wrap="nowrap">
-                <Group gap="md" wrap="nowrap">
-                  <Checkbox />
-                  <Avatar color="gray" radius="xl">
+            <Paper p={{ base: "sm", sm: "md" }} radius={0}>
+              <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
+                <Group gap="sm" wrap="nowrap" align="flex-start">
+                  <Checkbox mt={4} />
+                  <Avatar color="gray" radius="xl" size="md">
                     NW
                   </Avatar>
                   <div>
@@ -149,7 +157,7 @@ export default function RequestsPage() {
                   </div>
                 </Group>
 
-                <Group gap="md">
+                <Group gap="xs" align="center" justify="space-between" style={{ width: "100%", sm: "auto" }}>
                   <Text size="xs" c="dimmed">
                     01/07/2026
                   </Text>

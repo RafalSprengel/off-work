@@ -18,6 +18,7 @@ import {
   IconMoon,
   IconSettings,
   IconSun,
+  IconUser,
   IconUsers,
   IconX,
 } from "@tabler/icons-react";
@@ -126,6 +127,18 @@ export default function SidebarContent({
             <Group gap="sm">
               <IconUsers size={18} />
               <Text size="sm">Departments</Text>
+            </Group>
+          </UnstyledButton>
+
+          <UnstyledButton
+            className={styles.menuItem}
+            data-active={isActive("/employees")}
+            component={Link}
+            href="/employees"
+          >
+            <Group gap="sm">
+              <IconUser size={18} />
+              <Text size="sm">Employees</Text>
             </Group>
           </UnstyledButton>
 

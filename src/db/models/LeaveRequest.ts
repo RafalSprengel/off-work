@@ -2,7 +2,7 @@ import mongoose, { type Document, type Model, Schema } from "mongoose";
 
 export interface ILeaveRequest extends Document {
   user: mongoose.Types.ObjectId;
-  dates: Date[];
+  dates: string[];
   daysRequested: number;
   status: "pending" | "approved" | "rejected";
   createdAt: Date;
@@ -12,7 +12,7 @@ export interface ILeaveRequest extends Document {
 const LeaveRequestSchema = new Schema<ILeaveRequest>(
   {
     user: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    dates: [{ type: Date, required: true }],
+    dates: [{ type: String, required: true }],
     daysRequested: { type: Number, required: true },
     status: {
       type: String,

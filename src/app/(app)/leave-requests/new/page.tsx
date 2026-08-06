@@ -1,5 +1,6 @@
 "use client";
 
+import { createLeaveRequest } from "@/actions/leaveRequestActions";
 import {
   Button,
   Container,
@@ -15,18 +16,18 @@ import { DateInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { IconCalendar } from "@tabler/icons-react";
 import dayjs from "dayjs";
+import { useRouter } from "next/navigation";
 import "@mantine/dates/styles.css";
 
 const usersData = [
-  { value: "self", label: "For myself" },
   {
-    value: "1",
+    _id: "60d5ecb8b5c9c22b1c8e28a1",
     label: "Adam Pietrzak",
     department: "Kitchen",
     email: "adam@demo.com",
   },
   {
-    value: "2",
+    _id: "60d5ecb8b5c9c22b1c8e28a2",
     label: "Artur Pawlak",
     department: "Floor",
     email: "artur@demo.com",
@@ -34,88 +35,59 @@ const usersData = [
 ];
 
 export default function NewLeaveRequestPage() {
+  const router = useRouter();
+
   const form = useForm({
     initialValues: {
-      employee: "self",
+      employee: "",
       startDate: null as Date | null,
       endDate: null as Date | null,
-      daysRequested: 0,
       completedDate: new Date(),
+    },
+    validate: {
+      employee: (value) => (!value ? "Please select an employee" : null),
+      startDate: (value) => (!value ? "Start date is required" : null),
+      endDate: (value) => (!value ? "End date is required" : null),
     },
   });
 
-  const calculateDays = (
-    start: Date | string | null,
-    end: Date | string | null,
-  ): number => {
-    if (!start || !end) return 0;
+  const handleSubmit = async (values: typeof form.values) => {
+    if (!values.startDate || !values.endDate) return;
 
-    let currentDate = dayjs(start).startOf("day");
-    const endDate = dayjs(end).startOf("day");
+    const result = await createLeaveRequest({
+      user: values.employee,
+      startDate: dayjs(values.startDate).format("YYYY-MM-DD"),
+      endDate: dayjs(values.endDate).format("YYYY-MM-DD"),
+    });
 
-    if (!currentDate.isValid() || !endDate.isValid()) {
-      return 0;
+    if (result.error) {
+      form.setErrors({ startDate: result.error });
+    } else {
+      router.push("/leave-requests");
     }
-
-    if (currentDate.isAfter(endDate)) {
-      return 0;
-    }
-
-    let workingDays = 0;
-
-    while (
-      currentDate.isBefore(endDate) ||
-      currentDate.isSame(endDate, "day")
-    ) {
-      const dayOfWeek = currentDate.day();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        workingDays++;
-      }
-      currentDate = currentDate.add(1, "day");
-    }
-
-    return workingDays;
   };
 
-  const handleStartDateChange = (date: Date | null) => {
-    form.setFieldValue("startDate", date);
-    const days = calculateDays(date, form.values.endDate);
-    form.setFieldValue("daysRequested", days);
-  };
-
-  const handleEndDateChange = (date: Date | null) => {
-    form.setFieldValue("endDate", date);
-    const days = calculateDays(form.values.startDate, date);
-    form.setFieldValue("daysRequested", days);
-  };
-
-  const handleSubmit = (_values: typeof form.values) => {
-    // Submit handling logic
-  };
+  const selectData = usersData.map((u) => ({
+    value: u._id,
+    label: u.label,
+  }));
 
   return (
-    <Container size="sm" py="lg">
+    <Container size="sm" py="lg" px={{ base: "xs", sm: "md" }}>
       <Stack gap="lg">
         <Title order={2}>Create new request</Title>
-        <Paper p="xl" radius="md" withBorder>
+        <Paper p={{ base: "md", sm: "xl" }} radius="md" withBorder>
           <form onSubmit={form.onSubmit(handleSubmit)}>
             <Stack gap="md">
               <Select
                 label="Employee"
                 placeholder="Select employee"
-                data={usersData}
+                data={selectData}
                 searchable
                 nothingFoundMessage="Nothing found..."
                 {...form.getInputProps("employee")}
                 renderOption={({ option }) => {
-                  const user = usersData.find((u) => u.value === option.value);
-                  if (option.value === "self") {
-                    return (
-                      <Text size="sm" fw={500}>
-                        For myself
-                      </Text>
-                    );
-                  }
+                  const user = usersData.find((u) => u._id === option.value);
                   return (
                     <div>
                       <Text size="sm" fw={600}>
@@ -138,8 +110,7 @@ export default function NewLeaveRequestPage() {
                   placeholder="Select start date"
                   leftSection={<IconCalendar size={18} />}
                   valueFormat="YYYY-MM-DD"
-                  value={form.values.startDate}
-                  onChange={handleStartDateChange}
+                  {...form.getInputProps("startDate")}
                   clearable
                   style={{ flex: 1 }}
                 />
@@ -150,8 +121,7 @@ export default function NewLeaveRequestPage() {
                   leftSection={<IconCalendar size={18} />}
                   valueFormat="YYYY-MM-DD"
                   minDate={form.values.startDate || undefined}
-                  value={form.values.endDate}
-                  onChange={handleEndDateChange}
+                  {...form.getInputProps("endDate")}
                   clearable
                   style={{ flex: 1 }}
                 />
@@ -167,16 +137,6 @@ export default function NewLeaveRequestPage() {
               >
                 <div>
                   <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
-                    No of Days Requested
-                  </Text>
-                  <Text size="sm" fw={600}>
-                    {form.values.daysRequested}{" "}
-                    {form.values.daysRequested === 1 ? "day" : "days"}
-                  </Text>
-                </div>
-
-                <div>
-                  <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
                     Date Completed
                   </Text>
                   <Flex gap={6} align="center">
@@ -189,7 +149,11 @@ export default function NewLeaveRequestPage() {
               </Flex>
 
               <Flex justify="flex-end" mt="md">
-                <Button type="submit" color="blue">
+                <Button
+                  type="submit"
+                  color="blue"
+                  w={{ base: "100%", sm: "auto" }}
+                >
                   Submit Request
                 </Button>
               </Flex>

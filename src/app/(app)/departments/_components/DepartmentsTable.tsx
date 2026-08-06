@@ -4,6 +4,7 @@ import {
     ActionIcon,
     Badge,
     Button,
+    Card,
     Group,
     Paper,
     Stack,
@@ -16,6 +17,7 @@ import {
     TableTr,
     Text,
     Title,
+    useMatches,
 } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import { IconEdit, IconPlus, IconTrash } from "@tabler/icons-react";
@@ -29,6 +31,11 @@ export default function DepartmentsTable({
 }: {
     departments: IDepartment[];
 }) {
+    const isMobile = useMatches({
+        base: true,
+        sm: false,
+    });
+
     function openNewModal() {
         modals.open({
             modalId: "new-department",
@@ -110,6 +117,52 @@ export default function DepartmentsTable({
         </TableTr>
     ));
 
+    const mobileCards = departments.map((dept) => (
+        <Card key={dept._id} withBorder shadow="xs" radius="md" padding="md">
+            <Group justify="space-between" align="flex-start" mb="xs">
+                <div>
+                    <Text fw={600} size="md">
+                        {dept.name}
+                    </Text>
+                    {dept.manager && (
+                        <Text size="xs" c="dimmed">
+                            Manager: {dept.manager}
+                        </Text>
+                    )}
+                </div>
+                <Group gap={4} wrap="nowrap">
+                    <ActionIcon
+                        variant="subtle"
+                        color="blue"
+                        aria-label="Edit department"
+                        size="md"
+                        onClick={() => openEditModal(dept)}
+                    >
+                        <IconEdit size={18} />
+                    </ActionIcon>
+                    <ActionIcon
+                        variant="subtle"
+                        color="red"
+                        aria-label="Delete department"
+                        size="md"
+                        onClick={() => openDeleteModal(dept)}
+                    >
+                        <IconTrash size={18} />
+                    </ActionIcon>
+                </Group>
+            </Group>
+
+            <Group justify="space-between" align="center" mt="sm">
+                <Text size="xs" c="dimmed">
+                    Employees
+                </Text>
+                <Badge variant="flat" size="sm">
+                    10
+                </Badge>
+            </Group>
+        </Card>
+    ));
+
     return (
         <Stack gap="lg">
             <Group justify="space-between" align="flex-start">
@@ -130,29 +183,43 @@ export default function DepartmentsTable({
                 </Button>
             </Group>
 
-            <Paper withBorder shadow="xs" radius="md">
-                <TableScrollContainer minWidth={500}>
-                    <Table verticalSpacing="sm" horizontalSpacing="md">
-                        <TableThead>
-                            <TableTr>
-                                <TableTh>Name</TableTh>
-                                <TableTh>Manager</TableTh>
-                                <TableTh>Employees</TableTh>
-                                <TableTh style={{ textAlign: "right" }}>Actions</TableTh>
-                            </TableTr>
-                        </TableThead>
-                        <TableTbody>
-                            {rows.length > 0 ? (
-                                rows
-                            ) : (
+            {isMobile ? (
+                <Stack gap="sm">
+                    {departments.length > 0 ? (
+                        mobileCards
+                    ) : (
+                        <Paper withBorder p="md" radius="md">
+                            <Text size="sm" c="dimmed" ta="center">
+                                No departments yet.
+                            </Text>
+                        </Paper>
+                    )}
+                </Stack>
+            ) : (
+                <Paper withBorder shadow="xs" radius="md">
+                    <TableScrollContainer minWidth={500}>
+                        <Table verticalSpacing="sm" horizontalSpacing="md">
+                            <TableThead>
                                 <TableTr>
-                                    <TableTd colSpan={4}>No departments yet.</TableTd>
+                                    <TableTh>Name</TableTh>
+                                    <TableTh>Manager</TableTh>
+                                    <TableTh>Employees</TableTh>
+                                    <TableTh style={{ textAlign: "right" }}>Actions</TableTh>
                                 </TableTr>
-                            )}
-                        </TableTbody>
-                    </Table>
-                </TableScrollContainer>
-            </Paper>
+                            </TableThead>
+                            <TableTbody>
+                                {rows.length > 0 ? (
+                                    rows
+                                ) : (
+                                    <TableTr>
+                                        <TableTd colSpan={4}>No departments yet.</TableTd>
+                                    </TableTr>
+                                )}
+                            </TableTbody>
+                        </Table>
+                    </TableScrollContainer>
+                </Paper>
+            )}
         </Stack>
     );
 }
