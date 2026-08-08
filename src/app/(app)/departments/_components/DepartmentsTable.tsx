@@ -36,7 +36,7 @@ export default function DepartmentsTable({
         sm: false,
     });
 
-    function openNewModal() {
+    function openNewDeptModal() {
         modals.open({
             modalId: "new-department",
             title: "Add a new department",
@@ -96,7 +96,6 @@ export default function DepartmentsTable({
                 <Group gap={4} justify="flex-end" wrap="nowrap">
                     <ActionIcon
                         variant="subtle"
-                        color="blue"
                         aria-label="Edit department"
                         size="sm"
                         onClick={() => openEditModal(dept)}
@@ -133,7 +132,6 @@ export default function DepartmentsTable({
                 <Group gap={4} wrap="nowrap">
                     <ActionIcon
                         variant="subtle"
-                        color="blue"
                         aria-label="Edit department"
                         size="md"
                         onClick={() => openEditModal(dept)}
@@ -175,9 +173,9 @@ export default function DepartmentsTable({
                     </Badge>
                 </div>
                 <Button
-                    color="green"
+                   
                     leftSection={<IconPlus size={16} />}
-                    onClick={openNewModal}
+                    onClick={openNewDeptModal}
                 >
                     New
                 </Button>
@@ -197,7 +195,6 @@ export default function DepartmentsTable({
                 </Stack>
             ) : (
                 <Paper withBorder shadow="xs" radius="md">
-                    <TableScrollContainer minWidth={500}>
                         <Table verticalSpacing="sm" horizontalSpacing="md">
                             <TableThead>
                                 <TableTr>
@@ -217,7 +214,6 @@ export default function DepartmentsTable({
                                 )}
                             </TableTbody>
                         </Table>
-                    </TableScrollContainer>
                 </Paper>
             )}
         </Stack>

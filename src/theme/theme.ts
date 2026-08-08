@@ -10,5 +10,12 @@ export const theme = createTheme({
         label: classes.label,
       },
     },
+    Modal: {
+      classNames: {
+        title: classes.modalTitle,
+        header: classes.modalHeader,
+        content: classes.modalContent,
+      },
+    },
   },
 });

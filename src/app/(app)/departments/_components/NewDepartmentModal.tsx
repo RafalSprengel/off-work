@@ -1,6 +1,7 @@
 'use client';
 
-import { Button, Group, TextInput, Text } from "@mantine/core";
+import { Button, Group, TextInput } from "@mantine/core";
+import { useForm } from "@mantine/form";
 import { useState } from "react";
 import { createDepartment } from "@/actions/departmentsActions";
 
@@ -9,23 +10,36 @@ export default function NewDepartmentModal({
 }: {
   closeModal: () => void;
 }) {
-  const [name, setName] = useState("");
-  const [manager, setManager] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const form = useForm({
+    initialValues: {
+      name: "",
+      manager: "",
+    },
+    validate: {
+      name: (value) => (value.trim().length === 0 ? "Department name is required" : null),
+      manager: (value) => (value.trim().length === 0 ? "Manager is required" : null),
+    },
+  });
+
   async function handleSubmit() {
-    setError(null);
+    const { hasErrors } = form.validate();
+    if (hasErrors) return;
+
     setLoading(true);
 
-    const result = await createDepartment({ name, manager });
+    const result = await createDepartment({
+      name: form.values.name,
+      manager: form.values.manager,
+    });
 
     setLoading(false);
 
     if (result.success) {
       closeModal();
     } else {
-      setError(result.error || "An error occurred");
+      form.setFieldError("name", result.error || "An error occurred");
     }
   }
 
@@ -34,17 +48,14 @@ export default function NewDepartmentModal({
       <TextInput
         label="Department name"
         placeholder="e.g. Fabrication"
-        value={name}
-        onChange={(e) => setName(e.currentTarget.value)}
-        error={error}
+        {...form.getInputProps("name")}
         disabled={loading}
       />
       <TextInput
         label="Manager"
         placeholder="e.g. John Doe"
         mt="md"
-        value={manager}
-        onChange={(e) => setManager(e.currentTarget.value)}
+        {...form.getInputProps("manager")}
         disabled={loading}
       />
 
