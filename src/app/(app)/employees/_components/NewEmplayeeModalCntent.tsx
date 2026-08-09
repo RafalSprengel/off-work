@@ -123,7 +123,6 @@ export default function NewEmployeeModalContent() {
         async function loadManagers() {
             setIsLoadingManagers(true)
             const { success, data, error } = await getManagers();
-            console.log("Lista managerów:", data)
             if (success && data) {
                 setManagersList(data)
             } else {
@@ -165,7 +164,11 @@ export default function NewEmployeeModalContent() {
                 />
                 <Select
                     label="Role"
-                    placeholder={isLoadingRoles ? "Loading roles..." : "Select role"}
+                    placeholder={
+                        isLoadingRoles ? "Loading roles..." :
+                            roles.length > 0 ? "Select role" :
+                                "No roles found"
+                    }
                     data={roles}
                     loading={isLoadingRoles}
                     disabled={isLoadingRoles}
@@ -177,7 +180,10 @@ export default function NewEmployeeModalContent() {
             <Flex direction={{ base: 'column', sm: 'row' }} gap="md">
                 <Select
                     label="Department"
-                    placeholder={isLoadingDepartments ? "Loading departments..." : "Select department"}
+                    placeholder={isLoadingDepartments ? "Loading departments..." :
+                        departments.length > 0 ? "Select department" :
+                            "No departments found"
+                    }
                     loading={isLoadingDepartments}
                     disabled={isLoadingDepartments}
                     data={departments.map((department) => {
@@ -191,7 +197,11 @@ export default function NewEmployeeModalContent() {
                 />
                 <Select
                     label="Manager"
-                    placeholder={isLoadingManagers ? "Loading managers..." : "Select manager"}
+                    placeholder={
+                        isLoadingManagers ? "Loading managers..." :
+                            managersList.length > 0 ? "Select manager" :
+                                "No managers found"
+                    }
                     loading={isLoadingManagers}
                     disabled={isLoadingManagers}
                     data={managersList.map((manager) => {

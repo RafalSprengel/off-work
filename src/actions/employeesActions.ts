@@ -89,7 +89,7 @@ export async function getManagers(): Promise<{ success: boolean; data?: IManager
     try {
         await dbConnect();
         const organizationId = await getOrganizationId();
-        const managers = await Employee.find({ role: "Manager", status: { $in: ["active", "invited"] }, organizationId }).select("_id, firstName, lastName").lean()
+        const managers = await Employee.find({ role: "Manager", status: { $in: ["active", "invited"] }, organizationId }).select("_id firstName lastName").lean()
         const formattedManagers: IManager[] = managers.map((manager) => ({
             _id: manager._id.toString(),
             firstName: manager.firstName,
