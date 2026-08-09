@@ -3,16 +3,20 @@
 import dbConnect from "@/db/connection";
 import Department from "@/db/models/Departments";
 import { revalidatePath } from "next/cache";
-import type { ICreateDepartmentInput, IEditDepartmentInput, IDepartment } from "@/types/department";
+import type { ICreateDepartmentInput, IDepartment } from "@/types/department";
+import { getOrganizationId } from "@/utils/getOrganizationId";
 
 export async function getDepartments(): Promise<{ success: boolean, data: IDepartment[], error: string | null }> {
   try {
     await dbConnect();
-    const rawDepartments = await Department.find({}).select("_id name manager").lean();
+    const organizationId = await getOrganizationId();
+    const rawDepartments = await Department.find({ organizationId: organizationId }).select("_id name manager organizationId").lean();
 
     const departments: IDepartment[] = rawDepartments.map((dept: any) => ({
-      ...dept,
-      _id: dept._id.toString()
+      _id: dept._id.toString(),
+      name: dept.name,
+      manager: dept.manager,
+      organizationId: dept.organizationId.toString(),
     }));
 
     return {
@@ -41,7 +45,11 @@ export async function createDepartment(newDepartment: ICreateDepartmentInput) {
 
   try {
     await dbConnect();
-    const department = await Department.create(newDepartment);
+    const organizationId = await getOrganizationId();
+    const department = await Department.create({
+      ...newDepartment,
+      organizationId,
+    });
     revalidatePath("/departments");
 
     return {
@@ -50,8 +58,7 @@ export async function createDepartment(newDepartment: ICreateDepartmentInput) {
         _id: department._id.toString(),
         name: department.name,
         manager: department.manager,
-        createdAt: department.createdAt.toISOString(),
-        updatedAt: department.updatedAt.toISOString(),
+        organizationId: department.organizationId.toString(),
       },
     };
   } catch (error: any) {
@@ -78,7 +85,7 @@ export async function createDepartment(newDepartment: ICreateDepartmentInput) {
   }
 }
 
-export async function updateDepartment(updatedDepartment: IEditDepartmentInput) {
+export async function updateDepartment(updatedDepartment: IDepartment) {
   if (!updatedDepartment.name || updatedDepartment.name.trim().length < 2) {
     return {
       success: false,
@@ -88,7 +95,20 @@ export async function updateDepartment(updatedDepartment: IEditDepartmentInput) 
 
   try {
     await dbConnect();
-    const department = await Department.findByIdAndUpdate(updatedDepartment._id, updatedDepartment, { new: true });
+    const organizationId = await getOrganizationId();
+    const department = await Department.findOneAndUpdate(
+      { _id: updatedDepartment._id, organizationId },
+      updatedDepartment,
+      { new: true }
+    );
+
+    if (!department) {
+      return {
+        success: false,
+        error: "Department not found or access denied.",
+      };
+    }
+
     revalidatePath("/departments", "page");
 
     return {
@@ -97,8 +117,7 @@ export async function updateDepartment(updatedDepartment: IEditDepartmentInput) 
         _id: department?._id.toString(),
         name: department?.name,
         manager: department?.manager,
-        createdAt: department?.createdAt.toISOString(),
-        updatedAt: department?.updatedAt.toISOString(),
+        organizationId: department?.organizationId.toString(),
       },
     };
   } catch (error: any) {
@@ -128,7 +147,16 @@ export async function updateDepartment(updatedDepartment: IEditDepartmentInput) 
 export async function deleteDepartment(_id: string) {
   try {
     await dbConnect();
-    await Department.findByIdAndDelete(_id);
+    const organizationId = await getOrganizationId();
+    const result = await Department.findOneAndDelete({ _id, organizationId });
+
+    if (!result) {
+      return {
+        success: false,
+        error: "Department not found or access denied.",
+      };
+    }
+
     revalidatePath("/departments", "page");
 
     return {

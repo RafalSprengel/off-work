@@ -1,15 +1,8 @@
-export interface IEditDepartmentInput {
-  _id: string;
-  name: string;
-  manager?: string;
-}
-
 export interface IDepartment {
   _id: string;
   name: string;
   manager?: string;
-  createdAt: string;
-  updatedAt: string;
+  organizationId: string;
 }
 
-export type ICreateDepartmentInput = Pick<IDepartment, "name" | "manager">;
+export type ICreateDepartmentInput = Pick<IDepartment, "name" | "manager" | "organizationId">;

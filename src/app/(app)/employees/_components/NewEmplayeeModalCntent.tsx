@@ -7,15 +7,22 @@ import { DatePickerInput } from "@mantine/dates";
 import { modals } from "@mantine/modals";
 import { getDepartments } from "@/actions/departmentsActions";
 import { getRoles } from "@/actions/rolesActions";
+import { getManagers } from "@/actions/employeesActions";
+import type { IManager } from "@/types/employees";
+import { createEmployee } from "@/actions/employeesActions";
 import { IDepartment } from "@/types/department";
 import { notifications } from "@mantine/notifications"
 import { IconX } from "@tabler/icons-react"
+
+
 
 export default function NewEmployeeModalContent() {
     const [departments, setDepartments] = useState<IDepartment[]>([])
     const [isLoadingDepartments, setIsLoadingDepartments] = useState(false)
     const [roles, setRoles] = useState<string[]>([])
     const [isLoadingRoles, setIsLoadingRoles] = useState(false)
+    const [managersList, setManagersList] = useState<IManager[]>([])
+    const [isLoadingManagers, setIsLoadingManagers] = useState(false)
 
     const form = useForm({
         initialValues: {
@@ -24,8 +31,9 @@ export default function NewEmployeeModalContent() {
             email: "",
             role: "",
             department: "",
-            proposedAnnualLeave: "24",
-            employmentDate: ""
+            manager: "",
+            proposedAnnualLeave: 24,
+            employmentDate: null
         },
         validate: {
             firstName: (value) => (value ? null : "First name is required"),
@@ -38,14 +46,38 @@ export default function NewEmployeeModalContent() {
         }
     })
 
-    function handleSubmit() {
+    async function handleSubmit() {
         const { hasErrors } = form.validate()
 
         if (hasErrors) {
             return
         }
 
-        console.log(form.values)
+        const { success, error } = await createEmployee({
+            firstName: form.values.firstName,
+            lastName: form.values.lastName,
+            email: form.values.email,
+            role: form.values.role,
+            department: form.values.department,
+            proposedAnnualLeave: form.values.proposedAnnualLeave,
+            employmentDate: form.values.employmentDate as unknown as string,
+        })
+
+        if (success) {
+            notifications.show({
+                title: "Success",
+                message: "Employee created successfully",
+                color: "green",
+            })
+            modals.close("new-employee-modal")
+        } else {
+            notifications.show({
+                title: "Error",
+                message: error || "Failed to create employee",
+                color: "red",
+                icon: <IconX />
+            })
+        }
     }
 
     function handleCancel() {
@@ -86,6 +118,25 @@ export default function NewEmployeeModalContent() {
             setIsLoadingRoles(false)
         }
         loadRoles();
+
+
+        async function loadManagers() {
+            setIsLoadingManagers(true)
+            const { success, data, error } = await getManagers();
+            console.log("Lista managerów:", data)
+            if (success && data) {
+                setManagersList(data)
+            } else {
+                notifications.show({
+                    title: "Error",
+                    message: error,
+                    color: "red",
+                    icon: <IconX />
+                })
+            }
+            setIsLoadingManagers(false)
+        }
+        loadManagers();
     }, [])
 
     return (
@@ -138,12 +189,21 @@ export default function NewEmployeeModalContent() {
                     {...form.getInputProps("department")}
                     flex={1}
                 />
-                <NumberInput
-                    label="Proposed Annual Leave"
-                    placeholder="e.g. 20"
+                <Select
+                    label="Manager"
+                    placeholder={isLoadingManagers ? "Loading managers..." : "Select manager"}
+                    loading={isLoadingManagers}
+                    disabled={isLoadingManagers}
+                    data={managersList.map((manager) => {
+                        return {
+                            value: manager._id,
+                            label: manager.firstName + " " + manager.lastName
+                        }
+                    })}
+                    {...form.getInputProps("department")}
                     flex={1}
-                    {...form.getInputProps("proposedAnnualLeave")}
                 />
+
             </Flex>
 
             <Flex direction={{ base: 'column', sm: 'row' }} gap="md">
@@ -153,7 +213,12 @@ export default function NewEmployeeModalContent() {
                     {...form.getInputProps("employmentDate")}
                     flex={1}
                 />
-                <div style={{ flex: 1 }} />
+                <NumberInput
+                    label="Proposed Annual Leave"
+                    placeholder="e.g. 20"
+                    flex={1}
+                    {...form.getInputProps("proposedAnnualLeave")}
+                />
             </Flex>
 
             <Group grow mt="md">

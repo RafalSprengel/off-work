@@ -4,6 +4,7 @@ import connectDB from "@/db/connection";
 import LeaveRequest from "@/db/models/LeaveRequest";
 import dayjs from "dayjs";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
+import { getOrganizationId } from "@/utils/getOrganizationId";
 
 dayjs.extend(isSameOrBefore);
 
@@ -19,7 +20,7 @@ async function getBankHolidays(year: number): Promise<string[]> {
 }
 
 interface CreateLeaveRequestInput {
-  user: string;
+  employee: string;
   startDate: string; // Format "YYYY-MM-DD"
   endDate: string;   // Format "YYYY-MM-DD"
 }
@@ -27,7 +28,7 @@ interface CreateLeaveRequestInput {
 export async function createLeaveRequest(data: CreateLeaveRequestInput) {
   await connectDB();
 
-  const { user, startDate, endDate } = data;
+  const { employee, startDate, endDate } = data;
 
   const start = dayjs(startDate, "YYYY-MM-DD");
   const end = dayjs(endDate, "YYYY-MM-DD");
@@ -59,10 +60,13 @@ export async function createLeaveRequest(data: CreateLeaveRequestInput) {
     return { error: "Selected range contains no working days" };
   }
 
+  const organizationId = await getOrganizationId();
+
   const existingConflict = await LeaveRequest.findOne({
-    user,
+    employee,
     status: { $in: ["pending", "approved"] },
     dates: { $in: datesToRequest },
+    organizationId,
   });
 
   if (existingConflict) {
@@ -70,10 +74,11 @@ export async function createLeaveRequest(data: CreateLeaveRequestInput) {
   }
 
   const newRequest = await LeaveRequest.create({
-    user,
+    employee,
     dates: datesToRequest,
     daysRequested: datesToRequest.length,
     status: "pending",
+    organizationId,
   });
 
   return { success: true, requestId: newRequest._id.toString() };

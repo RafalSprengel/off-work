@@ -6,6 +6,7 @@ export interface IClosureDay extends Document {
   type: "bank_holiday" | "company_closure" | "blackout_period";
   enabled: boolean;
   isCustom: boolean;
+  organizationId: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,11 +22,17 @@ const ClosureDaySchema = new Schema<IClosureDay>(
     },
     enabled: { type: Boolean, default: true },
     isCustom: { type: Boolean, default: false },
+    organizationId: {
+      type: Schema.Types.ObjectId,
+      ref: "Organization",
+      required: true,
+    },
   },
   { timestamps: true },
 );
 
 ClosureDaySchema.index({ dates: 1, type: 1, enabled: 1 });
+ClosureDaySchema.index({ organizationId: 1 });
 
 const ClosureDay: Model<IClosureDay> =
   (mongoose.models.ClosureDay as Model<IClosureDay>) ||

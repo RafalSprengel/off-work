@@ -2,8 +2,9 @@ import mongoose, { type Document, type Model, Schema } from "mongoose";
 import type { IDepartment } from "@/types/department";
 
 export interface IDepartmentDocument
-  extends Omit<IDepartment, "_id" | "createdAt" | "updatedAt">,
-    Document {
+  extends Omit<IDepartment, "_id" | "organizationId">,
+  Document {
+  organizationId: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,6 +20,11 @@ const DepartmentSchema = new Schema<IDepartmentDocument>(
       type: String,
       trim: true,
     },
+    organizationId: {
+      type: Schema.Types.ObjectId,
+      ref: "Organization",
+      required: true,
+    },
   },
   {
     timestamps: true,
@@ -30,12 +36,14 @@ const DepartmentSchema = new Schema<IDepartmentDocument>(
 );
 
 DepartmentSchema.index(
-  { name: 1 },
+  { name: 1, organizationId: 1 },
   {
     unique: true,
     collation: { locale: "en", strength: 2 },
   },
 );
+
+DepartmentSchema.index({ organizationId: 1 });
 
 const Department: Model<IDepartmentDocument> =
   (mongoose.models.Department as Model<IDepartmentDocument>) ||
