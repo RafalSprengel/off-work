@@ -7,28 +7,33 @@ import type { IEmployee } from "@/types/employees";
 import type { ICreateEmployeeInput } from "@/types/employees";
 import type { IManager } from "@/types/employees";
 import { getOrganizationId } from "@/utils/getOrganizationId";
+import { revalidatePath } from "next/cache";
 
 
 export async function getEmployees(): Promise<{ success: boolean; data: IEmployee[]; error?: string }> {
     try {
         await dbConnect();
         const organizationId = await getOrganizationId();
-        const rewEmployees = await Employee.find({ organizationId }).select({}).lean();
-        const employees: IEmployee[] = rewEmployees.map((emp) => ({
-            _id: emp._id.toString(),
-            firstName: emp.firstName,
-            lastName: emp.lastName,
-            email: emp.email,
-            role: emp.role,
-            department: emp.department.toString(),
-            proposedAnnualLeave: emp.proposedAnnualLeave,
-            employmentDate: emp.employmentDate instanceof Date
-                ? emp.employmentDate.toISOString()
-                : String(emp.employmentDate),
-            managerId: emp.managerId?.toString(),
-            organizationId: emp.organizationId?.toString(),
-            status: emp.status as "active" | "inactive" | "invited",
-        }));
+        const rawEmployees = await Employee.find({ organizationId }).select({}).populate("department", "name manager").lean();
+        const employees: IEmployee[] = JSON.parse(JSON.stringify(rawEmployees));
+
+        // const employees: IEmployee[] = rawEmployees.map((emp) => ({
+        //     _id: emp._id.toString(),
+        //     firstName: emp.firstName,
+        //     lastName: emp.lastName,
+        //     email: emp.email,
+        //     role: emp.role,
+        //     department: emp.department ? {
+        //         name: emp.department.name
+        //     } : undefined,
+        //     proposedAnnualLeave: emp.proposedAnnualLeave,
+        //     employmentDate: emp.employmentDate instanceof Date
+        //         ? emp.employmentDate.toISOString()
+        //         : String(emp.employmentDate),
+        //     managerId: emp.managerId?.toString(),
+        //     organizationId: emp.organizationId?.toString(),
+        //     status: emp.status as "active" | "inactive" | "invited",
+        // }));
 
         return { success: true, data: employees };
 
@@ -38,7 +43,7 @@ export async function getEmployees(): Promise<{ success: boolean; data: IEmploye
     }
 }
 
-export async function createEmployee(data: ICreateEmployeeInput): Promise<{ success: boolean; data?: IEmployee; error?: string }> {
+export async function createEmployee(data: ICreateEmployeeInput): Promise<{ success: boolean; data?: IEmployee; error?: string; errorCode?: string }> {
     try {
         await dbConnect();
         const organizationId = await getOrganizationId();
@@ -51,9 +56,12 @@ export async function createEmployee(data: ICreateEmployeeInput): Promise<{ succ
             department: new mongoose.Types.ObjectId(data.department),
             proposedAnnualLeave: data.proposedAnnualLeave,
             employmentDate: new Date(data.employmentDate),
+            ...(data.managerId ? { managerId: new mongoose.Types.ObjectId(data.managerId) } : {}),
             organizationId: new mongoose.Types.ObjectId(organizationId),
             status: "invited" as const,
         });
+
+        revalidatePath("/employees");
 
         const emp = employee.toObject();
 
@@ -78,7 +86,7 @@ export async function createEmployee(data: ICreateEmployeeInput): Promise<{ succ
         console.error("Error creating employee:", error);
 
         if (error?.code === 11000) {
-            return { success: false, error: "An employee with this email already exists." };
+            return { success: false, error: "An employee with this email already exists.", errorCode: "DUPLICATE_EMAIL" };
         }
 
         return { success: false, error: error instanceof Error ? error.message : "Failed to create employee" };

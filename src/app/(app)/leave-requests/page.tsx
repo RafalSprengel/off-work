@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import {
   ActionIcon,
   Avatar,
   Badge,
   Button,
   Checkbox,
+  Collapse,
   Container,
   Divider,
   Group,
@@ -21,12 +23,15 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconDownload,
+  IconFilter,
   IconPlus,
   IconSearch,
 } from "@tabler/icons-react";
 import Link from "next/link";
 
 export default function RequestsPage() {
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
   return (
     <Container size="xl" py="lg" px={{ base: "xs", sm: "md" }}>
       <Stack gap="lg">
@@ -62,43 +67,54 @@ export default function RequestsPage() {
 
         <Paper p={{ base: "sm", sm: "md" }} radius="md" withBorder>
           <Stack gap="sm">
-            <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} gap="xs">
-              <Select
-                placeholder="Pending"
-                data={["Pending", "Approved", "Rejected"]}
-              />
-              <Select
-                placeholder="All types"
-                data={["All types", "Annual Leave"]}
-              />
-              <Select placeholder="All employees" data={["All employees"]} />
-              <Select
-                placeholder="All departments"
-                data={["All departments", "Bar", "Kitchen"]}
-              />
-            </SimpleGrid>
-
-            <Group gap="xs" wrap="wrap">
-              <Group gap="xs" wrap="nowrap">
-                <ActionIcon variant="default" size="input-sm">
+            <Group justify="space-between" align="center" wrap="wrap" gap="sm">
+              <Group gap="xs" wrap="wrap">
+                <ActionIcon variant="default" size="input-xs">
                   <IconChevronLeft size={16} />
                 </ActionIcon>
                 <Button variant="default" size="xs">
                   August 2026
                 </Button>
-                <ActionIcon variant="default" size="input-sm">
+                <ActionIcon variant="default" size="input-xs">
                   <IconChevronRight size={16} />
                 </ActionIcon>
+
+                <Button
+                  variant="default"
+                  size="xs"
+                  onClick={() => setFiltersOpen((o) => !o)}
+                  leftSection={<IconFilter size={16} />}
+                  data-active={filtersOpen || undefined}
+                >
+                  Filtry
+                </Button>
               </Group>
-              <Button variant="subtle" size="xs">
-                Entire period
-              </Button>
+
+              <TextInput
+                placeholder="Search..."
+                leftSection={<IconSearch size={16} />}
+                style={{ flexGrow: 1, maxWidth: 300 }}
+                w={{ base: "100%", sm: "auto" }}
+              />
             </Group>
 
-            <TextInput
-              placeholder="Search..."
-              leftSection={<IconSearch size={16} />}
-            />
+            <Collapse expanded={filtersOpen}>
+              <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="xs" pt="xs">
+                <Select
+                  placeholder="Pending"
+                  data={["Pending", "Approved", "Rejected"]}
+                />
+                <Select
+                  placeholder="All types"
+                  data={["All types", "Annual Leave"]}
+                />
+                <Select placeholder="All employees" data={["All employees"]} />
+                <Select
+                  placeholder="All departments"
+                  data={["All departments", "Bar", "Kitchen"]}
+                />
+              </SimpleGrid>
+            </Collapse>
           </Stack>
         </Paper>
 
@@ -124,7 +140,7 @@ export default function RequestsPage() {
                   </div>
                 </Group>
 
-                <Group gap="xs" align="center" justify="space-between" style={{ width: "100%", sm: "auto" }}>
+                <Group gap="xs" align="center" justify="space-between" w={{ base: "100%", sm: "auto" }}>
                   <Text size="xs" c="dimmed">
                     01/07/2026
                   </Text>
@@ -157,7 +173,7 @@ export default function RequestsPage() {
                   </div>
                 </Group>
 
-                <Group gap="xs" align="center" justify="space-between" style={{ width: "100%", sm: "auto" }}>
+                <Group gap="xs" align="center" justify="space-between" w={{ base: "100%", sm: "auto" }}>
                   <Text size="xs" c="dimmed">
                     01/07/2026
                   </Text>

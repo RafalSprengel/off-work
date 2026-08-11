@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
+import "@/db/models";
 import Organization from "./models/Organization";
+
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -43,7 +45,6 @@ async function dbConnect() {
       name: "Default Organization",
       slug: "default",
     });
-    // console.log("✅ Seeded default organization:", DEFAULT_ORG_ID);
   }
 
   return cached.conn;

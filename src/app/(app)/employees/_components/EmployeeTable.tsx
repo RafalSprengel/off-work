@@ -4,9 +4,9 @@ import { Stack, Group, Title, Badge, Button, Paper, Table, Text } from "@mantine
 import { modals } from "@mantine/modals";
 import { IconEdit, IconPlus, IconTrash } from "@tabler/icons-react";
 import NewEmployeeModalContent from "./NewEmplayeeModalCntent";
+import type { IEmployee } from "@/types/employees";
 
-export default function EmployeeTable() {
-
+export default function EmployeeTable({ employees }: { employees: IEmployee[] }) {
     function openNewEmployeeModal() {
 
         modals.open({
@@ -17,13 +17,22 @@ export default function EmployeeTable() {
         })
     }
 
+    const rows = employees.map((empl) => (
+        <Table.Tr key={empl.email}>
+            <Table.Td>{empl.firstName} {empl.lastName}</Table.Td>
+            <Table.Td>{empl.email}</Table.Td>
+            <Table.Td>{typeof empl.department === 'object' ? empl.department?.name ?? "-" : empl.department ?? "-"}</Table.Td>
+            <Table.Td>{empl.role}</Table.Td>
+            <Table.Td>Zzzz</Table.Td>
+        </Table.Tr>
+    ))
     return (
         <Stack gap="lg">
             <Group justify="space-between" >
                 <div>
                     <Title order={2} fw='700'>Employees</Title>
                     <Badge variant="light" color="blue" size="md" mt="xs">
-                        123
+                        {employees.length} Employees
                     </Badge>
                 </div>
                 <Button leftSection={<IconPlus size={16} />} onClick={openNewEmployeeModal}>
@@ -43,13 +52,7 @@ export default function EmployeeTable() {
                         </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
-                        <Table.Tr>
-                            <Table.Td>Zzzz</Table.Td>
-                            <Table.Td>Zzzz</Table.Td>
-                            <Table.Td>Zzzz</Table.Td>
-                            <Table.Td>Zzzz</Table.Td>
-                            <Table.Td>Zzzz</Table.Td>
-                        </Table.Tr>
+                        {rows}
                     </Table.Tbody>
                 </Table>
             </Paper>

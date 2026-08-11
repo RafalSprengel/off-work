@@ -1,9 +1,10 @@
 'use client';
 
-import { Button, Group, TextInput } from "@mantine/core";
+import { Button, Group, TextInput, MultiSelect } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useState } from "react";
 import { createDepartment } from "@/actions/departmentsActions";
+import { useManagers } from "@/hooks/useManagers";
 
 export default function NewDepartmentModal({
   closeModal,
@@ -11,15 +12,15 @@ export default function NewDepartmentModal({
   closeModal: () => void;
 }) {
   const [loading, setLoading] = useState(false);
+  const { data: managers, isLoading: isLoadingManagers, error: errorManagers } = useManagers();
 
   const form = useForm({
     initialValues: {
       name: "",
-      manager: "",
+      managerIds: [] as string[],
     },
     validate: {
       name: (value) => (value.trim().length === 0 ? "Department name is required" : null),
-      manager: (value) => (value.trim().length === 0 ? "Manager is required" : null),
     },
   });
 
@@ -31,7 +32,7 @@ export default function NewDepartmentModal({
 
     const result = await createDepartment({
       name: form.values.name,
-      manager: form.values.manager,
+      managerIds: form.values.managerIds.length > 0 ? form.values.managerIds : undefined,
     });
 
     setLoading(false);
@@ -51,12 +52,20 @@ export default function NewDepartmentModal({
         {...form.getInputProps("name")}
         disabled={loading}
       />
-      <TextInput
-        label="Manager"
-        placeholder="e.g. John Doe"
+
+      <MultiSelect
+        label="Managers"
+        placeholder={isLoadingManagers ? "Loading managers..." : managers?.length ? "Select managers" : "No managers found"}
         mt="md"
-        {...form.getInputProps("manager")}
-        disabled={loading}
+        {...form.getInputProps("managerIds")}
+        data={managers?.map((manager) => ({
+          value: manager._id,
+          label: manager.firstName + " " + manager.lastName,
+        }))}
+        disabled={loading || isLoadingManagers}
+        clearable
+        searchable
+        nothingFoundMessage="No managers found"
       />
 
       <Group grow mt="md">

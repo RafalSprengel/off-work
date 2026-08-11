@@ -17,5 +17,6 @@ export const theme = createTheme({
         content: classes.modalContent,
       },
     },
+
   },
 });

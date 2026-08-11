@@ -59,7 +59,7 @@ export default function DepartmentsTable({
                     closeModal={() => modals.close("edit-department")}
                     _id={dept._id}
                     name={dept.name}
-                    manager={dept.manager}
+                    manager={dept.managers?.[0]}
                 />
             ),
         });
@@ -78,7 +78,6 @@ export default function DepartmentsTable({
             ),
         });
     }
-
     const rows = departments.map((dept) => (
         <TableTr key={dept._id}>
             <TableTd>
@@ -87,10 +86,15 @@ export default function DepartmentsTable({
                 </Text>
             </TableTd>
             <TableTd>
-                <Text size="sm">{dept.manager}</Text>
+                <Text size="sm">
+                    {dept.managers?.length === 0 ? "-"
+                        : dept.managers && dept.managers.length > 0
+                            ? dept.managers.map((m) => m.firstName + " " + m.lastName).join(", ")
+                            : ""}
+                </Text>
             </TableTd>
             <TableTd>
-                <Text size="sm">10</Text>
+                <Text size="sm">{dept.employeeCount ?? 0}</Text>
             </TableTd>
             <TableTd>
                 <Group gap={4} justify="flex-end" wrap="nowrap">
@@ -123,9 +127,9 @@ export default function DepartmentsTable({
                     <Text fw={600} size="md">
                         {dept.name}
                     </Text>
-                    {dept.manager && (
+                    {dept.managers && (
                         <Text size="xs" c="dimmed">
-                            Manager: {dept.manager}
+                            Managers: {dept.managers.length > 0 ? dept.managers.map((m) => m.firstName + " " + m.lastName).join(", ") : "-"}
                         </Text>
                     )}
                 </div>
@@ -155,7 +159,7 @@ export default function DepartmentsTable({
                     Employees
                 </Text>
                 <Badge variant="flat" size="sm">
-                    10
+                    {dept.employeeCount ?? 0}
                 </Badge>
             </Group>
         </Card>
@@ -173,7 +177,7 @@ export default function DepartmentsTable({
                     </Badge>
                 </div>
                 <Button
-                   
+
                     leftSection={<IconPlus size={16} />}
                     onClick={openNewDeptModal}
                 >
@@ -195,25 +199,25 @@ export default function DepartmentsTable({
                 </Stack>
             ) : (
                 <Paper withBorder shadow="xs" radius="md">
-                        <Table verticalSpacing="sm" horizontalSpacing="md">
-                            <TableThead>
+                    <Table verticalSpacing="sm" horizontalSpacing="md">
+                        <TableThead>
+                            <TableTr>
+                                <TableTh>Name</TableTh>
+                                <TableTh>Manager</TableTh>
+                                <TableTh>Employees</TableTh>
+                                <TableTh style={{ textAlign: "right" }}>Actions</TableTh>
+                            </TableTr>
+                        </TableThead>
+                        <TableTbody>
+                            {rows.length > 0 ? (
+                                rows
+                            ) : (
                                 <TableTr>
-                                    <TableTh>Name</TableTh>
-                                    <TableTh>Manager</TableTh>
-                                    <TableTh>Employees</TableTh>
-                                    <TableTh style={{ textAlign: "right" }}>Actions</TableTh>
+                                    <TableTd colSpan={4}>No departments yet.</TableTd>
                                 </TableTr>
-                            </TableThead>
-                            <TableTbody>
-                                {rows.length > 0 ? (
-                                    rows
-                                ) : (
-                                    <TableTr>
-                                        <TableTd colSpan={4}>No departments yet.</TableTd>
-                                    </TableTr>
-                                )}
-                            </TableTbody>
-                        </Table>
+                            )}
+                        </TableTbody>
+                    </Table>
                 </Paper>
             )}
         </Stack>

@@ -1,23 +1,48 @@
 "use server";
 
+import mongoose from "mongoose";
 import dbConnect from "@/db/connection";
-import Department from "@/db/models/Departments";
+import Department from "@/db/models/Department";
+import Employee from "@/db/models/Employee";
 import { revalidatePath } from "next/cache";
-import type { ICreateDepartmentInput, IDepartment } from "@/types/department";
+import type { ICreateDepartmentInput, IDepartment, IUpdateDepartmentInput } from "@/types/department";
 import { getOrganizationId } from "@/utils/getOrganizationId";
 
 export async function getDepartments(): Promise<{ success: boolean, data: IDepartment[], error: string | null }> {
   try {
     await dbConnect();
     const organizationId = await getOrganizationId();
-    const rawDepartments = await Department.find({ organizationId: organizationId }).select("_id name manager organizationId").lean();
 
-    const departments: IDepartment[] = rawDepartments.map((dept: any) => ({
-      _id: dept._id.toString(),
-      name: dept.name,
-      manager: dept.manager,
-      organizationId: dept.organizationId.toString(),
-    }));
+    const rawDepartments = await Department.aggregate([
+      { $match: { organization: new mongoose.Types.ObjectId(organizationId) } },
+      {
+        $lookup: {
+          from: "employees",
+          localField: "managers",
+          foreignField: "_id",
+          pipeline: [
+            { $project: { firstName: 1, lastName: 1, _id: 1 } },
+          ],
+          as: "managers",
+        },
+      },
+      { $project: { _id: 1, name: 1, managers: 1, organization: 1 } },
+    ]);
+
+    const departments: IDepartment[] = JSON.parse(JSON.stringify(rawDepartments));
+
+    // Get employee count for each department
+    const departmentIds = departments.map((d) => d._id);
+    const employeeCounts = await Employee.aggregate([
+      { $match: { department: { $in: departmentIds }, status: { $ne: "inactive" } } },
+      { $group: { _id: "$department", count: { $sum: 1 } } },
+    ]);
+
+    const countMap = new Map(employeeCounts.map((item) => [item._id.toString(), item.count]));
+
+    for (const dept of departments) {
+      dept.employeeCount = countMap.get(dept._id) ?? 0;
+    }
 
     return {
       success: true,
@@ -34,7 +59,6 @@ export async function getDepartments(): Promise<{ success: boolean, data: IDepar
     };
   }
 }
-
 export async function createDepartment(newDepartment: ICreateDepartmentInput) {
   if (!newDepartment.name || newDepartment.name.trim().length < 2) {
     return {
@@ -47,8 +71,9 @@ export async function createDepartment(newDepartment: ICreateDepartmentInput) {
     await dbConnect();
     const organizationId = await getOrganizationId();
     const department = await Department.create({
-      ...newDepartment,
-      organizationId,
+      name: newDepartment.name,
+      managers: newDepartment.managerIds ?? [],
+      organization: organizationId,
     });
     revalidatePath("/departments");
 
@@ -57,8 +82,8 @@ export async function createDepartment(newDepartment: ICreateDepartmentInput) {
       data: {
         _id: department._id.toString(),
         name: department.name,
-        manager: department.manager,
-        organizationId: department.organizationId.toString(),
+        managers: department.managers?.map((m) => m.toString()) ?? [],
+        organization: department.organization.toString(),
       },
     };
   } catch (error: any) {
@@ -85,7 +110,7 @@ export async function createDepartment(newDepartment: ICreateDepartmentInput) {
   }
 }
 
-export async function updateDepartment(updatedDepartment: IDepartment) {
+export async function updateDepartment(updatedDepartment: IUpdateDepartmentInput) {
   if (!updatedDepartment.name || updatedDepartment.name.trim().length < 2) {
     return {
       success: false,
@@ -97,8 +122,8 @@ export async function updateDepartment(updatedDepartment: IDepartment) {
     await dbConnect();
     const organizationId = await getOrganizationId();
     const department = await Department.findOneAndUpdate(
-      { _id: updatedDepartment._id, organizationId },
-      updatedDepartment,
+      { _id: updatedDepartment._id, organization: organizationId },
+      { name: updatedDepartment.name, managers: updatedDepartment.managerIds ?? [] },
       { new: true }
     );
 
@@ -114,10 +139,10 @@ export async function updateDepartment(updatedDepartment: IDepartment) {
     return {
       success: true,
       data: {
-        _id: department?._id.toString(),
-        name: department?.name,
-        manager: department?.manager,
-        organizationId: department?.organizationId.toString(),
+        _id: department._id.toString(),
+        name: department.name,
+        managers: department.managers?.map((m) => m.toString()) ?? [],
+        organization: department.organization.toString(),
       },
     };
   } catch (error: any) {
@@ -148,7 +173,7 @@ export async function deleteDepartment(_id: string) {
   try {
     await dbConnect();
     const organizationId = await getOrganizationId();
-    const result = await Department.findOneAndDelete({ _id, organizationId });
+    const result = await Department.findOneAndDelete({ _id, organization: organizationId });
 
     if (!result) {
       return {

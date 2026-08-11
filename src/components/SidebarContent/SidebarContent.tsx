@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   ActionIcon,
   Avatar,
@@ -37,12 +38,18 @@ export default function SidebarContent({
 }: SidebarContentProps) {
   const pathname = usePathname();
   const { colorScheme, setColorScheme } = useMantineColorScheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isActive = (path: string) =>
     pathname.startsWith(path) ? true : undefined;
 
   const toggleColorScheme = () => {
     setColorScheme(colorScheme === "dark" ? "light" : "dark");
+    onClose();
   };
 
   return (
@@ -83,6 +90,7 @@ export default function SidebarContent({
             data-active={isActive("/dashboard")}
             component={Link}
             href="/dashboard"
+            onClick={onClose}
           >
             <Group gap="sm">
               <IconLayoutDashboard size={18} />
@@ -95,6 +103,7 @@ export default function SidebarContent({
             data-active={isActive("/leave-requests")}
             component={Link}
             href="/leave-requests"
+            onClick={onClose}
           >
             <Group gap="sm">
               <IconFileDescription size={18} />
@@ -107,6 +116,7 @@ export default function SidebarContent({
             data-active={isActive("/calendar")}
             component={Link}
             href="/calendar"
+            onClick={onClose}
           >
             <Group gap="sm">
               <IconCalendar size={18} />
@@ -123,6 +133,7 @@ export default function SidebarContent({
             data-active={isActive("/departments")}
             component={Link}
             href="/departments"
+            onClick={onClose}
           >
             <Group gap="sm">
               <IconUsers size={18} />
@@ -135,6 +146,7 @@ export default function SidebarContent({
             data-active={isActive("/employees")}
             component={Link}
             href="/employees"
+            onClick={onClose}
           >
             <Group gap="sm">
               <IconUser size={18} />
@@ -142,7 +154,7 @@ export default function SidebarContent({
             </Group>
           </UnstyledButton>
 
-          <UnstyledButton className={styles.menuItem}>
+          <UnstyledButton className={styles.menuItem} onClick={onClose}>
             <Group gap="sm">
               <IconSettings size={18} />
               <Text size="sm">Settings</Text>
@@ -174,13 +186,13 @@ export default function SidebarContent({
               aria-label="Toggle color scheme"
               className={styles.themeBtn}
             >
-              {colorScheme === "dark" ? (
+              {mounted && colorScheme === "dark" ? (
                 <IconSun size={18} />
               ) : (
                 <IconMoon size={18} />
               )}
             </ActionIcon>
-            <UnstyledButton className={styles.logoutBtn}>
+            <UnstyledButton className={styles.logoutBtn} onClick={onClose}>
               <IconLogout size={18} />
             </UnstyledButton>
           </Group>

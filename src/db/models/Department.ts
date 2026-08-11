@@ -2,9 +2,10 @@ import mongoose, { type Document, type Model, Schema } from "mongoose";
 import type { IDepartment } from "@/types/department";
 
 export interface IDepartmentDocument
-  extends Omit<IDepartment, "_id" | "organizationId">,
+  extends Omit<IDepartment, "_id" | "organization" | "managers">,
   Document {
-  organizationId: mongoose.Types.ObjectId;
+  managers: mongoose.Types.ObjectId[];
+  organization: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -16,11 +17,13 @@ const DepartmentSchema = new Schema<IDepartmentDocument>(
       required: [true, "Department name is required"],
       trim: true,
     },
-    manager: {
-      type: String,
-      trim: true,
-    },
-    organizationId: {
+    managers: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Employee",
+      },
+    ],
+    organization: {
       type: Schema.Types.ObjectId,
       ref: "Organization",
       required: true,
@@ -36,14 +39,14 @@ const DepartmentSchema = new Schema<IDepartmentDocument>(
 );
 
 DepartmentSchema.index(
-  { name: 1, organizationId: 1 },
+  { name: 1, organization: 1 },
   {
     unique: true,
     collation: { locale: "en", strength: 2 },
   },
 );
 
-DepartmentSchema.index({ organizationId: 1 });
+DepartmentSchema.index({ organization: 1 });
 
 const Department: Model<IDepartmentDocument> =
   (mongoose.models.Department as Model<IDepartmentDocument>) ||
