@@ -31,17 +31,24 @@ export async function getDepartments(): Promise<{ success: boolean, data: IDepar
 
     const departments: IDepartment[] = JSON.parse(JSON.stringify(rawDepartments));
 
-    // Get employee count for each department
-    const departmentIds = departments.map((d) => d._id);
+    const departmentObjectIds = departments.map((d) => new mongoose.Types.ObjectId(d._id));
+
     const employeeCounts = await Employee.aggregate([
-      { $match: { department: { $in: departmentIds }, status: { $ne: "inactive" } } },
+      {
+        $match: {
+          department: { $in: departmentObjectIds },
+          status: { $ne: "inactive" }
+        }
+      },
       { $group: { _id: "$department", count: { $sum: 1 } } },
     ]);
 
-    const countMap = new Map(employeeCounts.map((item) => [item._id.toString(), item.count]));
+    const countMap = new Map(
+      employeeCounts.map((item) => [String(item._id), item.count])
+    );
 
     for (const dept of departments) {
-      dept.employeeCount = countMap.get(dept._id) ?? 0;
+      dept.employeeCount = countMap.get(String(dept._id)) ?? 0;
     }
 
     return {
@@ -59,6 +66,7 @@ export async function getDepartments(): Promise<{ success: boolean, data: IDepar
     };
   }
 }
+
 export async function createDepartment(newDepartment: ICreateDepartmentInput) {
   if (!newDepartment.name || newDepartment.name.trim().length < 2) {
     return {
