@@ -5,7 +5,7 @@ import {
 } from "@mantine/core";
 import { ModalsProvider } from "@mantine/modals";
 import { Notifications } from "@mantine/notifications";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { theme } from "@/theme/theme";
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
@@ -16,6 +16,11 @@ export const metadata: Metadata = {
   title: "Off Work",
   description:
     "Application for tracking annual leave and planning holiday days.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

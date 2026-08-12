@@ -19,11 +19,15 @@ export default function LayoutClient({
       navbar={{
         width: 280,
         breakpoint: "sm",
-        collapsed: { mobile: true },
+        collapsed: { mobile: !opened },
       }}
       padding="md"
     >
-      <AppShell.Header className={styles.header}>
+      <AppShell.Header
+        className={styles.header}
+        bg="light-dark(var(--mantine-color-white), #0d0d0d)"
+        style={{ zIndex: 100 }}
+      >
         <Group h="100%" px="md" justify="space-between">
           <Group>
             <Burger
@@ -32,6 +36,7 @@ export default function LayoutClient({
               hiddenFrom="sm"
               size="sm"
               className={styles.burger}
+              aria-label="Toggle navigation"
             />
             <Box hiddenFrom="sm" className={styles.logo}>
               OFF-WORK
@@ -40,7 +45,7 @@ export default function LayoutClient({
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar className={styles.sidebar}>
+      <AppShell.Navbar className={styles.sidebar} visibleFrom="sm">
         <SidebarContent onClose={close} isMobile={false} />
       </AppShell.Navbar>
 
@@ -49,6 +54,7 @@ export default function LayoutClient({
         onClose={close}
         size={280}
         withCloseButton={false}
+        hiddenFrom="sm"
         transitionProps={{ duration: 200, transition: "slide-right" }}
         styles={{
           body: { padding: 0, height: "100%" },

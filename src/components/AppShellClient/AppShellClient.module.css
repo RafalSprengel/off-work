@@ -1,17 +1,12 @@
-.header {
-  background-color: light-dark(var(--mantine-color-gray-1), #0d0d0d);
-  border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), #2d2d2d);
-}
-
 .logo {
-  color: light-dark(var(--mantine-color-black), #fff);
+  color: light-dark(var(--mantine-color-black), var(--mantine-color-white));
   font-weight: 800;
   font-size: 20px;
 }
 
 .sidebar {
   background-color: light-dark(var(--mantine-color-white), #0d0d0d);
-  border-right: 1px solid light-dark(var(--mantine-color-gray-3), #2d2d2d);
+  border-right: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
 }
 
 .main {
