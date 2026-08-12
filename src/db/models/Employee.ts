@@ -23,10 +23,8 @@ const EmployeeSchema = new Schema<IEmployeeDocument>(
         email: {
             type: String,
             required: true,
-            unique: true,
             lowercase: true,
             trim: true,
-            index: true,
         },
         role: {
             type: String,

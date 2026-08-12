@@ -18,6 +18,10 @@ export type ICreateEmployeeInput = Omit<IEmployee, "_id" | "status" | "organizat
     department: string;
 };
 
+export type IUpdateEmployeeInput = Omit<IEmployee, "status" | "organizationId" | "department"> & {
+    department: string;
+};
+
 export type IManager = {
     _id: string;
     firstName: string;

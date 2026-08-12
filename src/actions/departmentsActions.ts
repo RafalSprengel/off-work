@@ -85,15 +85,7 @@ export async function createDepartment(newDepartment: ICreateDepartmentInput) {
     });
     revalidatePath("/departments");
 
-    return {
-      success: true,
-      data: {
-        _id: department._id.toString(),
-        name: department.name,
-        managers: department.managers?.map((m) => m.toString()) ?? [],
-        organization: department.organization.toString(),
-      },
-    };
+    return { success: true };
   } catch (error: any) {
     console.error("Error creating department:", error);
 
@@ -144,15 +136,7 @@ export async function updateDepartment(updatedDepartment: IUpdateDepartmentInput
 
     revalidatePath("/departments", "page");
 
-    return {
-      success: true,
-      data: {
-        _id: department._id.toString(),
-        name: department.name,
-        managers: department.managers?.map((m) => m.toString()) ?? [],
-        organization: department.organization.toString(),
-      },
-    };
+    return { success: true };
   } catch (error: any) {
     console.error("Error updating department:", error);
 
