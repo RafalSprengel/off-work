@@ -107,7 +107,7 @@ export default function AdminDashboard() {
                     <Group gap="xs">
                         <Button
                             component={Link}
-                            href="/admin/users/new"
+                            href="/team/employees"
                             variant="light"
                             color="blue"
                             size="sm"
