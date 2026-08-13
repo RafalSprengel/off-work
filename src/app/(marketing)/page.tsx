@@ -62,7 +62,7 @@ export default function Home() {
             radius="md"
             className={styles.homeButton}
             component="a"
-            href="/dashboard"
+            href="/team"
           >
             Login
           </Button>

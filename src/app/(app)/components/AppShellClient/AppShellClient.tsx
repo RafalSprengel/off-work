@@ -1,7 +1,26 @@
 "use client";
 
-import { AppShell, Box, Burger, Drawer, Group } from "@mantine/core";
+import {
+  ActionIcon,
+  AppShell,
+  Avatar,
+  Box,
+  Burger,
+  Drawer,
+  Group,
+  Indicator,
+  Menu,
+  Text,
+  UnstyledButton,
+} from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
+import {
+  IconBell,
+  IconChevronDown,
+  IconLogout,
+  IconSettings,
+  IconUser,
+} from "@tabler/icons-react";
 import SidebarContent from "../SidebarContent/SidebarContent";
 import styles from "./AppShellClient.module.css";
 
@@ -41,6 +60,49 @@ export default function LayoutClient({
             <Box hiddenFrom="sm" className={styles.logo}>
               OFF-WORK
             </Box>
+          </Group>
+
+          <Group gap="sm">
+            <Indicator color="blue" size={8} offset={4} processing>
+              <ActionIcon variant="subtle" color="gray" radius="xl" size="lg" aria-label="Notifications">
+                <IconBell size={20} />
+              </ActionIcon>
+            </Indicator>
+
+            <Menu shadow="md" width={200} position="bottom-end">
+              <Menu.Target>
+                <UnstyledButton>
+                  <Group gap={8}>
+                    <Avatar color="blue" radius="xl" size="sm">
+                      RS
+                    </Avatar>
+                    <Box visibleFrom="sm">
+                      <Text size="sm" fw={600} lh={1.2}>
+                        Rafał Sprengel
+                      </Text>
+                      <Text size="xs" c="dimmed" lh={1}>
+                        Admin
+                      </Text>
+                    </Box>
+                    <IconChevronDown size={14} style={{ opacity: 0.5 }} />
+                  </Group>
+                </UnstyledButton>
+              </Menu.Target>
+
+              <Menu.Dropdown>
+                <Menu.Label>Account</Menu.Label>
+                <Menu.Item leftSection={<IconUser size={14} />}>
+                  Profile
+                </Menu.Item>
+                <Menu.Item leftSection={<IconSettings size={14} />}>
+                  Settings
+                </Menu.Item>
+                <Menu.Divider />
+                <Menu.Item color="red" leftSection={<IconLogout size={14} />}>
+                  Logout
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
           </Group>
         </Group>
       </AppShell.Header>
