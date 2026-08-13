@@ -27,7 +27,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import styles from "./SidebarContent.module.css";
 
 interface SidebarContentProps {
@@ -40,6 +40,7 @@ export default function SidebarContent({
   isMobile,
 }: SidebarContentProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { colorScheme, setColorScheme } = useMantineColorScheme();
   const [mounted, setMounted] = useState(false);
 
@@ -58,6 +59,15 @@ export default function SidebarContent({
       setViewMode("me");
     }
   }, [pathname]);
+
+  const handleViewModeChange = (value: string) => {
+    setViewMode(value);
+    if (value === "team") {
+      router.push("/team");
+    } else if (value === "me") {
+      router.push("/me");
+    }
+  };
 
   const isActive = (path: string) => {
     if (path === "/me" || path === "/team") {
@@ -116,7 +126,7 @@ export default function SidebarContent({
           fullWidth
           mt="lg"
           value={viewMode}
-          onChange={setViewMode}
+          onChange={handleViewModeChange}
           data={[
             { label: "TEAM", value: "team" },
             { label: "ME", value: "me" },
