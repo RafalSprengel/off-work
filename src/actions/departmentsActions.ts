@@ -124,7 +124,7 @@ export async function updateDepartment(updatedDepartment: IUpdateDepartmentInput
     const department = await Department.findOneAndUpdate(
       { _id: updatedDepartment._id, organization: organizationId },
       { name: updatedDepartment.name, managers: updatedDepartment.managerIds ?? [] },
-      { new: true }
+      { returnDocument: "after" }
     );
 
     if (!department) {

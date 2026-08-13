@@ -93,7 +93,7 @@ export async function updateEmployee(data: IUpdateEmployeeInput): Promise<{ succ
                 employmentDate: new Date(data.employmentDate),
                 managerId: data.managerId ? new mongoose.Types.ObjectId(data.managerId) : null,
             },
-            { new: true }
+            { returnDocument: "after" }
         );
 
         if (!employee) {
