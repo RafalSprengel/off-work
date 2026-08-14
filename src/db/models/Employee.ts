@@ -7,7 +7,7 @@ export interface IEmployeeDocument extends Document {
     email: string;
     role: "Manager" | "Employee";
     department: mongoose.Types.ObjectId;
-    proposedAnnualLeave: number;
+    annualLeaveDaysAllowance: number;
     employmentDate: Date;
     managerId?: mongoose.Types.ObjectId;
     organizationId?: mongoose.Types.ObjectId;
@@ -37,7 +37,7 @@ const EmployeeSchema = new Schema<IEmployeeDocument>(
             required: true,
         },
 
-        proposedAnnualLeave: { type: Number, default: 24, min: 0 },
+        annualLeaveDaysAllowance: { type: Number, default: 24, min: 0 },
         employmentDate: { type: Date, required: true },
         managerId: {
             type: Schema.Types.ObjectId,

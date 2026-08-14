@@ -88,7 +88,7 @@ export default function EmployeeDashboard() {
           </Box>
           <Button
             component={Link}
-            href="/leave/request"
+            href="/me/leave-requests/new"
             size="md"
             leftSection={<IconCalendarPlus size={18} />}
           >

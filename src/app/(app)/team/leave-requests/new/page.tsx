@@ -1,6 +1,9 @@
 "use client";
 
-import { createLeaveRequest } from "@/actions/leaveRequestActions";
+import { createLeaveRequestAsAdmin } from "@/actions/leaveRequestActions";
+import { getEmployees } from "@/actions/employeesActions";
+import { getUkBankHolidays } from "@/actions/bankHolidaysActions";
+import type { IEmployee } from "@/types/employees";
 import {
   Button,
   Container,
@@ -12,120 +15,214 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { DateInput } from "@mantine/dates";
+import { DatePickerInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
-import { IconCalendar } from "@tabler/icons-react";
+import { notifications } from "@mantine/notifications";
+import { IconCalendar, IconX } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import "@mantine/dates/styles.css";
 
-const usersData = [
-  {
-    _id: "60d5ecb8b5c9c22b1c8e28a1",
-    label: "Adam Pietrzak",
-    department: "Kitchen",
-    email: "adam@demo.com",
-  },
-  {
-    _id: "60d5ecb8b5c9c22b1c8e28a2",
-    label: "Artur Pawlak",
-    department: "Floor",
-    email: "artur@demo.com",
-  },
-];
-
-export default function NewLeaveRequestPage() {
+export default function NewLeaveRequestAsAdminPage() {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [employees, setEmployees] = useState<IEmployee[]>([]);
+  const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
+  const [bankHolidays, setBankHolidays] = useState<string[]>([]);
 
   const form = useForm({
     initialValues: {
       employee: "",
-      startDate: null as Date | null,
-      endDate: null as Date | null,
+      dateRange: [null, null] as [Date | null, Date | null],
       completedDate: new Date(),
     },
     validate: {
       employee: (value) => (!value ? "Please select an employee" : null),
-      startDate: (value) => (!value ? "Start date is required" : null),
-      endDate: (value) => (!value ? "End date is required" : null),
+      dateRange: (value) => {
+        if (!value[0] || !value[1]) {
+          return "Please select both start and end dates";
+        }
+        return null;
+      },
     },
   });
 
-  const handleSubmit = async (values: typeof form.values) => {
-    if (!values.startDate || !values.endDate) return;
+  useEffect(() => {
+    async function loadInitialData() {
+      setIsLoadingEmployees(true);
 
-    const result = await createLeaveRequest({
-      user: values.employee,
-      startDate: dayjs(values.startDate).format("YYYY-MM-DD"),
-      endDate: dayjs(values.endDate).format("YYYY-MM-DD"),
+      const [empRes, holidaysRes] = await Promise.all([
+        getEmployees(),
+        getUkBankHolidays(),
+      ]);
+
+      if (empRes.success && empRes.data) {
+        setEmployees(empRes.data);
+      } else {
+        notifications.show({
+          title: "Error",
+          message: empRes.error || "Failed to load employees",
+          color: "red",
+          icon: <IconX size={16} />,
+        });
+      }
+
+      if (holidaysRes.success && holidaysRes.data) {
+        setBankHolidays(holidaysRes.data);
+      }
+
+      setIsLoadingEmployees(false);
+    }
+
+    loadInitialData();
+  }, []);
+
+  const [startDate, endDate] = form.values.dateRange;
+
+  const calculateDaysRequested = () => {
+    if (!startDate || !endDate) return 0;
+    const start = dayjs(startDate);
+    const end = dayjs(endDate);
+    if (end.isBefore(start, "day")) return 0;
+    return end.diff(start, "day") + 1;
+  };
+
+  const daysRequested = calculateDaysRequested();
+
+  const handleSubmit = async (values: typeof form.values) => {
+    const [start, end] = values.dateRange;
+    if (!start || !end) return;
+
+    setLoading(true);
+
+    const result = await createLeaveRequestAsAdmin({
+      userId: values.employee,
+      startDate: dayjs(start).format("YYYY-MM-DD"),
+      endDate: dayjs(end).format("YYYY-MM-DD"),
     });
 
+    setLoading(false);
+
     if (result.error) {
-      form.setErrors({ startDate: result.error });
+      notifications.show({
+        title: "Error",
+        message: result.error,
+        color: "red",
+        icon: <IconX size={16} />,
+      });
     } else {
-      router.push("/leave-requests");
+      notifications.show({
+        title: "Success",
+        message: "Leave request created successfully",
+        color: "green",
+      });
+      router.push("/team/leave-requests");
     }
   };
 
-  const selectData = usersData.map((u) => ({
-    value: u._id,
-    label: u.label,
-  }));
+  const selectData = employees.map((emp) => {
+    const deptName = typeof emp.department === "object" ? emp.department?.name : emp.department;
+    return {
+      value: emp._id,
+      label: `${emp.firstName} ${emp.lastName}`,
+      department: deptName || "No department",
+      email: emp.email,
+    };
+  });
 
   return (
     <Container size="sm" py="lg" px={{ base: "xs", sm: "md" }}>
       <Stack gap="lg">
-        <Title order={2}>Create new request</Title>
+        <Title order={2}>Create Leave Request (Admin)</Title>
         <Paper p={{ base: "md", sm: "xl" }} radius="md" withBorder>
           <form onSubmit={form.onSubmit(handleSubmit)}>
             <Stack gap="md">
               <Select
                 label="Employee"
-                placeholder="Select employee"
+                placeholder={isLoadingEmployees ? "Loading employees..." : "Select employee"}
                 data={selectData}
                 searchable
-                nothingFoundMessage="Nothing found..."
+                disabled={isLoadingEmployees || loading}
+                nothingFoundMessage="No employees found"
                 {...form.getInputProps("employee")}
                 renderOption={({ option }) => {
-                  const user = usersData.find((u) => u._id === option.value);
+                  const emp = selectData.find((e) => e.value === option.value);
                   return (
                     <div>
                       <Text size="sm" fw={600}>
-                        {user?.label}
+                        {emp?.label}
                       </Text>
                       <Text size="xs" c="dimmed">
-                        🏢 {user?.department}
+                        🏢 {emp?.department}
                       </Text>
                       <Text size="xs" c="dimmed">
-                        ✉️ {user?.email}
+                        ✉️ {emp?.email}
                       </Text>
                     </div>
                   );
                 }}
               />
 
-              <Flex direction={{ base: "column", sm: "row" }} gap="md">
-                <DateInput
-                  label="1st Day of Holiday"
-                  placeholder="Select start date"
-                  leftSection={<IconCalendar size={18} />}
-                  valueFormat="YYYY-MM-DD"
-                  {...form.getInputProps("startDate")}
-                  clearable
-                  style={{ flex: 1 }}
-                />
+              <DatePickerInput
+                type="range"
+                label="Holiday Date Range"
+                placeholder="Pick start and end date"
+                leftSection={<IconCalendar size={18} />}
+                valueFormat="YYYY-MM-DD"
+                clearable
+                disabled={loading}
+                getDayProps={(date) => {
+                  const formattedDate = dayjs(date).format("YYYY-MM-DD");
+                  const isBankHoliday = bankHolidays.includes(formattedDate);
 
-                <DateInput
-                  label="Last Day of Holiday"
-                  placeholder="Select end date"
-                  leftSection={<IconCalendar size={18} />}
-                  valueFormat="YYYY-MM-DD"
-                  minDate={form.values.startDate || undefined}
-                  {...form.getInputProps("endDate")}
-                  clearable
-                  style={{ flex: 1 }}
-                />
-              </Flex>
+                  if (isBankHoliday) {
+                    return {
+                      style: {
+                        backgroundColor: "var(--mantine-color-green-1)",
+                        color: "var(--mantine-color-green-9)",
+                        fontWeight: "bold",
+                        borderRadius: "8px",
+                      },
+                    };
+                  }
+
+                  return {};
+                }}
+                renderDay={(date) => {
+                  const dayObj = dayjs(date);
+                  const dayNum = dayObj.date();
+                  const formattedDate = dayObj.format("YYYY-MM-DD");
+                  const isBankHoliday = bankHolidays.includes(formattedDate);
+
+                  return (
+                    <Flex direction="column" align="center" justify="center" style={{ height: "100%", width: "100%" }}>
+                      <Text size="xs" lh={1} fw={isBankHoliday ? 700 : 400}>
+                        {dayNum}
+                      </Text>
+                      {isBankHoliday && (
+                        <Text size="7px" lh={1.1} ta="center" mt={2} style={{ whiteSpace: "pre-line" }}>
+                          Bank{"\n"}Holiday
+                        </Text>
+                      )}
+                    </Flex>
+                  );
+                }}
+                {...form.getInputProps("dateRange")}
+              />
+
+              {daysRequested > 0 && (
+                <Paper p="sm" radius="sm" withBorder bg="var(--mantine-color-gray-0)">
+                  <Flex justify="space-between" align="center">
+                    <Text size="sm" fw={500}>
+                      Total Days Requested:
+                    </Text>
+                    <Text size="sm" fw={700} c="blue">
+                      {daysRequested} {daysRequested === 1 ? "day" : "days"}
+                    </Text>
+                  </Flex>
+                </Paper>
+              )}
 
               <Divider my="xs" />
 
@@ -148,10 +245,18 @@ export default function NewLeaveRequestPage() {
                 </div>
               </Flex>
 
-              <Flex justify="flex-end" mt="md">
+              <Flex justify="flex-end" mt="md" gap="sm">
+                <Button
+                  variant="light"
+                  onClick={() => router.back()}
+                  disabled={loading}
+                >
+                  Cancel
+                </Button>
                 <Button
                   type="submit"
                   color="blue"
+                  loading={loading}
                   w={{ base: "100%", sm: "auto" }}
                 >
                   Submit Request

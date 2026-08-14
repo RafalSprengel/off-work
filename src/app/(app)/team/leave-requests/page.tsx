@@ -1,189 +1,238 @@
 "use client";
 
-import { useState } from "react";
+import { createLeaveRequestAsAdmin } from "@/actions/leaveRequestActions";
+import { useEmployees } from "@/hooks/useEmployees";
+import { useUkBankHolidays } from "@/hooks/useUkBankHolidays";
 import {
-  ActionIcon,
-  Avatar,
-  Badge,
   Button,
-  Checkbox,
-  Collapse,
   Container,
   Divider,
-  Group,
+  Flex,
   Paper,
   Select,
-  SimpleGrid,
   Stack,
   Text,
-  TextInput,
   Title,
 } from "@mantine/core";
-import {
-  IconChevronLeft,
-  IconChevronRight,
-  IconDownload,
-  IconFilter,
-  IconPlus,
-  IconSearch,
-} from "@tabler/icons-react";
-import Link from "next/link";
+import { DatePickerInput } from "@mantine/dates";
+import { useForm } from "@mantine/form";
+import { notifications } from "@mantine/notifications";
+import { IconCalendar, IconX } from "@tabler/icons-react";
+import dayjs from "dayjs";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import "@mantine/dates/styles.css";
 
-export default function RequestsPage() {
-  const [filtersOpen, setFiltersOpen] = useState(false);
+export default function NewLeaveRequestAsAdminPage() {
+  const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
+
+  const { employees, loading: isLoadingEmployees } = useEmployees();
+  const { bankHolidays } = useUkBankHolidays();
+
+  const form = useForm({
+    initialValues: {
+      employee: "",
+      dateRange: [null, null] as [Date | null, Date | null],
+      completedDate: new Date(),
+    },
+    validate: {
+      employee: (value) => (!value ? "Please select an employee" : null),
+      dateRange: (value) => {
+        if (!value[0] || !value[1]) {
+          return "Please select both start and end dates";
+        }
+        return null;
+      },
+    },
+  });
+
+  const [startDate, endDate] = form.values.dateRange;
+
+  const calculateDaysRequested = () => {
+    if (!startDate || !endDate) return 0;
+    const start = dayjs(startDate);
+    const end = dayjs(endDate);
+    if (end.isBefore(start, "day")) return 0;
+    return end.diff(start, "day") + 1;
+  };
+
+  const daysRequested = calculateDaysRequested();
+
+  const handleSubmit = async (values: typeof form.values) => {
+    const [start, end] = values.dateRange;
+    if (!start || !end) return;
+
+    setSubmitting(true);
+
+    const result = await createLeaveRequestAsAdmin({
+      userId: values.employee,
+      startDate: dayjs(start).format("YYYY-MM-DD"),
+      endDate: dayjs(end).format("YYYY-MM-DD"),
+    });
+
+    setSubmitting(false);
+
+    if (result.error) {
+      notifications.show({
+        title: "Error",
+        message: result.error,
+        color: "red",
+        icon: <IconX size={16} />,
+      });
+    } else {
+      notifications.show({
+        title: "Success",
+        message: "Leave request created successfully",
+        color: "green",
+      });
+      router.push("/team/leave-requests");
+    }
+  };
+
+  const selectData = employees.map((emp) => {
+    const deptName = typeof emp.department === "object" ? emp.department?.name : emp.department;
+    return {
+      value: emp._id,
+      label: `${emp.firstName} ${emp.lastName}`,
+      department: deptName || "No department",
+      email: emp.email,
+    };
+  });
 
   return (
-    <Container size="xl" py="lg" px={{ base: "xs", sm: "md" }}>
+    <Container size="sm" py="lg" px={{ base: "xs", sm: "md" }}>
       <Stack gap="lg">
-        <Group justify="space-between" align="center" wrap="wrap" gap="md">
-          <div>
-            <Title order={2} fw={700}>
-              Leave Requests
-            </Title>
-            <Badge variant="light" color="blue" size="md" mt="xs">
-              10 requests
-            </Badge>
-          </div>
-
-          <Group gap="sm" justify="flex-start">
-            <Button
-              variant="default"
-              size="sm"
-              leftSection={<IconDownload size={16} />}
-            >
-              Export CSV
-            </Button>
-            <Button
-              color="green"
-              size="sm"
-              component={Link}
-              href="/leave-requests/new"
-              leftSection={<IconPlus size={16} />}
-            >
-              New
-            </Button>
-          </Group>
-        </Group>
-
-        <Paper p={{ base: "sm", sm: "md" }} radius="md" withBorder>
-          <Stack gap="sm">
-            <Group justify="space-between" align="center" wrap="wrap" gap="sm">
-              <Group gap="xs" wrap="wrap">
-                <ActionIcon variant="default" size="input-xs">
-                  <IconChevronLeft size={16} />
-                </ActionIcon>
-                <Button variant="default" size="xs">
-                  August 2026
-                </Button>
-                <ActionIcon variant="default" size="input-xs">
-                  <IconChevronRight size={16} />
-                </ActionIcon>
-
-                <Button
-                  variant="default"
-                  size="xs"
-                  onClick={() => setFiltersOpen((o) => !o)}
-                  leftSection={<IconFilter size={16} />}
-                  data-active={filtersOpen || undefined}
-                >
-                  Filtry
-                </Button>
-              </Group>
-
-              <TextInput
-                placeholder="Search..."
-                leftSection={<IconSearch size={16} />}
-                style={{ flexGrow: 1, maxWidth: 300 }}
-                w={{ base: "100%", sm: "auto" }}
+        <Title order={2}>Create Leave Request (Admin)</Title>
+        <Paper p={{ base: "md", sm: "xl" }} radius="md" withBorder>
+          <form onSubmit={form.onSubmit(handleSubmit)}>
+            <Stack gap="md">
+              <Select
+                label="Employee"
+                placeholder={isLoadingEmployees ? "Loading employees..." : "Select employee"}
+                data={selectData}
+                searchable
+                disabled={isLoadingEmployees || submitting}
+                nothingFoundMessage="No employees found"
+                {...form.getInputProps("employee")}
+                renderOption={({ option }) => {
+                  const emp = selectData.find((e) => e.value === option.value);
+                  return (
+                    <div>
+                      <Text size="sm" fw={600}>
+                        {emp?.label}
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        🏢 {emp?.department}
+                      </Text>
+                      <Text size="xs" c="dimmed">
+                        ✉️ {emp?.email}
+                      </Text>
+                    </div>
+                  );
+                }}
               />
-            </Group>
 
-            <Collapse expanded={filtersOpen}>
-              <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="xs" pt="xs">
-                <Select
-                  placeholder="Pending"
-                  data={["Pending", "Approved", "Rejected"]}
-                />
-                <Select
-                  placeholder="All types"
-                  data={["All types", "Annual Leave"]}
-                />
-                <Select placeholder="All employees" data={["All employees"]} />
-                <Select
-                  placeholder="All departments"
-                  data={["All departments", "Bar", "Kitchen"]}
-                />
-              </SimpleGrid>
-            </Collapse>
-          </Stack>
-        </Paper>
+              <DatePickerInput
+                type="range"
+                label="Holiday Date Range"
+                placeholder="Pick start and end date"
+                leftSection={<IconCalendar size={18} />}
+                valueFormat="YYYY-MM-DD"
+                clearable
+                disabled={submitting}
+                getDayProps={(date) => {
+                  const formattedDate = dayjs(date).format("YYYY-MM-DD");
+                  const isBankHoliday = bankHolidays.includes(formattedDate);
 
-        <Paper radius="md" withBorder p={0}>
-          <Stack gap={0}>
-            <Paper p={{ base: "sm", sm: "md" }} radius={0}>
-              <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
-                <Group gap="sm" wrap="nowrap" align="flex-start">
-                  <Checkbox mt={4} />
-                  <Avatar color="gray" radius="xl" size="md">
-                    BB
-                  </Avatar>
-                  <div>
-                    <Text size="sm" fw={600}>
-                      Annual Leave
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      Benjamin Brown · 2026-08-17 – 2026-08-25 · 7 days
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      Management
-                    </Text>
-                  </div>
-                </Group>
+                  if (isBankHoliday) {
+                    return {
+                      style: {
+                        backgroundColor: "var(--mantine-color-green-1)",
+                        color: "var(--mantine-color-green-9)",
+                        fontWeight: "bold",
+                        borderRadius: "8px",
+                      },
+                    };
+                  }
 
-                <Group gap="xs" align="center" justify="space-between" w={{ base: "100%", sm: "auto" }}>
-                  <Text size="xs" c="dimmed">
-                    01/07/2026
+                  return {};
+                }}
+                renderDay={(date) => {
+                  const dayObj = dayjs(date);
+                  const dayNum = dayObj.date();
+                  const formattedDate = dayObj.format("YYYY-MM-DD");
+                  const isBankHoliday = bankHolidays.includes(formattedDate);
+
+                  return (
+                    <Flex direction="column" align="center" justify="center" style={{ height: "100%", width: "100%" }}>
+                      <Text size="xs" lh={1} fw={isBankHoliday ? 700 : 400}>
+                        {dayNum}
+                      </Text>
+                      {isBankHoliday && (
+                        <Text size="7px" lh={1.1} ta="center" mt={2} style={{ whiteSpace: "pre-line" }}>
+                          Bank{"\n"}Holiday
+                        </Text>
+                      )}
+                    </Flex>
+                  );
+                }}
+                {...form.getInputProps("dateRange")}
+              />
+
+              {daysRequested > 0 && (
+                <Paper p="sm" radius="sm" withBorder bg="var(--mantine-color-gray-0)">
+                  <Flex justify="space-between" align="center">
+                    <Text size="sm" fw={500}>
+                      Total Days Requested:
+                    </Text>
+                    <Text size="sm" fw={700} c="blue">
+                      {daysRequested} {daysRequested === 1 ? "day" : "days"}
+                    </Text>
+                  </Flex>
+                </Paper>
+              )}
+
+              <Divider my="xs" />
+
+              <Flex
+                direction={{ base: "column", xs: "row" }}
+                justify="space-between"
+                align={{ base: "flex-start", sm: "center" }}
+                gap="sm"
+              >
+                <div>
+                  <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
+                    Date Completed
                   </Text>
-                  <Badge variant="light" color="gray">
-                    Pending
-                  </Badge>
-                </Group>
-              </Group>
-            </Paper>
-
-            <Divider />
-
-            <Paper p={{ base: "sm", sm: "md" }} radius={0}>
-              <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
-                <Group gap="sm" wrap="nowrap" align="flex-start">
-                  <Checkbox mt={4} />
-                  <Avatar color="gray" radius="xl" size="md">
-                    NW
-                  </Avatar>
-                  <div>
-                    <Text size="sm" fw={600}>
-                      Annual Leave
+                  <Flex gap={6} align="center">
+                    <IconCalendar size={16} style={{ opacity: 0.7 }} />
+                    <Text size="sm" fw={500}>
+                      {dayjs(form.values.completedDate).format("YYYY-MM-DD")}
                     </Text>
-                    <Text size="xs" c="dimmed">
-                      Nathan White · 2026-08-13 – 2026-08-18 · 4 days
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      Bar
-                    </Text>
-                  </div>
-                </Group>
+                  </Flex>
+                </div>
+              </Flex>
 
-                <Group gap="xs" align="center" justify="space-between" w={{ base: "100%", sm: "auto" }}>
-                  <Text size="xs" c="dimmed">
-                    01/07/2026
-                  </Text>
-                  <Badge variant="light" color="gray">
-                    Pending
-                  </Badge>
-                </Group>
-              </Group>
-            </Paper>
-          </Stack>
+              <Flex justify="flex-end" mt="md" gap="sm">
+                <Button
+                  variant="light"
+                  onClick={() => router.back()}
+                  disabled={submitting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  color="blue"
+                  loading={submitting}
+                  w={{ base: "100%", sm: "auto" }}
+                >
+                  Submit Request
+                </Button>
+              </Flex>
+            </Stack>
+          </form>
         </Paper>
       </Stack>
     </Container>
