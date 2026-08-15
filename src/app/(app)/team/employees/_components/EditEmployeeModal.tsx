@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { useForm } from "@mantine/form";
 import { Stack, Button, TextInput, Select, NumberInput, Group, Flex } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
-import { getDepartments } from "@/actions/departmentsActions";
-import { getRoles } from "@/actions/rolesActions";
-import { getManagers, updateEmployee } from "@/actions/employeesActions";
+import { getDepartments } from "@/actions/manager/employees/getDepartments";
+import { getRoles } from "@/actions/public/roles/getRoles";
+import { getManagers } from "@/actions/manager/employees/getManagers";
+import { updateEmployee } from "@/actions/admin/employees/updateEmployee";
 import type { IEmployee, IManager } from "@/types/employees";
 import type { IDepartment } from "@/types/department";
 import { notifications } from "@mantine/notifications";
@@ -42,7 +43,7 @@ export default function EditEmployeeModal({
             role: employee.role,
             department: departmentId,
             managerId: employee.managerId ?? "",
-            proposedAnnualLeave: employee.proposedAnnualLeave,
+            holidayAllowance: employee.holidayAllowance,
             employmentDate: employee.employmentDate ? new Date(employee.employmentDate) : null,
         },
         validate: {
@@ -51,7 +52,7 @@ export default function EditEmployeeModal({
             email: (value) => (value ? null : "Email is required"),
             role: (value) => (value ? null : "Role is required"),
             department: (value) => (value ? null : "Department is required"),
-            proposedAnnualLeave: (value) => (value ? null : "Proposed annual leave is required"),
+            holidayAllowance: (value) => (value ? null : "Holiday allowance is required"),
             employmentDate: (value) => (value ? null : "Employment date is required"),
         },
     });
@@ -70,7 +71,7 @@ export default function EditEmployeeModal({
                 role: form.values.role,
                 department: form.values.department,
                 managerId: form.values.managerId || undefined,
-                proposedAnnualLeave: form.values.proposedAnnualLeave,
+                holidayAllowance: form.values.holidayAllowance,
                 employmentDate: form.values.employmentDate as unknown as string,
             });
 
@@ -232,7 +233,7 @@ export default function EditEmployeeModal({
                     label="Proposed Annual Leave"
                     placeholder="e.g. 20"
                     flex={1}
-                    {...form.getInputProps("proposedAnnualLeave")}
+                    {...form.getInputProps("holidayAllowance")}
                     disabled={loading}
                 />
             </Flex>

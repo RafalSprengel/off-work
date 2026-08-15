@@ -12,20 +12,11 @@ import {
     Textarea,
     Title,
 } from "@mantine/core";
-import { DateInput } from "@mantine/dates";
 import { IconPlus } from "@tabler/icons-react";
 import Link from "next/link";
 import { useState } from "react";
+import { LeaveRequest } from "@/types/leaveRequest";
 
-interface LeaveRequest {
-    id: string;
-    type: string;
-    startDate: string;
-    endDate: string;
-    days: number;
-    status: "Pending" | "Approved" | "Rejected";
-    reason: string;
-}
 
 export default function EmployeeLeaveRequestsPage() {
     const [requests] = useState<LeaveRequest[]>([

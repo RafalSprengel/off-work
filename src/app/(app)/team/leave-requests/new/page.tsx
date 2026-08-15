@@ -1,9 +1,8 @@
 "use client";
 
-import { createLeaveRequestAsAdmin } from "@/actions/leaveRequestActions";
-import { getEmployees } from "@/actions/employeesActions";
-import { getUkBankHolidays } from "@/actions/bankHolidaysActions";
-import type { IEmployee } from "@/types/employees";
+import { createLeaveRequest } from "@/actions/admin/leave/createLeaveRequest";
+import { useEmployees } from "@/hooks/useEmployees";
+import { useUkBankHolidays } from "@/hooks/useUkBankHolidays";
 import {
   Button,
   Container,
@@ -14,6 +13,8 @@ import {
   Stack,
   Text,
   Title,
+  Checkbox,
+  Group,
 } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
@@ -21,20 +22,22 @@ import { notifications } from "@mantine/notifications";
 import { IconCalendar, IconX } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "@mantine/dates/styles.css";
 
 export default function NewLeaveRequestAsAdminPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [employees, setEmployees] = useState<IEmployee[]>([]);
-  const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
-  const [bankHolidays, setBankHolidays] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  const { employees, loading: isLoadingEmployees } = useEmployees();
+  const { bankHolidays } = useUkBankHolidays();
 
   const form = useForm({
     initialValues: {
       employee: "",
       dateRange: [null, null] as [Date | null, Date | null],
+      startHalfDay: false,
+      endHalfDay: false,
       completedDate: new Date(),
     },
     validate: {
@@ -48,61 +51,44 @@ export default function NewLeaveRequestAsAdminPage() {
     },
   });
 
-  useEffect(() => {
-    async function loadInitialData() {
-      setIsLoadingEmployees(true);
-
-      const [empRes, holidaysRes] = await Promise.all([
-        getEmployees(),
-        getUkBankHolidays(),
-      ]);
-
-      if (empRes.success && empRes.data) {
-        setEmployees(empRes.data);
-      } else {
-        notifications.show({
-          title: "Error",
-          message: empRes.error || "Failed to load employees",
-          color: "red",
-          icon: <IconX size={16} />,
-        });
-      }
-
-      if (holidaysRes.success && holidaysRes.data) {
-        setBankHolidays(holidaysRes.data);
-      }
-
-      setIsLoadingEmployees(false);
-    }
-
-    loadInitialData();
-  }, []);
-
   const [startDate, endDate] = form.values.dateRange;
 
-  const calculateDaysRequested = () => {
-    if (!startDate || !endDate) return 0;
-    const start = dayjs(startDate);
-    const end = dayjs(endDate);
-    if (end.isBefore(start, "day")) return 0;
-    return end.diff(start, "day") + 1;
+  const calculateWorkingDays = (start: Date, end: Date): number => {
+    let count = 0;
+    let current = dayjs(start);
+    const last = dayjs(end);
+
+    while (current.isBefore(last) || current.isSame(last, "day")) {
+      const dayOfWeek = current.day();
+      const formattedDate = current.format("YYYY-MM-DD");
+      const isBankHoliday = bankHolidays.includes(formattedDate);
+
+      if (dayOfWeek !== 0 && dayOfWeek !== 6 && !isBankHoliday) {
+        count++;
+      }
+      current = current.add(1, "day");
+    }
+
+    return count;
   };
 
-  const daysRequested = calculateDaysRequested();
+  const daysRequested = startDate && endDate ? calculateWorkingDays(startDate, endDate) : 0;
 
   const handleSubmit = async (values: typeof form.values) => {
     const [start, end] = values.dateRange;
     if (!start || !end) return;
 
-    setLoading(true);
+    setSubmitting(true);
 
-    const result = await createLeaveRequestAsAdmin({
+    const result = await createLeaveRequest({
       userId: values.employee,
       startDate: dayjs(start).format("YYYY-MM-DD"),
       endDate: dayjs(end).format("YYYY-MM-DD"),
+      startHalfDay: values.startHalfDay,
+      endHalfDay: values.endHalfDay,
     });
 
-    setLoading(false);
+    setSubmitting(false);
 
     if (result.error) {
       notifications.show({
@@ -143,7 +129,7 @@ export default function NewLeaveRequestAsAdminPage() {
                 placeholder={isLoadingEmployees ? "Loading employees..." : "Select employee"}
                 data={selectData}
                 searchable
-                disabled={isLoadingEmployees || loading}
+                disabled={isLoadingEmployees || submitting}
                 nothingFoundMessage="No employees found"
                 {...form.getInputProps("employee")}
                 renderOption={({ option }) => {
@@ -171,7 +157,7 @@ export default function NewLeaveRequestAsAdminPage() {
                 leftSection={<IconCalendar size={18} />}
                 valueFormat="YYYY-MM-DD"
                 clearable
-                disabled={loading}
+                disabled={submitting}
                 getDayProps={(date) => {
                   const formattedDate = dayjs(date).format("YYYY-MM-DD");
                   const isBankHoliday = bankHolidays.includes(formattedDate);
@@ -211,6 +197,22 @@ export default function NewLeaveRequestAsAdminPage() {
                 {...form.getInputProps("dateRange")}
               />
 
+              {/* Half-day checkboxes */}
+              <Group grow>
+                <Checkbox
+                  label="Start day is half-day"
+                  description="First day counts as 0.5 day"
+                  {...form.getInputProps("startHalfDay", { type: "checkbox" })}
+                  disabled={submitting}
+                />
+                <Checkbox
+                  label="End day is half-day"
+                  description="Last day counts as 0.5 day"
+                  {...form.getInputProps("endHalfDay", { type: "checkbox" })}
+                  disabled={submitting}
+                />
+              </Group>
+
               {daysRequested > 0 && (
                 <Paper p="sm" radius="sm" withBorder bg="var(--mantine-color-gray-0)">
                   <Flex justify="space-between" align="center">
@@ -218,7 +220,12 @@ export default function NewLeaveRequestAsAdminPage() {
                       Total Days Requested:
                     </Text>
                     <Text size="sm" fw={700} c="blue">
-                      {daysRequested} {daysRequested === 1 ? "day" : "days"}
+                      {(() => {
+                        let days = daysRequested;
+                        if (form.values.startHalfDay) days -= 0.5;
+                        if (form.values.endHalfDay) days -= 0.5;
+                        return `${days} ${days === 1 ? "day" : "days"}`;
+                      })()}
                     </Text>
                   </Flex>
                 </Paper>
@@ -249,14 +256,14 @@ export default function NewLeaveRequestAsAdminPage() {
                 <Button
                   variant="light"
                   onClick={() => router.back()}
-                  disabled={loading}
+                  disabled={submitting}
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   color="blue"
-                  loading={loading}
+                  loading={submitting}
                   w={{ base: "100%", sm: "auto" }}
                 >
                   Submit Request

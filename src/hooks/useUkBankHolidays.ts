@@ -1,6 +1,6 @@
 "use client";
 
-import { getUkBankHolidays } from "@/actions/bankHolidaysActions";
+import { getUkBankHolidays } from "@/actions/public/bankHolidays/getUkBankHolidays";
 import { useEffect, useState } from "react";
 
 export function useUkBankHolidays() {

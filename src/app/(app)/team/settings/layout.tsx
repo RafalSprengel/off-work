@@ -40,7 +40,7 @@ export default function SettingsLayout({
                 <Button
                     leftSection={<IconCheck size={16} />}
                     color="green"
-                    fullWidth={{ base: true, sm: false }}
+                // hiddenFrom="sm"
                 >
                     Save Changes
                 </Button>

@@ -185,7 +185,7 @@ export default function EmployeeDashboard() {
       </SimpleGrid>
 
       {/* Main Content Grid */}
-      <Grid spacing="md">
+      <Grid gap="md">
         {/* Recent Leave Requests */}
         <Grid.Col span={{ base: 12, lg: 8 }}>
           <Paper p="lg" radius="md" withBorder>

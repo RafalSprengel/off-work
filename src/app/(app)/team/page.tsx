@@ -200,14 +200,14 @@ export default function AdminDashboard() {
             </SimpleGrid>
 
             {/* Main Content Grid */}
-            <Grid spacing="md">
+            <Grid gap="md">
                 {/* Pending Leave Requests Table */}
                 <Grid.Col span={{ base: 12, lg: 8 }}>
                     <Paper p="lg" radius="md" withBorder>
                         <Group justify="space-between" mb="md">
                             <Box>
                                 <Title order={3} size="h4">
-                                    All Pending Leave Requests
+                                    Latest Pending Leave Requests
                                 </Title>
                                 <Text size="sm" c="dimmed">
                                     Review and override company-wide time off requests
@@ -215,7 +215,7 @@ export default function AdminDashboard() {
                             </Box>
                             <Button
                                 component={Link}
-                                href="/admin/requests"
+                                href="/team/leave-requests"
                                 variant="subtle"
                                 size="xs"
                                 rightSection={<IconChevronRight size={14} />}

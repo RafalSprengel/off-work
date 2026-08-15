@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button, Group, Text } from "@mantine/core";
-import { deleteDepartment } from "@/actions/departmentsActions";
+import { deleteDepartment } from "@/actions/admin/departments/deleteDepartment";
 import type { IDepartment } from "@/types/department";
 
 export default function DeleteDepartmentModal({

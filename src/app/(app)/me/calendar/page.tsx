@@ -5,13 +5,13 @@ import { DatePicker } from "@mantine/dates";
 import { useState } from "react";
 
 export default function EmployeeCalendarPage() {
-    const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
     return (
         <Stack gap="lg">
             <Title order={2}>My Schedule & Calendar</Title>
 
-            <Grid gutter="md" align="start">
+            <Grid gap="md" align="start">
                 <Grid.Col span={{ base: 12, md: "auto" }}>
                     <Paper
                         p="md"
@@ -23,13 +23,13 @@ export default function EmployeeCalendarPage() {
                     >
                         <DatePicker
                             value={selectedDate}
-                            onChange={setSelectedDate}
+                            onChange={(val) => setSelectedDate(val)}
                             size="md"
                         />
                     </Paper>
                 </Grid.Col>
 
-                <Grid.Col span={{ base: 12, md: "flex-1" }}>
+                <Grid.Col span={{ base: 12, md: "auto" }}>
                     <Paper
                         p="md"
                         radius="md"

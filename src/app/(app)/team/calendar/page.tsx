@@ -102,7 +102,7 @@ export default function TeamCalendarPage() {
       </Paper>
 
       {/* Główny układ: Kalendarz + Szczegóły dla Menedżera */}
-      <Grid gutter="md" align="start">
+      <Grid gap="md" align="start">
         <Grid.Col span={{ base: 12, md: 5, lg: 4 }}>
           <Paper
             p="md"
@@ -114,7 +114,7 @@ export default function TeamCalendarPage() {
           >
             <DatePicker
               value={selectedDate}
-              onChange={setSelectedDate}
+              onChange={(val) => setSelectedDate(val as Date | null)}
               size="md"
             />
           </Paper>
@@ -183,7 +183,7 @@ export default function TeamCalendarPage() {
                   </Card>
                 ))
               ) : (
-                <Text size="sm" c="dimmed" align="center" py="xl">
+                <Text size="sm" c="dimmed" ta="center" py="xl">
                   No planned absences for this criteria.
                 </Text>
               )}

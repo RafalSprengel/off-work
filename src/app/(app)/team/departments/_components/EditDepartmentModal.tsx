@@ -3,7 +3,7 @@
 import { Button, Group, MultiSelect, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useState } from "react";
-import { updateDepartment } from "@/actions/departmentsActions";
+import { updateDepartment } from "@/actions/admin/departments/updateDepartment";
 import { useManagers } from "@/hooks/useManagers";
 import type { IManagerData } from "@/types/department";
 

@@ -3,7 +3,7 @@
 import { Button, Group, TextInput, MultiSelect } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useState } from "react";
-import { createDepartment } from "@/actions/departmentsActions";
+import { createDepartment } from "@/actions/admin/departments/createDepartment";
 import { useManagers } from "@/hooks/useManagers";
 
 export default function NewDepartmentModal({

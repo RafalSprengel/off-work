@@ -7,7 +7,7 @@ export interface IEmployee {
     email: string;
     role: string;
     department?: IDepartment | string;
-    proposedAnnualLeave: number;
+    holidayAllowance: number;
     employmentDate: string;
     managerId?: string;
     organizationId?: string;

@@ -1,4 +1,3 @@
-// src/db/models/Employee.ts
 import mongoose, { type Document, type Model, Schema } from "mongoose";
 
 export interface IEmployeeDocument extends Document {
@@ -7,7 +6,7 @@ export interface IEmployeeDocument extends Document {
     email: string;
     role: "Manager" | "Employee";
     department: mongoose.Types.ObjectId;
-    annualLeaveDaysAllowance: number;
+    holidayAllowance: number;
     employmentDate: Date;
     managerId?: mongoose.Types.ObjectId;
     organizationId?: mongoose.Types.ObjectId;
@@ -37,7 +36,7 @@ const EmployeeSchema = new Schema<IEmployeeDocument>(
             required: true,
         },
 
-        annualLeaveDaysAllowance: { type: Number, default: 24, min: 0 },
+        holidayAllowance: { type: Number, default: 24, min: 0 },
         employmentDate: { type: Date, required: true },
         managerId: {
             type: Schema.Types.ObjectId,

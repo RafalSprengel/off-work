@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getManagers } from "@/actions/employeesActions";
+import { getManagers } from "@/actions/manager/employees/getManagers";
 import type { IManager } from "@/types/employees";
 import { notifications } from "@mantine/notifications"
 import { IconX } from "@tabler/icons-react"

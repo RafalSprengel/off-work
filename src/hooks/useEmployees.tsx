@@ -1,6 +1,6 @@
 "use client";
 
-import { getEmployees } from "@/actions/employeesActions";
+import { getEmployees } from "@/actions/manager/employees/getEmployees";
 import type { IEmployee } from "@/types/employees";
 import { notifications } from "@mantine/notifications";
 import { IconX } from "@tabler/icons-react";
@@ -21,14 +21,14 @@ export function useEmployees() {
                     title: "Error",
                     message: res.error || "Failed to load employees",
                     color: "red",
-                    icon: <IconX size={ 16} />,
-        });
-}
-setLoading(false);
-    }
+                    icon: <IconX size={16} />,
+                });
+            }
+            setLoading(false);
+        }
 
-fetchEmployees();
-  }, []);
+        fetchEmployees();
+    }, []);
 
-return { employees, loading };
+    return { employees, loading };
 }

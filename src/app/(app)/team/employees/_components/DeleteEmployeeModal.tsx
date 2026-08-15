@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button, Group, Text } from "@mantine/core";
-import { deleteEmployee } from "@/actions/employeesActions";
+import { deleteEmployee } from "@/actions/admin/employees/deleteEmployee";
 import type { IEmployee } from "@/types/employees";
 
 export default function DeleteEmployeeModal({

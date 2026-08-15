@@ -1,6 +1,6 @@
 "use client";
 
-import { createLeaveRequest } from "@/actions/leaveRequestActions";
+import { createLeaveRequest } from "@/actions/employee/leave/createLeaveRequest";
 import {
     Button,
     Container,
@@ -37,25 +37,27 @@ export default function NewEmployeeLeaveRequestPage() {
         },
     });
 
-    const getSelectedDates = (start: Date, end: Date): string[] => {
-        const dates: string[] = [];
+    const startDate = form.values.dateRange[0];
+    const endDate = form.values.dateRange[1];
+
+    const calculateWorkingDays = (start: Date, end: Date): number => {
+        let count = 0;
         let current = dayjs(start);
         const last = dayjs(end);
 
         while (current.isBefore(last) || current.isSame(last, "day")) {
-            dates.push(current.format("YYYY-MM-DD"));
+            const dayOfWeek = current.day();
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                count++;
+            }
             current = current.add(1, "day");
         }
 
-        return dates;
+        return count;
     };
 
-    const startDate = form.values.dateRange[0];
-    const endDate = form.values.dateRange[1];
-
-    const datesList =
-        startDate && endDate ? getSelectedDates(startDate, endDate) : [];
-    const daysRequested = datesList.length;
+    const daysRequested =
+        startDate && endDate ? calculateWorkingDays(startDate, endDate) : 0;
 
     const handleSubmit = async () => {
         if (!startDate || !endDate) return;
@@ -63,8 +65,8 @@ export default function NewEmployeeLeaveRequestPage() {
         setLoading(true);
 
         const result = await createLeaveRequest({
-            dates: datesList,
-            daysRequested,
+            startDate: dayjs(startDate).format("YYYY-MM-DD"),
+            endDate: dayjs(endDate).format("YYYY-MM-DD"),
         });
 
         setLoading(false);
