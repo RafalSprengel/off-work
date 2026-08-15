@@ -4,6 +4,29 @@ import connectDB from "@/db/connection";
 import LeaveRequest from "@/db/models/LeaveRequest";
 import { getOrganizationId } from "@/utils/getOrganizationId";
 
+export interface TeamLeaveRequestItem {
+    _id: string;
+    employee: {
+        _id: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        department?: {
+            _id: string;
+            name: string;
+        };
+    };
+    startDate: string;
+    endDate: string;
+    startHalfDay: boolean;
+    endHalfDay: boolean;
+    daysRequested: number;
+    status: "pending" | "approved" | "rejected";
+    type: "annual" | "sick" | "unpaid" | "other";
+    createdAt: string;
+    updatedAt: string;
+}
+
 export async function getTeamLeaveRequests() {
     try {
         await connectDB();
@@ -14,13 +37,20 @@ export async function getTeamLeaveRequests() {
         }
 
         const leaveRequests = await LeaveRequest.find({ organizationId: orgId })
-            .populate("employee", "firstName lastName email department")
+            .populate({
+                path: "employee",
+                select: "firstName lastName email department",
+                populate: {
+                    path: "department",
+                    select: "name",
+                },
+            })
             .sort({ createdAt: -1 })
             .lean();
 
         return {
             success: true,
-            data: JSON.parse(JSON.stringify(leaveRequests)),
+            data: JSON.parse(JSON.stringify(leaveRequests)) as TeamLeaveRequestItem[],
         };
     } catch (error: unknown) {
         console.error("Error fetching team leave requests:", error);

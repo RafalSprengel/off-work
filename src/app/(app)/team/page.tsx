@@ -17,6 +17,8 @@ import {
     Tooltip,
     Avatar,
     Menu,
+    Loader,
+    Flex,
 } from "@mantine/core"
 import {
     IconUsers,
@@ -24,72 +26,50 @@ import {
     IconCheck,
     IconX,
     IconDotsVertical,
-    IconBuildingHospital,
+    IconCalendarStats,
     IconUserPlus,
     IconSettings,
-    IconCalendarStats,
     IconChevronRight,
     IconAdjustments,
 } from "@tabler/icons-react"
+import dayjs from "dayjs"
+import relativeTime from "dayjs/plugin/relativeTime"
 import Link from "next/link"
+import { useTeamDashboard } from "@/hooks/useTeamDashboard"
+
+dayjs.extend(relativeTime)
+
+const typeLabels: Record<string, string> = {
+    annual: "Annual Leave",
+    sick: "Sick Leave",
+    unpaid: "Unpaid Leave",
+    other: "Other",
+}
+
+function formatDateRange(startDate: string, endDate: string): string {
+    const start = dayjs(startDate, "YYYY-MM-DD")
+    const end = dayjs(endDate, "YYYY-MM-DD")
+    return `${start.format("D MMM YYYY")} - ${end.format("D MMM YYYY")}`
+}
 
 export default function AdminDashboard() {
-    const companyStats = {
-        totalEmployees: 142,
-        activeOnLeave: 12,
-        pendingApprovals: 8,
-        sickLeavesToday: 3,
+    const { data, loading } = useTeamDashboard()
+
+    if (loading) {
+        return (
+            <Flex justify="center" align="center" py={80}>
+                <Loader />
+            </Flex>
+        )
     }
 
-    const pendingRequests = [
-        {
-            id: "REQ-109",
-            employee: "Alex Morgan",
-            department: "Engineering",
-            type: "Annual Leave",
-            dates: "20 Aug 2026 - 28 Aug 2026",
-            days: 7,
-            submitted: "1 hour ago",
-            avatar: "https://avatar.vercel.sh/alex",
-        },
-        {
-            id: "REQ-108",
-            employee: "David Kim",
-            department: "Design",
-            type: "Sick Leave",
-            dates: "13 Aug 2026 - 14 Aug 2026",
-            days: 2,
-            submitted: "3 hours ago",
-            avatar: "https://avatar.vercel.sh/david",
-        },
-        {
-            id: "REQ-107",
-            employee: "Sophia Chen",
-            department: "Marketing",
-            type: "Maternity Leave",
-            dates: "01 Sep 2026 - 01 Dec 2026",
-            days: 90,
-            submitted: "1 day ago",
-            avatar: "https://avatar.vercel.sh/sophia",
-        },
-        {
-            id: "REQ-105",
-            employee: "James Wilson",
-            department: "Sales",
-            type: "Unpaid Leave",
-            dates: "25 Aug 2026 - 26 Aug 2026",
-            days: 2,
-            submitted: "2 days ago",
-            avatar: "https://avatar.vercel.sh/james",
-        },
-    ]
-
-    const departmentOverview = [
-        { name: "Engineering", count: 45, onLeave: 5 },
-        { name: "Product & Design", count: 22, onLeave: 2 },
-        { name: "Sales & Marketing", count: 38, onLeave: 4 },
-        { name: "HR & Finance", count: 14, onLeave: 1 },
-    ]
+    if (!data) {
+        return (
+            <Text ta="center" py={80} c="dimmed">
+                Failed to load dashboard data
+            </Text>
+        )
+    }
 
     return (
         <Stack gap="lg">
@@ -131,50 +111,52 @@ export default function AdminDashboard() {
             {/* Company Level Stats */}
             <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="md">
                 <Paper p="md" radius="md" withBorder>
-                    <Group justify="space-between" mb="xs">
+                    <Group justify="space-between" align="center" wrap="nowrap" mb="xs">
                         <Text size="sm" c="dimmed" fw={500}>
                             Total Employees
                         </Text>
-                        <ThemeIcon variant="light" color="blue">
+                        <ThemeIcon variant="light" color="blue" style={{ flexShrink: 0 }}>
                             <IconUsers size={16} />
                         </ThemeIcon>
                     </Group>
                     <Text size="xl" fw={700}>
-                        {companyStats.totalEmployees}
+                        {data.totalEmployees}
                     </Text>
                     <Text size="xs" c="dimmed" mt={4}>
-                        Across 4 departments
+                        Across {data.departmentOverview.length} departments
                     </Text>
                 </Paper>
 
                 <Paper p="md" radius="md" withBorder>
-                    <Group justify="space-between" mb="xs">
+                    <Group justify="space-between" align="center" wrap="nowrap" mb="xs">
                         <Text size="sm" c="dimmed" fw={500}>
                             Currently On Leave
                         </Text>
-                        <ThemeIcon variant="light" color="teal">
+                        <ThemeIcon variant="light" color="teal" style={{ flexShrink: 0 }}>
                             <IconCalendarStats size={16} />
                         </ThemeIcon>
                     </Group>
                     <Text size="xl" fw={700}>
-                        {companyStats.activeOnLeave}
+                        {data.activeOnLeave}
                     </Text>
                     <Text size="xs" c="dimmed" mt={4}>
-                        8.4% of total workforce
+                        {data.totalEmployees > 0
+                            ? `${((data.activeOnLeave / data.totalEmployees) * 100).toFixed(1)}% of total workforce`
+                            : "0% of total workforce"}
                     </Text>
                 </Paper>
 
                 <Paper p="md" radius="md" withBorder>
-                    <Group justify="space-between" mb="xs">
+                    <Group justify="space-between" align="center" wrap="nowrap" mb="xs">
                         <Text size="sm" c="dimmed" fw={500}>
                             Pending Requests
                         </Text>
-                        <ThemeIcon variant="light" color="orange">
+                        <ThemeIcon variant="light" color="orange" style={{ flexShrink: 0 }}>
                             <IconClock size={16} />
                         </ThemeIcon>
                     </Group>
                     <Text size="xl" fw={700}>
-                        {companyStats.pendingApprovals}
+                        {data.pendingApprovals}
                     </Text>
                     <Text size="xs" c="dimmed" mt={4}>
                         Requires manager action
@@ -182,19 +164,19 @@ export default function AdminDashboard() {
                 </Paper>
 
                 <Paper p="md" radius="md" withBorder>
-                    <Group justify="space-between" mb="xs">
+                    <Group justify="space-between" align="center" wrap="nowrap" mb="xs">
                         <Text size="sm" c="dimmed" fw={500}>
-                            Sick Leaves Today
+                            On Leave This Week
                         </Text>
-                        <ThemeIcon variant="light" color="red">
-                            <IconBuildingHospital size={16} />
+                        <ThemeIcon variant="light" color="red" style={{ flexShrink: 0 }}>
+                            <IconCalendarStats size={16} />
                         </ThemeIcon>
                     </Group>
                     <Text size="xl" fw={700}>
-                        {companyStats.sickLeavesToday}
+                        {data.onLeaveThisWeek}
                     </Text>
                     <Text size="xs" c="dimmed" mt={4}>
-                        Reported this morning
+                        Approved for this week
                     </Text>
                 </Paper>
             </SimpleGrid>
@@ -220,84 +202,94 @@ export default function AdminDashboard() {
                                 size="xs"
                                 rightSection={<IconChevronRight size={14} />}
                             >
-                                View All ({companyStats.pendingApprovals})
+                                View All ({data.pendingApprovals})
                             </Button>
                         </Group>
 
-                        <Table.ScrollContainer minWidth={600}>
-                            <Table verticalSpacing="sm" highlightOnHover>
-                                <Table.Thead>
-                                    <Table.Tr>
-                                        <Table.Th>Employee</Table.Th>
-                                        <Table.Th>Type</Table.Th>
-                                        <Table.Th>Dates</Table.Th>
-                                        <Table.Th>Days</Table.Th>
-                                        <Table.Th>Actions</Table.Th>
-                                    </Table.Tr>
-                                </Table.Thead>
-                                <Table.Tbody>
-                                    {pendingRequests.map((req) => (
-                                        <Table.Tr key={req.id}>
-                                            <Table.Td>
-                                                <Group gap="sm" wrap="nowrap">
-                                                    <Avatar src={req.avatar} radius="xl" size="sm" />
-                                                    <Box>
-                                                        <Text size="sm" fw={500}>
-                                                            {req.employee}
-                                                        </Text>
-                                                        <Text size="xs" c="dimmed">
-                                                            {req.department}
-                                                        </Text>
-                                                    </Box>
-                                                </Group>
-                                            </Table.Td>
-                                            <Table.Td>
-                                                <Badge variant="light" color="blue" size="sm">
-                                                    {req.type}
-                                                </Badge>
-                                            </Table.Td>
-                                            <Table.Td>
-                                                <Text size="sm">{req.dates}</Text>
-                                                <Text size="xs" c="dimmed">
-                                                    Submitted {req.submitted}
-                                                </Text>
-                                            </Table.Td>
-                                            <Table.Td>
-                                                <Text size="sm" fw={500}>
-                                                    {req.days}d
-                                                </Text>
-                                            </Table.Td>
-                                            <Table.Td>
-                                                <Group gap={4} wrap="nowrap">
-                                                    <Tooltip label="Approve">
-                                                        <ActionIcon variant="light" color="green" radius="xl">
-                                                            <IconCheck size={16} />
-                                                        </ActionIcon>
-                                                    </Tooltip>
-                                                    <Tooltip label="Reject">
-                                                        <ActionIcon variant="light" color="red" radius="xl">
-                                                            <IconX size={16} />
-                                                        </ActionIcon>
-                                                    </Tooltip>
-                                                    <Menu position="bottom-end" shadow="md">
-                                                        <Menu.Target>
-                                                            <ActionIcon variant="subtle" color="gray" radius="xl">
-                                                                <IconDotsVertical size={16} />
-                                                            </ActionIcon>
-                                                        </Menu.Target>
-                                                        <Menu.Dropdown>
-                                                            <Menu.Item>View Details</Menu.Item>
-
-                                                            <Menu.Item color="blue">Adjust Balance</Menu.Item>
-                                                        </Menu.Dropdown>
-                                                    </Menu>
-                                                </Group>
-                                            </Table.Td>
+                        {data.pendingRequests.length === 0 ? (
+                            <Text ta="center" py="xl" c="dimmed">
+                                No pending leave requests
+                            </Text>
+                        ) : (
+                            <Table.ScrollContainer minWidth={600}>
+                                <Table verticalSpacing="sm" highlightOnHover>
+                                    <Table.Thead>
+                                        <Table.Tr>
+                                            <Table.Th>Employee</Table.Th>
+                                            <Table.Th>Type</Table.Th>
+                                            <Table.Th>Dates</Table.Th>
+                                            <Table.Th>Days</Table.Th>
+                                            <Table.Th>Actions</Table.Th>
                                         </Table.Tr>
-                                    ))}
-                                </Table.Tbody>
-                            </Table>
-                        </Table.ScrollContainer>
+                                    </Table.Thead>
+                                    <Table.Tbody>
+                                        {data.pendingRequests.map((req) => (
+                                            <Table.Tr key={req._id}>
+                                                <Table.Td>
+                                                    <Group gap="sm" wrap="nowrap">
+                                                        <Avatar
+                                                            name={`${req.employee.firstName} ${req.employee.lastName}`}
+                                                            radius="xl"
+                                                            size="sm"
+                                                            color="initials"
+                                                        />
+                                                        <Box>
+                                                            <Text size="sm" fw={500}>
+                                                                {req.employee.firstName} {req.employee.lastName}
+                                                            </Text>
+                                                            <Text size="xs" c="dimmed">
+                                                                {req.employee.department?.name ?? "No Department"}
+                                                            </Text>
+                                                        </Box>
+                                                    </Group>
+                                                </Table.Td>
+                                                <Table.Td>
+                                                    <Badge variant="light" color="blue" size="sm">
+                                                        {typeLabels[req.type] ?? req.type}
+                                                    </Badge>
+                                                </Table.Td>
+                                                <Table.Td>
+                                                    <Text size="sm">{formatDateRange(req.startDate, req.endDate)}</Text>
+                                                    <Text size="xs" c="dimmed">
+                                                        Submitted {dayjs(req.createdAt).fromNow()}
+                                                    </Text>
+                                                </Table.Td>
+                                                <Table.Td>
+                                                    <Text size="sm" fw={500}>
+                                                        {req.daysRequested}d
+                                                    </Text>
+                                                </Table.Td>
+                                                <Table.Td>
+                                                    <Group gap={4} wrap="nowrap">
+                                                        <Tooltip label="Approve">
+                                                            <ActionIcon variant="light" color="green" radius="xl">
+                                                                <IconCheck size={16} />
+                                                            </ActionIcon>
+                                                        </Tooltip>
+                                                        <Tooltip label="Reject">
+                                                            <ActionIcon variant="light" color="red" radius="xl">
+                                                                <IconX size={16} />
+                                                            </ActionIcon>
+                                                        </Tooltip>
+                                                        <Menu position="bottom-end" shadow="md">
+                                                            <Menu.Target>
+                                                                <ActionIcon variant="subtle" color="gray" radius="xl">
+                                                                    <IconDotsVertical size={16} />
+                                                                </ActionIcon>
+                                                            </Menu.Target>
+                                                            <Menu.Dropdown>
+                                                                <Menu.Item>View Details</Menu.Item>
+                                                                <Menu.Item color="blue">Adjust Balance</Menu.Item>
+                                                            </Menu.Dropdown>
+                                                        </Menu>
+                                                    </Group>
+                                                </Table.Td>
+                                            </Table.Tr>
+                                        ))}
+                                    </Table.Tbody>
+                                </Table>
+                            </Table.ScrollContainer>
+                        )}
                     </Paper>
                 </Grid.Col>
 
@@ -308,7 +300,7 @@ export default function AdminDashboard() {
                             <Title order={3} size="h4">
                                 Department Status
                             </Title>
-                            <ActionIcon variant="subtle" color="gray">
+                            <ActionIcon variant="subtle" color="gray" component={Link} href="/team/departments">
                                 <IconAdjustments size={16} />
                             </ActionIcon>
                         </Group>
@@ -317,25 +309,31 @@ export default function AdminDashboard() {
                             Active absences proportion per department.
                         </Text>
 
-                        <Stack gap="md">
-                            {departmentOverview.map((dept, index) => (
-                                <Paper key={index} p="sm" radius="sm" withBorder bg="var(--mantine-color-gray-0)">
-                                    <Group justify="space-between" align="center">
-                                        <Box>
-                                            <Text size="sm" fw={500}>
-                                                {dept.name}
-                                            </Text>
-                                            <Text size="xs" c="dimmed">
-                                                {dept.count} members
-                                            </Text>
-                                        </Box>
-                                        <Badge color={dept.onLeave > 3 ? "orange" : "gray"} variant="light">
-                                            {dept.onLeave} on leave
-                                        </Badge>
-                                    </Group>
-                                </Paper>
-                            ))}
-                        </Stack>
+                        {data.departmentOverview.length === 0 ? (
+                            <Text ta="center" py="xl" c="dimmed" size="sm">
+                                No departments found
+                            </Text>
+                        ) : (
+                            <Stack gap="md">
+                                {data.departmentOverview.map((dept, index) => (
+                                    <Paper key={index} p="sm" radius="sm" withBorder bg="var(--mantine-color-gray-0)">
+                                        <Group justify="space-between" align="center">
+                                            <Box>
+                                                <Text size="sm" fw={500}>
+                                                    {dept.name}
+                                                </Text>
+                                                <Text size="xs" c="dimmed">
+                                                    {dept.count} members
+                                                </Text>
+                                            </Box>
+                                            <Badge color={dept.onLeave > 3 ? "orange" : "gray"} variant="light">
+                                                {dept.onLeave} on leave
+                                            </Badge>
+                                        </Group>
+                                    </Paper>
+                                ))}
+                            </Stack>
+                        )}
 
                         <Button
                             component={Link}

@@ -8,6 +8,7 @@ export interface ILeaveRequest extends Document {
   endHalfDay: boolean;
   daysRequested: number;
   status: "pending" | "approved" | "rejected";
+  type: "annual" | "sick" | "unpaid" | "other";
   organizationId: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -44,6 +45,11 @@ const LeaveRequestSchema = new Schema<ILeaveRequest>(
       type: String,
       enum: ["pending", "approved", "rejected"],
       default: "pending",
+    },
+    type: {
+      type: String,
+      enum: ["annual", "sick", "unpaid", "other"],
+      default: "annual",
     },
   },
   { timestamps: true },
