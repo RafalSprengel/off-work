@@ -109,75 +109,83 @@ export default function AdminDashboard() {
             </Paper>
 
             {/* Company Level Stats */}
-            <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="md">
-                <Paper p="md" radius="md" withBorder>
-                    <Group justify="space-between" align="center" wrap="nowrap" mb="xs">
-                        <Text size="sm" c="dimmed" fw={500}>
+            <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="xs">
+                <Paper p="xs" radius="md" withBorder>
+                    <Group justify="space-between" align="center" wrap="nowrap" mb={4}>
+                        <Text size="xs" c="dimmed" fw={500}>
                             Total Employees
                         </Text>
-                        <ThemeIcon variant="light" color="blue" style={{ flexShrink: 0 }}>
-                            <IconUsers size={16} />
+                        <ThemeIcon variant="light" color="blue" size="sm" radius="md" style={{ flexShrink: 0 }}>
+                            <IconUsers size={14} />
                         </ThemeIcon>
                     </Group>
-                    <Text size="xl" fw={700}>
-                        {data.totalEmployees}
-                    </Text>
-                    <Text size="xs" c="dimmed" mt={4}>
-                        Across {data.departmentOverview.length} departments
-                    </Text>
+                    <Group align="baseline" gap="xs">
+                        <Text size="lg" fw={700} lh={1}>
+                            {data.totalEmployees}
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                            Across {data.departmentOverview.length} departments
+                        </Text>
+                    </Group>
                 </Paper>
 
-                <Paper p="md" radius="md" withBorder>
-                    <Group justify="space-between" align="center" wrap="nowrap" mb="xs">
-                        <Text size="sm" c="dimmed" fw={500}>
+                <Paper p="xs" radius="md" withBorder>
+                    <Group justify="space-between" align="center" wrap="nowrap" mb={4}>
+                        <Text size="xs" c="dimmed" fw={500}>
                             Currently On Leave
                         </Text>
-                        <ThemeIcon variant="light" color="teal" style={{ flexShrink: 0 }}>
-                            <IconCalendarStats size={16} />
+                        <ThemeIcon variant="light" color="teal" size="sm" radius="md" style={{ flexShrink: 0 }}>
+                            <IconCalendarStats size={14} />
                         </ThemeIcon>
                     </Group>
-                    <Text size="xl" fw={700}>
-                        {data.activeOnLeave}
-                    </Text>
-                    <Text size="xs" c="dimmed" mt={4}>
-                        {data.totalEmployees > 0
-                            ? `${((data.activeOnLeave / data.totalEmployees) * 100).toFixed(1)}% of total workforce`
-                            : "0% of total workforce"}
-                    </Text>
+                    <Group align="baseline" gap="xs">
+                        <Text size="lg" fw={700} lh={1}>
+                            {data.activeOnLeave}
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                            {data.totalEmployees > 0
+                                ? `${((data.activeOnLeave / data.totalEmployees) * 100).toFixed(1)}% of total workforce`
+                                : "0% of total workforce"}
+                        </Text>
+                    </Group>
                 </Paper>
 
-                <Paper p="md" radius="md" withBorder>
-                    <Group justify="space-between" align="center" wrap="nowrap" mb="xs">
-                        <Text size="sm" c="dimmed" fw={500}>
+                <Paper p="xs" radius="md" withBorder>
+                    <Group justify="space-between" align="center" wrap="nowrap" mb={4}>
+                        <Text size="xs" c="dimmed" fw={500}>
                             Pending Requests
                         </Text>
-                        <ThemeIcon variant="light" color="orange" style={{ flexShrink: 0 }}>
-                            <IconClock size={16} />
+                        <ThemeIcon variant="light" color="orange" size="sm" radius="md" style={{ flexShrink: 0 }}>
+                            <IconClock size={14} />
                         </ThemeIcon>
                     </Group>
-                    <Text size="xl" fw={700}>
-                        {data.pendingApprovals}
-                    </Text>
-                    <Text size="xs" c="dimmed" mt={4}>
-                        Requires manager action
-                    </Text>
+                    <Group align="baseline" gap="xs">
+                        <Text size="lg" fw={700} lh={1}>
+                            {data.pendingApprovals}
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                            Requires manager action
+                        </Text>
+                    </Group>
                 </Paper>
 
-                <Paper p="md" radius="md" withBorder>
-                    <Group justify="space-between" align="center" wrap="nowrap" mb="xs">
-                        <Text size="sm" c="dimmed" fw={500}>
+                <Paper p="xs" radius="md" withBorder>
+                    <Group justify="space-between" align="center" wrap="nowrap" mb={4}>
+                        <Text size="xs" c="dimmed" fw={500}>
                             On Leave This Week
                         </Text>
-                        <ThemeIcon variant="light" color="red" style={{ flexShrink: 0 }}>
-                            <IconCalendarStats size={16} />
+                        <ThemeIcon variant="light" color="red" size="sm" radius="md" style={{ flexShrink: 0 }}>
+                            <IconCalendarStats size={14} />
                         </ThemeIcon>
                     </Group>
-                    <Text size="xl" fw={700}>
-                        {data.onLeaveThisWeek}
-                    </Text>
-                    <Text size="xs" c="dimmed" mt={4}>
-                        Approved for this week
-                    </Text>
+                    <Group align="baseline" gap="xs">
+                        <Text size="lg" fw={700} lh={1}>
+                            {data.onLeaveThisWeek}
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                            Approved for this week
+                        </Text>
+                    </Group>
                 </Paper>
             </SimpleGrid>
 
@@ -334,18 +342,6 @@ export default function AdminDashboard() {
                                 ))}
                             </Stack>
                         )}
-
-                        <Button
-                            component={Link}
-                            href="/admin/departments"
-                            variant="outline"
-                            color="gray"
-                            fullWidth
-                            mt="xl"
-                            size="xs"
-                        >
-                            Manage Departments
-                        </Button>
                     </Paper>
                 </Grid.Col>
             </Grid>
