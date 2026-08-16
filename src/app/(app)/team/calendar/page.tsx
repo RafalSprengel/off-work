@@ -1,10 +1,7 @@
 "use client";
 
 import {
-  Avatar,
   Badge,
-  Card,
-  Grid,
   Group,
   MultiSelect,
   Paper,
@@ -14,22 +11,40 @@ import {
   Title,
   Loader,
   Center,
+  SegmentedControl,
 } from "@mantine/core";
-import { DatePicker } from "@mantine/dates";
-import { IconCalendarEvent, IconFilter, IconUsers } from "@tabler/icons-react";
+import {
+  Schedule,
+  MobileMonthView,
+  type ScheduleEventData,
+} from "@mantine/schedule";
+import { IconFilter, IconUsers } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import dayjs from "dayjs";
-import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
-import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import { useTeamLeaveRequests } from "@/hooks/useTeamLeaveRequests";
 
-dayjs.extend(isSameOrAfter);
-dayjs.extend(isSameOrBefore);
+const typeColors: Record<string, string> = {
+  annual: "blue",
+  sick: "red",
+  unpaid: "orange",
+  other: "gray",
+};
+
+const typeLabels: Record<string, string> = {
+  annual: "Annual Leave",
+  sick: "Sick Leave",
+  unpaid: "Unpaid Leave",
+  other: "Other Leave",
+};
 
 export default function TeamCalendarPage() {
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>("All");
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [mobileView, setMobileView] = useState<"calendar" | "list">("calendar");
+  const [mobileDate, setMobileDate] = useState(dayjs().format("YYYY-MM-DD"));
+  const [mobileSelectedDate, setMobileSelectedDate] = useState<string | null>(
+    dayjs().format("YYYY-MM-DD")
+  );
 
   const { requests, loading } = useTeamLeaveRequests();
 
@@ -43,16 +58,8 @@ export default function TeamCalendarPage() {
     return ["All", ...Array.from(depts)];
   }, [requests]);
 
-  const filteredEvents = useMemo(() => {
+  const filteredRequests = useMemo(() => {
     return requests.filter((req) => {
-      if (selectedDate) {
-        const dateStr = dayjs(selectedDate).format("YYYY-MM-DD");
-        const isWithinRange =
-          dayjs(dateStr).isSameOrAfter(req.startDate, "day") &&
-          dayjs(dateStr).isSameOrBefore(req.endDate, "day");
-        if (!isWithinRange) return false;
-      }
-
       if (
         selectedDepartment &&
         selectedDepartment !== "All" &&
@@ -67,14 +74,26 @@ export default function TeamCalendarPage() {
 
       return true;
     });
-  }, [requests, selectedDate, selectedDepartment, selectedTypes]);
+  }, [requests, selectedDepartment, selectedTypes]);
 
-  const leaveTypeLabels: Record<string, string> = {
-    annual: "Annual Leave",
-    sick: "Sick Leave",
-    unpaid: "Unpaid Leave",
-    other: "Other Leave",
-  };
+  const scheduleEvents: ScheduleEventData[] = useMemo(() => {
+    return filteredRequests.map((req) => {
+      const fullName = `${req.employee?.firstName || ""} ${req.employee?.lastName || ""}`.trim();
+      const typeLabel = typeLabels[req.type] || req.type;
+      const statusLabel = req.status.charAt(0).toUpperCase() + req.status.slice(1);
+
+      const startDateFormatted = dayjs(req.startDate).format("YYYY-MM-DD");
+      const endDateFormatted = dayjs(req.endDate).format("YYYY-MM-DD");
+
+      return {
+        id: req._id,
+        title: `${fullName} - ${typeLabel} (${statusLabel})`,
+        start: `${startDateFormatted} 00:00:00`,
+        end: `${endDateFormatted} 23:59:59`,
+        color: typeColors[req.type] || "gray",
+      };
+    });
+  }, [filteredRequests]);
 
   return (
     <Stack gap="lg">
@@ -111,123 +130,116 @@ export default function TeamCalendarPage() {
             onChange={setSelectedTypes}
             style={{ flexGrow: 1 }}
           />
+          <Badge
+            variant="light"
+            color="blue"
+            size="lg"
+            leftSection={<IconUsers size={14} />}
+            style={{ alignSelf: "flex-end", marginBottom: 2 }}
+          >
+            {filteredRequests.length} Absences
+          </Badge>
         </Group>
       </Paper>
 
-      <Grid gap="md" align="start">
-        <Grid.Col span={{ base: 12, md: 5, lg: 4 }}>
+      {loading ? (
+        <Center py="xl">
+          <Loader size="md" />
+        </Center>
+      ) : (
+        <>
+          {/* Mobile view toggle */}
           <Paper
-            p="md"
+            p="xs"
             radius="md"
             withBorder
             bg="var(--mantine-color-body)"
-            display="flex"
-            style={{ justifyContent: "center" }}
+            hiddenFrom="md"
           >
-            <DatePicker
-              value={selectedDate}
-              onChange={(val) => setSelectedDate(val as Date | null)}
-              size="md"
+            <SegmentedControl
+              value={mobileView}
+              onChange={(val) => setMobileView(val as "calendar" | "list")}
+              data={[
+                { value: "calendar", label: "Calendar" },
+                { value: "list", label: "List" },
+              ]}
+              fullWidth
             />
           </Paper>
-        </Grid.Col>
 
-        <Grid.Col span={{ base: 12, md: 7, lg: 8 }}>
+          {/* Mobile: Calendar view (Schedule) */}
           <Paper
             p="md"
             radius="md"
             withBorder
             bg="var(--mantine-color-body)"
-            style={{ minHeight: 380 }}
+            hiddenFrom="md"
+            display={mobileView === "calendar" ? "block" : "none"}
           >
-            <Group justify="space-between" mb="md">
-              <Group gap="xs">
-                <IconCalendarEvent size={20} />
-                <Title order={4}>
-                  Absences for{" "}
-                  {selectedDate
-                    ? selectedDate.toLocaleDateString("en-US", {
-                      month: "long",
-                      day: "numeric",
-                      year: "numeric",
-                    })
-                    : "Selected Date"}
-                </Title>
-              </Group>
-              <Badge variant="light" color="blue" leftSection={<IconUsers size={12} />}>
-                {filteredEvents.length} Absences
-              </Badge>
-            </Group>
-
-            {loading ? (
-              <Center py="xl">
-                <Loader size="md" />
-              </Center>
-            ) : (
-              <Stack gap="sm">
-                {filteredEvents.length > 0 ? (
-                  filteredEvents.map((event) => {
-                    const fullName = `${event.employee?.firstName || ""} ${event.employee?.lastName || ""
-                      }`.trim();
-                    const initials =
-                      `${event.employee?.firstName?.[0] || ""}${event.employee?.lastName?.[0] || ""
-                        }`.toUpperCase() || "?";
-
-                    return (
-                      <Card
-                        key={event._id}
-                        p="sm"
-                        radius="sm"
-                        withBorder
-                        bg="light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))"
-                      >
-                        <Group justify="space-between" align="center">
-                          <Group gap="sm">
-                            <Avatar color="blue" radius="xl">
-                              {initials}
-                            </Avatar>
-                            <div>
-                              <Text size="sm" fw={600}>
-                                {fullName || "Unknown Employee"}
-                              </Text>
-                              <Text size="xs" c="dimmed">
-                                {event.employee?.department?.name || "No Department"} •{" "}
-                                {leaveTypeLabels[event.type] || event.type}
-                              </Text>
-                            </div>
-                          </Group>
-
-                          <Group gap="xs">
-                            <Text size="xs" fw={500}>
-                              {event.startDate} - {event.endDate}
-                            </Text>
-                            <Badge
-                              color={
-                                event.status === "approved"
-                                  ? "green"
-                                  : event.status === "pending"
-                                    ? "yellow"
-                                    : "red"
-                              }
-                              variant="dot"
-                            >
-                              {event.status}
-                            </Badge>
-                          </Group>
-                        </Group>
-                      </Card>
-                    );
-                  })
-                ) : (
-                  <Text size="sm" c="dimmed" ta="center" py="xl">
-                    No planned absences for this criteria.
-                  </Text>
-                )}
-              </Stack>
-            )}
+            <Schedule
+              events={scheduleEvents}
+              defaultView="month"
+              monthViewProps={{
+                firstDayOfWeek: 1,
+              }}
+              weekViewProps={{
+                firstDayOfWeek: 1,
+                startTime: "08:00:00",
+                endTime: "18:00:00",
+              }}
+              dayViewProps={{
+                startTime: "08:00:00",
+                endTime: "18:00:00",
+              }}
+            />
           </Paper>
-        </Grid.Col>
-      </Grid>
+
+          {/* Mobile: List view (MobileMonthView) */}
+          <Paper
+            p="md"
+            radius="md"
+            withBorder
+            bg="var(--mantine-color-body)"
+            hiddenFrom="md"
+            display={mobileView === "list" ? "block" : "none"}
+          >
+            <MobileMonthView
+              date={mobileDate}
+              onDateChange={setMobileDate}
+              selectedDate={mobileSelectedDate}
+              onSelectedDateChange={setMobileSelectedDate}
+              events={scheduleEvents}
+              firstDayOfWeek={1}
+            />
+          </Paper>
+
+          {/* Desktop: Schedule component */}
+          <Paper
+            p="md"
+            radius="md"
+            withBorder
+            bg="var(--mantine-color-body)"
+            visibleFrom="md"
+          >
+            <Schedule
+              events={scheduleEvents}
+              defaultView="month"
+              monthViewProps={{
+                firstDayOfWeek: 1,
+              }}
+              weekViewProps={{
+                firstDayOfWeek: 1,
+                startTime: "08:00:00",
+                endTime: "18:00:00",
+              }}
+              dayViewProps={{
+                startTime: "08:00:00",
+                endTime: "18:00:00",
+              }}
+            />
+          </Paper>
+        </>
+      )}
     </Stack>
   );
 }

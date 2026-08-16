@@ -31,6 +31,7 @@ import {
     IconSettings,
     IconChevronRight,
     IconAdjustments,
+    IconCalendar,
 } from "@tabler/icons-react"
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
@@ -71,6 +72,9 @@ export default function AdminDashboard() {
         )
     }
 
+    const todayStr = dayjs().format("MMMM D, YYYY")
+    const todayAbsences = data.todayAbsences || []
+
     return (
         <Stack gap="lg">
             {/* Top Banner */}
@@ -109,85 +113,139 @@ export default function AdminDashboard() {
             </Paper>
 
             {/* Company Level Stats */}
-            <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="xs">
-                <Paper p="xs" radius="md" withBorder>
-                    <Group justify="space-between" align="center" wrap="nowrap" mb={4}>
-                        <Text size="xs" c="dimmed" fw={500}>
+            <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="md">
+                <Paper p="md" radius="md" withBorder>
+                    <Group justify="space-between" align="center" wrap="nowrap" mb="xs">
+                        <Text size="sm" c="dimmed" fw={500}>
                             Total Employees
                         </Text>
-                        <ThemeIcon variant="light" color="blue" size="sm" radius="md" style={{ flexShrink: 0 }}>
-                            <IconUsers size={14} />
+                        <ThemeIcon variant="light" color="blue" style={{ flexShrink: 0 }}>
+                            <IconUsers size={16} />
                         </ThemeIcon>
                     </Group>
-                    <Group align="baseline" gap="xs">
-                        <Text size="lg" fw={700} lh={1}>
-                            {data.totalEmployees}
-                        </Text>
-                        <Text size="xs" c="dimmed">
-                            Across {data.departmentOverview.length} departments
-                        </Text>
-                    </Group>
+                    <Text size="xl" fw={700}>
+                        {data.totalEmployees}
+                    </Text>
+                    <Text size="xs" c="dimmed" mt={4}>
+                        Across {data.departmentOverview.length} departments
+                    </Text>
                 </Paper>
 
-                <Paper p="xs" radius="md" withBorder>
-                    <Group justify="space-between" align="center" wrap="nowrap" mb={4}>
-                        <Text size="xs" c="dimmed" fw={500}>
+                <Paper p="md" radius="md" withBorder>
+                    <Group justify="space-between" align="center" wrap="nowrap" mb="xs">
+                        <Text size="sm" c="dimmed" fw={500}>
                             Currently On Leave
                         </Text>
-                        <ThemeIcon variant="light" color="teal" size="sm" radius="md" style={{ flexShrink: 0 }}>
-                            <IconCalendarStats size={14} />
+                        <ThemeIcon variant="light" color="teal" style={{ flexShrink: 0 }}>
+                            <IconCalendarStats size={16} />
                         </ThemeIcon>
                     </Group>
-                    <Group align="baseline" gap="xs">
-                        <Text size="lg" fw={700} lh={1}>
-                            {data.activeOnLeave}
-                        </Text>
-                        <Text size="xs" c="dimmed">
-                            {data.totalEmployees > 0
-                                ? `${((data.activeOnLeave / data.totalEmployees) * 100).toFixed(1)}% of total workforce`
-                                : "0% of total workforce"}
-                        </Text>
-                    </Group>
+                    <Text size="xl" fw={700}>
+                        {data.activeOnLeave}
+                    </Text>
+                    <Text size="xs" c="dimmed" mt={4}>
+                        {data.totalEmployees > 0
+                            ? `${((data.activeOnLeave / data.totalEmployees) * 100).toFixed(1)}% of total workforce`
+                            : "0% of total workforce"}
+                    </Text>
                 </Paper>
 
-                <Paper p="xs" radius="md" withBorder>
-                    <Group justify="space-between" align="center" wrap="nowrap" mb={4}>
-                        <Text size="xs" c="dimmed" fw={500}>
+                <Paper p="md" radius="md" withBorder>
+                    <Group justify="space-between" align="center" wrap="nowrap" mb="xs">
+                        <Text size="sm" c="dimmed" fw={500}>
                             Pending Requests
                         </Text>
-                        <ThemeIcon variant="light" color="orange" size="sm" radius="md" style={{ flexShrink: 0 }}>
-                            <IconClock size={14} />
+                        <ThemeIcon variant="light" color="orange" style={{ flexShrink: 0 }}>
+                            <IconClock size={16} />
                         </ThemeIcon>
                     </Group>
-                    <Group align="baseline" gap="xs">
-                        <Text size="lg" fw={700} lh={1}>
-                            {data.pendingApprovals}
-                        </Text>
-                        <Text size="xs" c="dimmed">
-                            Requires manager action
-                        </Text>
-                    </Group>
+                    <Text size="xl" fw={700}>
+                        {data.pendingApprovals}
+                    </Text>
+                    <Text size="xs" c="dimmed" mt={4}>
+                        Requires manager action
+                    </Text>
                 </Paper>
 
-                <Paper p="xs" radius="md" withBorder>
-                    <Group justify="space-between" align="center" wrap="nowrap" mb={4}>
-                        <Text size="xs" c="dimmed" fw={500}>
+                <Paper p="md" radius="md" withBorder>
+                    <Group justify="space-between" align="center" wrap="nowrap" mb="xs">
+                        <Text size="sm" c="dimmed" fw={500}>
                             On Leave This Week
                         </Text>
-                        <ThemeIcon variant="light" color="red" size="sm" radius="md" style={{ flexShrink: 0 }}>
-                            <IconCalendarStats size={14} />
+                        <ThemeIcon variant="light" color="red" style={{ flexShrink: 0 }}>
+                            <IconCalendarStats size={16} />
                         </ThemeIcon>
                     </Group>
-                    <Group align="baseline" gap="xs">
-                        <Text size="lg" fw={700} lh={1}>
-                            {data.onLeaveThisWeek}
-                        </Text>
-                        <Text size="xs" c="dimmed">
-                            Approved for this week
-                        </Text>
-                    </Group>
+                    <Text size="xl" fw={700}>
+                        {data.onLeaveThisWeek}
+                    </Text>
+                    <Text size="xs" c="dimmed" mt={4}>
+                        Approved for this week
+                    </Text>
                 </Paper>
             </SimpleGrid>
+
+            {/* Today Absences Section */}
+            <Paper p="lg" radius="md" withBorder>
+                <Group justify="space-between" align="center" mb="md">
+                    <Group gap="xs" align="center">
+                        <IconCalendar size={22} />
+                        <Title order={3} size="h4" fw={700}>
+                            Absences for {todayStr}
+                        </Title>
+                    </Group>
+                    <Badge variant="light" color="blue" size="lg" leftSection={<IconUsers size={14} />}>
+                        {todayAbsences.length} ABSENCES
+                    </Badge>
+                </Group>
+
+                {todayAbsences.length === 0 ? (
+                    <Text ta="center" py="xl" c="dimmed">
+                        No absences for today
+                    </Text>
+                ) : (
+                    <Stack gap="sm">
+                        {todayAbsences.map((absence) => (
+                            <Paper key={absence._id} p="md" radius="md" style={{ border: "1px solid var(--mantine-color-gray-3)", backgroundColor: "var(--mantine-color-gray-0)" }}>
+                                <Group justify="space-between" align="center">
+                                    <Group gap="md">
+                                        <Avatar
+                                            name={`${absence.employee.firstName} ${absence.employee.lastName}`}
+                                            radius="xl"
+                                            size="md"
+                                            color="blue"
+                                            variant="light"
+                                        />
+                                        <Box>
+                                            <Text size="sm" fw={700}>
+                                                {absence.employee.firstName} {absence.employee.lastName}
+                                            </Text>
+                                            <Text size="xs" c="dimmed">
+                                                {absence.employee.department?.name ?? "No Department"} • {typeLabels[absence.type] ?? absence.type}
+                                            </Text>
+                                        </Box>
+                                    </Group>
+
+                                    <Group gap="md">
+                                        <Text size="sm" fw={600} c="dimmed">
+                                            {dayjs(absence.startDate).format("YYYY-MM-DD")} - {dayjs(absence.endDate).format("YYYY-MM-DD")}
+                                        </Text>
+                                        <Badge
+                                            color="green"
+                                            variant="outline"
+                                            size="lg"
+                                            radius="xl"
+                                            leftSection={<Box style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "var(--mantine-color-green-6)" }} />}
+                                        >
+                                            APPROVED
+                                        </Badge>
+                                    </Group>
+                                </Group>
+                            </Paper>
+                        ))}
+                    </Stack>
+                )}
+            </Paper>
 
             {/* Main Content Grid */}
             <Grid gap="md">
@@ -342,6 +400,8 @@ export default function AdminDashboard() {
                                 ))}
                             </Stack>
                         )}
+
+
                     </Paper>
                 </Grid.Col>
             </Grid>

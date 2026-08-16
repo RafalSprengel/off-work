@@ -17,6 +17,7 @@
     "@mantine/modals": "^9.5.0",
     "@mantine/notifications": "^9.5.0",
     "@mantine/nprogress": "^9.5.0",
+    "@mantine/schedule": "^9.5.0",
     "@tabler/icons-react": "^3.45.0",
     "dayjs": "^1.11.21",
     "mongoose": "^9.8.1",

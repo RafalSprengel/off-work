@@ -16,6 +16,7 @@ export interface TeamDashboardData {
     activeOnLeave: number;
     pendingApprovals: number;
     onLeaveThisWeek: number;
+    todayAbsences: PendingRequestItem[];
     pendingRequests: PendingRequestItem[];
     departmentOverview: DepartmentOverviewItem[];
 }
@@ -99,6 +100,28 @@ export async function getTeamDashboard() {
             startDate: { $lte: today.format("YYYY-MM-DD") },
             endDate: { $gte: today.format("YYYY-MM-DD") },
         });
+
+        // Today absences (approved, covering today)
+        const todayAbsencesRaw = await LeaveRequest.find({
+            organizationId: orgId,
+            status: "approved",
+            startDate: { $lte: today.format("YYYY-MM-DD") },
+            endDate: { $gte: today.format("YYYY-MM-DD") },
+        })
+            .populate({
+                path: "employee",
+                select: "firstName lastName department",
+                populate: {
+                    path: "department",
+                    select: "name",
+                },
+            })
+            .sort({ createdAt: -1 })
+            .lean();
+
+        const todayAbsences = JSON.parse(
+            JSON.stringify(todayAbsencesRaw)
+        ) as PendingRequestItem[];
 
         // Pending requests for the table (latest 4)
         const pendingRequestsRaw = await LeaveRequest.find({
@@ -184,6 +207,7 @@ export async function getTeamDashboard() {
                 activeOnLeave,
                 pendingApprovals,
                 onLeaveThisWeek,
+                todayAbsences,
                 pendingRequests,
                 departmentOverview,
             } as TeamDashboardData,
