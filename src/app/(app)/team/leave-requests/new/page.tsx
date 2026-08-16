@@ -197,7 +197,6 @@ export default function NewLeaveRequestAsAdminPage() {
                 {...form.getInputProps("dateRange")}
               />
 
-              {/* Half-day checkboxes */}
               <Group grow>
                 <Checkbox
                   label="Start day is half-day"

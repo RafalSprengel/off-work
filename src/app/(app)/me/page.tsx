@@ -30,8 +30,10 @@ import {
   IconPlaneDeparture,
 } from "@tabler/icons-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation";
 
 export default function EmployeeDashboard() {
+  const router = useRouter();
   const recentRequests = [
     {
       id: "REQ-104",
@@ -75,7 +77,6 @@ export default function EmployeeDashboard() {
 
   return (
     <Stack gap="lg">
-      {/* Top Banner & Quick Action */}
       <Paper p="lg" radius="md" withBorder style={{ background: "var(--mantine-color-blue-0)" }}>
         <Group justify="space-between" align="center" wrap="wrap">
           <Box>
@@ -97,9 +98,7 @@ export default function EmployeeDashboard() {
         </Group>
       </Paper>
 
-      {/* Leave Balances Grid */}
       <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="md">
-        {/* Annual Leave */}
         <Paper p="md" radius="md" withBorder>
           <Group justify="space-between" mb="xs">
             <Text size="sm" c="dimmed" fw={500}>
@@ -120,7 +119,6 @@ export default function EmployeeDashboard() {
           <Progress value={(18 / 26) * 100} mt="md" size="sm" color="blue" />
         </Paper>
 
-        {/* Sick Leave */}
         <Paper p="md" radius="md" withBorder>
           <Group justify="space-between" mb="xs">
             <Text size="sm" c="dimmed" fw={500}>
@@ -141,7 +139,6 @@ export default function EmployeeDashboard() {
           <Progress value={(2 / 10) * 100} mt="md" size="sm" color="red" />
         </Paper>
 
-        {/* Pending Approval */}
         <Paper p="md" radius="md" withBorder>
           <Group justify="space-between" mb="xs">
             <Text size="sm" c="dimmed" fw={500}>
@@ -162,7 +159,6 @@ export default function EmployeeDashboard() {
           <Progress value={100} mt="md" size="sm" color="orange" />
         </Paper>
 
-        {/* Remote Work Days */}
         <Paper p="md" radius="md" withBorder>
           <Group justify="space-between" mb="xs">
             <Text size="sm" c="dimmed" fw={500}>
@@ -184,9 +180,7 @@ export default function EmployeeDashboard() {
         </Paper>
       </SimpleGrid>
 
-      {/* Main Content Grid */}
       <Grid gap="md">
-        {/* Recent Leave Requests */}
         <Grid.Col span={{ base: 12, lg: 8 }}>
           <Paper p="lg" radius="md" withBorder>
             <Group justify="space-between" mb="md">
@@ -222,7 +216,8 @@ export default function EmployeeDashboard() {
                 </Table.Thead>
                 <Table.Tbody>
                   {recentRequests.map((req) => (
-                    <Table.Tr key={req.id}>
+                    <Table.Tr key={req.id} onClick={() => router.push(`/me/leave-requests/${req.id}`)}
+                      style={{ cursor: "pointer" }}>
                       <Table.Td>
                         <Text size="sm" fw={500}>
                           {req.type}
@@ -253,7 +248,6 @@ export default function EmployeeDashboard() {
           </Paper>
         </Grid.Col>
 
-        {/* Team Absences Sidebar */}
         <Grid.Col span={{ base: 12, lg: 4 }}>
           <Paper p="lg" radius="md" withBorder style={{ height: "100%" }}>
             <Group justify="space-between" mb="md">

@@ -16,9 +16,10 @@ import { IconPlus } from "@tabler/icons-react";
 import Link from "next/link";
 import { useState } from "react";
 import { LeaveRequest } from "@/types/leaveRequest";
-
+import { useRouter } from "next/navigation";
 
 export default function EmployeeLeaveRequestsPage() {
+    const router = useRouter();
     const [requests] = useState<LeaveRequest[]>([
         {
             id: "1",
@@ -84,7 +85,8 @@ export default function EmployeeLeaveRequestsPage() {
                     </Table.Thead>
                     <Table.Tbody>
                         {requests.map((item) => (
-                            <Table.Tr key={item.id}>
+                            <Table.Tr key={item.id} onClick={() => router.push(`/me/leave-requests/${item.id}`)}
+                                style={{ cursor: "pointer" }}>
                                 <Table.Td>{item.type}</Table.Td>
                                 <Table.Td>
                                     {item.startDate} - {item.endDate}

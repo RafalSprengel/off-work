@@ -12,16 +12,19 @@ import {
   Loader,
   Center,
   SegmentedControl,
+  ActionIcon,
+  Flex,
 } from "@mantine/core";
 import {
   Schedule,
   MobileMonthView,
   type ScheduleEventData,
 } from "@mantine/schedule";
-import { IconFilter, IconUsers } from "@tabler/icons-react";
+import { IconChevronLeft, IconChevronRight, IconFilter, IconUsers } from "@tabler/icons-react";
 import { useMemo, useState } from "react";
 import dayjs from "dayjs";
 import { useTeamLeaveRequests } from "@/hooks/useTeamLeaveRequests";
+import { useRouter } from "next/navigation";
 
 const typeColors: Record<string, string> = {
   annual: "blue",
@@ -38,6 +41,7 @@ const typeLabels: Record<string, string> = {
 };
 
 export default function TeamCalendarPage() {
+  const router = useRouter();
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>("All");
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [mobileView, setMobileView] = useState<"calendar" | "list">("calendar");
@@ -60,6 +64,9 @@ export default function TeamCalendarPage() {
 
   const filteredRequests = useMemo(() => {
     return requests.filter((req) => {
+      // Only show approved requests in calendar
+      if (req.status !== "approved") return false;
+
       if (
         selectedDepartment &&
         selectedDepartment !== "All" &&
@@ -130,15 +137,7 @@ export default function TeamCalendarPage() {
             onChange={setSelectedTypes}
             style={{ flexGrow: 1 }}
           />
-          <Badge
-            variant="light"
-            color="blue"
-            size="lg"
-            leftSection={<IconUsers size={14} />}
-            style={{ alignSelf: "flex-end", marginBottom: 2 }}
-          >
-            {filteredRequests.length} Absences
-          </Badge>
+
         </Group>
       </Paper>
 
@@ -148,7 +147,6 @@ export default function TeamCalendarPage() {
         </Center>
       ) : (
         <>
-          {/* Mobile view toggle */}
           <Paper
             p="xs"
             radius="md"
@@ -167,7 +165,6 @@ export default function TeamCalendarPage() {
             />
           </Paper>
 
-          {/* Mobile: Calendar view (Schedule) */}
           <Paper
             p="md"
             radius="md"
@@ -179,6 +176,7 @@ export default function TeamCalendarPage() {
             <Schedule
               events={scheduleEvents}
               defaultView="month"
+              onEventClick={(event) => router.push(`/team/leave-requests/${event.id}`)}
               monthViewProps={{
                 firstDayOfWeek: 1,
               }}
@@ -194,7 +192,6 @@ export default function TeamCalendarPage() {
             />
           </Paper>
 
-          {/* Mobile: List view (MobileMonthView) */}
           <Paper
             p="md"
             radius="md"
@@ -203,6 +200,31 @@ export default function TeamCalendarPage() {
             hiddenFrom="md"
             display={mobileView === "list" ? "block" : "none"}
           >
+            <Flex justify="space-between" align="center" mb="sm">
+              <ActionIcon
+                variant="subtle"
+                onClick={() =>
+                  setMobileDate(
+                    dayjs(mobileDate).subtract(1, "month").format("YYYY-MM-DD")
+                  )
+                }
+              >
+                <IconChevronLeft size={20} />
+              </ActionIcon>
+              <Text fw={600} size="md">
+                {dayjs(mobileDate).format("MMMM YYYY")}
+              </Text>
+              <ActionIcon
+                variant="subtle"
+                onClick={() =>
+                  setMobileDate(
+                    dayjs(mobileDate).add(1, "month").format("YYYY-MM-DD")
+                  )
+                }
+              >
+                <IconChevronRight size={20} />
+              </ActionIcon>
+            </Flex>
             <MobileMonthView
               date={mobileDate}
               onDateChange={setMobileDate}
@@ -213,7 +235,6 @@ export default function TeamCalendarPage() {
             />
           </Paper>
 
-          {/* Desktop: Schedule component */}
           <Paper
             p="md"
             radius="md"
@@ -224,6 +245,7 @@ export default function TeamCalendarPage() {
             <Schedule
               events={scheduleEvents}
               defaultView="month"
+              onEventClick={(event) => router.push(`/team/leave-requests/${event.id}`)}
               monthViewProps={{
                 firstDayOfWeek: 1,
               }}

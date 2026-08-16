@@ -27,6 +27,7 @@ import {
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useTeamLeaveRequests } from "@/hooks/useTeamLeaveRequests";
 
@@ -46,6 +47,8 @@ function formatDateRange(startDate: string, endDate: string): string {
 }
 
 export default function TeamLeaveRequestsPage() {
+  const router = useRouter();
+
   const { requests, loading } = useTeamLeaveRequests();
 
   const [statusFilter, setStatusFilter] = useState<string>("Pending");
@@ -59,7 +62,7 @@ export default function TeamLeaveRequestsPage() {
 
   const pendingCount = useMemo(
     () => requests.filter((r) => r.status === "pending").length,
-    [requests]
+    [requests],
   );
 
   return (
@@ -127,7 +130,13 @@ export default function TeamLeaveRequestsPage() {
                   </Table.Thead>
                   <Table.Tbody>
                     {filteredRequests.map((req) => (
-                      <Table.Tr key={req._id}>
+                      <Table.Tr
+                        key={req._id}
+                        onClick={() =>
+                          router.push(`/team/leave-requests/${req._id}`)
+                        }
+                        style={{ cursor: "pointer" }}
+                      >
                         <Table.Td>
                           <Group gap="sm" wrap="nowrap">
                             <Avatar
@@ -141,7 +150,8 @@ export default function TeamLeaveRequestsPage() {
                                 {req.employee.firstName} {req.employee.lastName}
                               </Text>
                               <Text size="xs" c="dimmed">
-                                {req.employee.department?.name ?? "No Department"}
+                                {req.employee.department?.name ??
+                                  "No Department"}
                               </Text>
                             </Box>
                           </Group>
@@ -176,30 +186,57 @@ export default function TeamLeaveRequestsPage() {
                             }
                             size="sm"
                           >
-                            {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+                            {req.status.charAt(0).toUpperCase() +
+                              req.status.slice(1)}
                           </Badge>
                         </Table.Td>
                         <Table.Td>
                           <Group gap={4} wrap="nowrap">
-                            <Tooltip label="Approve">
-                              <ActionIcon variant="light" color="green" radius="xl">
-                                <IconCheck size={16} />
-                              </ActionIcon>
-                            </Tooltip>
-                            <Tooltip label="Reject">
-                              <ActionIcon variant="light" color="red" radius="xl">
-                                <IconX size={16} />
-                              </ActionIcon>
-                            </Tooltip>
+                            {req.status === "pending" && (
+                              <>
+                                <Tooltip label="Approve">
+                                  <ActionIcon
+                                    variant="light"
+                                    color="green"
+                                    radius="xl"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <IconCheck size={16} />
+                                  </ActionIcon>
+                                </Tooltip>
+                                <Tooltip label="Reject">
+                                  <ActionIcon
+                                    variant="light"
+                                    color="red"
+                                    radius="xl"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <IconX size={16} />
+                                  </ActionIcon>
+                                </Tooltip>
+                              </>
+                            )}
                             <Menu position="bottom-end" shadow="md">
                               <Menu.Target>
-                                <ActionIcon variant="subtle" color="gray" radius="xl">
+                                <ActionIcon
+                                  variant="subtle"
+                                  color="gray"
+                                  radius="xl"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
                                   <IconDotsVertical size={16} />
                                 </ActionIcon>
                               </Menu.Target>
                               <Menu.Dropdown>
-                                <Menu.Item>View Details</Menu.Item>
-                                <Menu.Item color="blue">Adjust Balance</Menu.Item>
+                                <Menu.Item
+                                  component={Link}
+                                  href={`/team/leave-requests/${req._id}`}
+                                >
+                                  View Details
+                                </Menu.Item>
+                                <Menu.Item color="blue">
+                                  Adjust Balance
+                                </Menu.Item>
                               </Menu.Dropdown>
                             </Menu>
                           </Group>

@@ -54,38 +54,32 @@ export async function getTeamDashboard() {
             return { success: false, error: "Organization ID is missing" };
         }
 
-        // Upewniamy się, że model Department jest załadowany w pamięci Mongoose
         if (!mongoose.models.Department) {
             void Department;
         }
 
-        // Konwersja orgId na Types.ObjectId dla zgodności z agregacją MongoDB
         const orgObjectId =
             typeof orgId === "string" && mongoose.Types.ObjectId.isValid(orgId)
                 ? new mongoose.Types.ObjectId(orgId)
                 : orgId;
 
-        // Total active employees (including invited)
         const totalEmployees = await Employee.countDocuments({
             organizationId: orgId,
             status: { $in: ["active", "invited"] },
         });
 
-        // Pending leave requests count
         const pendingApprovals = await LeaveRequest.countDocuments({
             organizationId: orgId,
             status: "pending",
         });
 
-        // Get current week boundaries (Monday to Sunday)
         const today = dayjs();
-        const startOfWeek = today.startOf("week").add(1, "day"); // Monday
-        const endOfWeek = today.endOf("week").add(1, "day"); // Sunday
+        const startOfWeek = today.startOf("week").add(1, "day");
+        const endOfWeek = today.endOf("week").add(1, "day");
 
         const startOfWeekStr = startOfWeek.format("YYYY-MM-DD");
         const endOfWeekStr = endOfWeek.format("YYYY-MM-DD");
 
-        // Approved leave requests overlapping with this week
         const onLeaveThisWeek = await LeaveRequest.countDocuments({
             organizationId: orgId,
             status: "approved",
@@ -93,7 +87,6 @@ export async function getTeamDashboard() {
             endDate: { $gte: startOfWeekStr },
         });
 
-        // Active on leave (approved, currently ongoing)
         const activeOnLeave = await LeaveRequest.countDocuments({
             organizationId: orgId,
             status: "approved",
@@ -101,7 +94,6 @@ export async function getTeamDashboard() {
             endDate: { $gte: today.format("YYYY-MM-DD") },
         });
 
-        // Today absences (approved, covering today)
         const todayAbsencesRaw = await LeaveRequest.find({
             organizationId: orgId,
             status: "approved",
@@ -123,7 +115,6 @@ export async function getTeamDashboard() {
             JSON.stringify(todayAbsencesRaw)
         ) as PendingRequestItem[];
 
-        // Pending requests for the table (latest 4)
         const pendingRequestsRaw = await LeaveRequest.find({
             organizationId: orgId,
             status: "pending",
@@ -144,7 +135,6 @@ export async function getTeamDashboard() {
             JSON.stringify(pendingRequestsRaw)
         ) as PendingRequestItem[];
 
-        // Department overview
         const departments = await Employee.aggregate([
             {
                 $match: {
@@ -173,9 +163,7 @@ export async function getTeamDashboard() {
             },
             { $sort: { count: -1 } },
         ]);
-        console.log('departments', departments);
 
-        // For each department, count how many are on approved leave this week
         const departmentOverview: DepartmentOverviewItem[] = [];
         for (const dept of departments) {
             const onLeave = await LeaveRequest.countDocuments({

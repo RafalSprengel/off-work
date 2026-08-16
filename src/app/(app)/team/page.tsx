@@ -33,6 +33,8 @@ import {
     IconAdjustments,
     IconCalendar,
 } from "@tabler/icons-react"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
 import Link from "next/link"
@@ -54,7 +56,9 @@ function formatDateRange(startDate: string, endDate: string): string {
 }
 
 export default function AdminDashboard() {
+    const router = useRouter();
     const { data, loading } = useTeamDashboard()
+    const [hoveredAbsenceId, setHoveredAbsenceId] = useState<string | null>(null);
 
     if (loading) {
         return (
@@ -77,7 +81,6 @@ export default function AdminDashboard() {
 
     return (
         <Stack gap="lg">
-            {/* Top Banner */}
             <Paper p="lg" radius="md" withBorder style={{ background: "var(--mantine-color-dark-8)", color: "var(--mantine-color-white)" }}>
                 <Group justify="space-between" align="center" wrap="wrap">
                     <Box>
@@ -112,7 +115,6 @@ export default function AdminDashboard() {
                 </Group>
             </Paper>
 
-            {/* Company Level Stats */}
             <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="md">
                 <Paper p="md" radius="md" withBorder>
                     <Group justify="space-between" align="center" wrap="nowrap" mb="xs">
@@ -185,7 +187,6 @@ export default function AdminDashboard() {
                 </Paper>
             </SimpleGrid>
 
-            {/* Today Absences Section */}
             <Paper p="lg" radius="md" withBorder>
                 <Group justify="space-between" align="center" mb="md">
                     <Group gap="xs" align="center">
@@ -206,7 +207,23 @@ export default function AdminDashboard() {
                 ) : (
                     <Stack gap="sm">
                         {todayAbsences.map((absence) => (
-                            <Paper key={absence._id} p="md" radius="md" style={{ border: "1px solid var(--mantine-color-gray-3)", backgroundColor: "var(--mantine-color-gray-0)" }}>
+                            <Paper
+                                key={absence._id}
+                                p="md"
+                                radius="md"
+                                onClick={() => router.push(`/team/leave-requests/${absence._id}`)}
+                                onMouseEnter={() => setHoveredAbsenceId(absence._id)}
+                                onMouseLeave={() => setHoveredAbsenceId(null)}
+                                style={{
+                                    border: "1px solid var(--mantine-color-gray-3)",
+                                    backgroundColor:
+                                        hoveredAbsenceId === absence._id
+                                            ? "var(--mantine-color-gray-1)"
+                                            : "var(--mantine-color-gray-0)",
+                                    cursor: "pointer",
+                                    transition: "background-color 100ms ease",
+                                }}
+                            >
                                 <Group justify="space-between" align="center">
                                     <Group gap="md">
                                         <Avatar
@@ -247,9 +264,7 @@ export default function AdminDashboard() {
                 )}
             </Paper>
 
-            {/* Main Content Grid */}
             <Grid gap="md">
-                {/* Pending Leave Requests Table */}
                 <Grid.Col span={{ base: 12, lg: 8 }}>
                     <Paper p="lg" radius="md" withBorder>
                         <Group justify="space-between" mb="md">
@@ -290,7 +305,8 @@ export default function AdminDashboard() {
                                     </Table.Thead>
                                     <Table.Tbody>
                                         {data.pendingRequests.map((req) => (
-                                            <Table.Tr key={req._id}>
+                                            <Table.Tr key={req._id} onClick={() => router.push(`/team/leave-requests/${req._id}`)}
+                                                style={{ cursor: "pointer" }}>
                                                 <Table.Td>
                                                     <Group gap="sm" wrap="nowrap">
                                                         <Avatar
@@ -326,7 +342,7 @@ export default function AdminDashboard() {
                                                     </Text>
                                                 </Table.Td>
                                                 <Table.Td>
-                                                    <Group gap={4} wrap="nowrap">
+                                                    <Group gap={4} wrap="nowrap" onClick={(e) => e.stopPropagation()}>
                                                         <Tooltip label="Approve">
                                                             <ActionIcon variant="light" color="green" radius="xl">
                                                                 <IconCheck size={16} />
@@ -344,7 +360,11 @@ export default function AdminDashboard() {
                                                                 </ActionIcon>
                                                             </Menu.Target>
                                                             <Menu.Dropdown>
-                                                                <Menu.Item>View Details</Menu.Item>
+
+                                                                <Menu.Item
+                                                                    component={Link}
+                                                                    href={`/team/leave-requests/${req._id}`}
+                                                                >View Details</Menu.Item>
                                                                 <Menu.Item color="blue">Adjust Balance</Menu.Item>
                                                             </Menu.Dropdown>
                                                         </Menu>
@@ -359,7 +379,6 @@ export default function AdminDashboard() {
                     </Paper>
                 </Grid.Col>
 
-                {/* Department Absence Summary */}
                 <Grid.Col span={{ base: 12, lg: 4 }}>
                     <Paper p="lg" radius="md" withBorder style={{ height: "100%" }}>
                         <Group justify="space-between" mb="md">

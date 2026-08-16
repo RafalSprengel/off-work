@@ -9,11 +9,11 @@ export interface ILeaveRequest extends Document {
   daysRequested: number;
   status: "pending" | "approved" | "rejected";
   type: "annual" | "sick" | "unpaid" | "other";
+  comment?: string;
   organizationId: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
-
 const LeaveRequestSchema = new Schema<ILeaveRequest>(
   {
     organizationId: {
@@ -50,6 +50,11 @@ const LeaveRequestSchema = new Schema<ILeaveRequest>(
       type: String,
       enum: ["annual", "sick", "unpaid", "other"],
       default: "annual",
+    },
+    comment: {
+      type: String,
+      trim: true,
+      default: "",
     },
   },
   { timestamps: true },
