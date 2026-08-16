@@ -1,41 +1,28 @@
 "use server";
 
-interface GovUkBankHolidayEvent {
-    title: string;
-    date: string;
-    notes: string;
-    bunting: boolean;
-}
+import dbConnect from "@/db/connection";
+import ClosureDay from "@/db/models/ClosureDay";
+import { getOrganizationId } from "@/utils/getOrganizationId";
 
-interface GovUkBankHolidaysResponse {
-    "england-and-wales": {
-        division: string;
-        events: GovUkBankHolidayEvent[];
-    };
-    scotland: {
-        division: string;
-        events: GovUkBankHolidayEvent[];
-    };
-    "northern-ireland": {
-        division: string;
-        events: GovUkBankHolidayEvent[];
-    };
-}
-
-export async function getUkBankHolidays(): Promise<{ success: boolean; data: string[]; error: string | null }> {
+export async function getUkBankHolidays(): Promise<{
+    success: boolean;
+    data: string[];
+    error: string | null;
+}> {
     try {
-        const response = await fetch("https://www.gov.uk/bank-holidays.json", {
-            next: { revalidate: 86400 },
-        });
+        await dbConnect();
+        const organizationId = await getOrganizationId();
 
-        if (!response.ok) {
-            throw new Error("Failed to fetch bank holidays from gov.uk");
-        }
+        const closureDays = await ClosureDay.find({
+            organizationId,
+            type: "bank_holiday",
+            enabled: true,
+        })
+            .select("date")
+            .sort({ date: 1 })
+            .lean();
 
-        const data: GovUkBankHolidaysResponse = await response.json();
-
-        const englandAndWalesEvents = data["england-and-wales"]?.events || [];
-        const holidayDates = englandAndWalesEvents.map((event) => event.date);
+        const holidayDates = closureDays.map((day) => day.date);
 
         return {
             success: true,

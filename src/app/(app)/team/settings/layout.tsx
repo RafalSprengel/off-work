@@ -14,6 +14,7 @@ import {
     IconBuilding,
     IconCalendarOff,
     IconCheck,
+    IconLock,
     IconPlug,
     IconSettings,
 } from "@tabler/icons-react";
@@ -84,6 +85,13 @@ export default function SettingsLayout({
                             style={{ whiteSpace: "nowrap" }}
                         >
                             Public Holidays
+                        </Tabs.Tab>
+                        <Tabs.Tab
+                            value="/team/settings/closures"
+                            leftSection={<IconLock size={16} />}
+                            style={{ whiteSpace: "nowrap" }}
+                        >
+                            Factory Closures
                         </Tabs.Tab>
                         <Tabs.Tab
                             value="/team/settings/integrations"

@@ -6,7 +6,7 @@ import { getOrganizationId } from "@/utils/getOrganizationId";
 
 export interface ClosureDayItem {
     id: string;
-    date: string;
+    date: string; // "YYYY-MM-DD"
     title: string;
     type: ClosureDayType;
     region: string | null;
@@ -36,14 +36,14 @@ export async function getClosureDays(
         }
 
         if (fromDate) {
-            filter.date = { $gte: new Date(fromDate) };
+            filter.date = { $gte: fromDate };
         }
 
         const closureDays = await ClosureDay.find(filter).sort({ date: 1 }).lean();
 
         const data: ClosureDayItem[] = closureDays.map((day) => ({
             id: day._id.toString(),
-            date: day.date.toISOString().split("T")[0],
+            date: day.date, // jest string "YYYY-MM-DD"
             title: day.title,
             type: day.type,
             region: day.region,

@@ -4,6 +4,7 @@ import dbConnect from "@/db/connection";
 import ClosureDay, { type UkBankHolidayRegion } from "@/db/models/ClosureDay";
 import { revalidatePath } from "next/cache";
 import { getOrganizationId } from "@/utils/getOrganizationId";
+import mongoose from "mongoose";
 
 interface GovUkBankHolidayEvent {
     title: string;
@@ -25,7 +26,9 @@ export interface ImportUkBankHolidaysResult {
     error: string | null;
 }
 
-export async function importUkBankHolidays(region: UkBankHolidayRegion): Promise<ImportUkBankHolidaysResult> {
+export async function importUkBankHolidays(
+    region: UkBankHolidayRegion
+): Promise<ImportUkBankHolidaysResult> {
     try {
         const response = await fetch("https://www.gov.uk/bank-holidays.json", {
             next: { revalidate: 86400 },
@@ -48,20 +51,20 @@ export async function importUkBankHolidays(region: UkBankHolidayRegion): Promise
         }
 
         await dbConnect();
-        const organizationId = await getOrganizationId();
+        const orgObjectId = new mongoose.Types.ObjectId(await getOrganizationId());
 
         const operations = events.map((event) => ({
             updateOne: {
                 filter: {
-                    organizationId,
+                    organizationId: orgObjectId,
                     type: "bank_holiday" as const,
-                    date: new Date(event.date),
+                    date: event.date,
                 },
                 update: {
                     $setOnInsert: {
-                        organizationId,
+                        organizationId: orgObjectId,
                         type: "bank_holiday" as const,
-                        date: new Date(event.date),
+                        date: event.date,
                         title: event.title,
                         region,
                         enabled: true,
@@ -74,6 +77,7 @@ export async function importUkBankHolidays(region: UkBankHolidayRegion): Promise
         }));
 
         const result = await ClosureDay.bulkWrite(operations, { ordered: false });
+
         const imported = result.upsertedCount ?? 0;
         const skipped = events.length - imported;
 
@@ -87,7 +91,6 @@ export async function importUkBankHolidays(region: UkBankHolidayRegion): Promise
         };
     } catch (error: unknown) {
         console.error("Error importing UK bank holidays:", error);
-
         return {
             success: false,
             imported: 0,

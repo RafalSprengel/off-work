@@ -4,7 +4,7 @@ export type ClosureDayType = "bank_holiday" | "company_closure" | "blackout_peri
 export type UkBankHolidayRegion = "england-and-wales" | "scotland" | "northern-ireland";
 
 export interface IClosureDay extends Document {
-  date: Date;
+  date: string;
   title: string;
   type: ClosureDayType;
   region: UkBankHolidayRegion | null;
@@ -19,8 +19,9 @@ export interface IClosureDay extends Document {
 const ClosureDaySchema = new Schema<IClosureDay>(
   {
     date: {
-      type: Date,
+      type: String,
       required: true,
+      match: [/^\d{4}-\d{2}-\d{2}$/, "Invalid date format, expected YYYY-MM-DD"],
     },
     title: {
       type: String,
@@ -55,11 +56,10 @@ const ClosureDaySchema = new Schema<IClosureDay>(
       required: true,
     },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 ClosureDaySchema.index({ organizationId: 1, type: 1, date: 1 }, { unique: true });
-
 ClosureDaySchema.index({ organizationId: 1, enabled: 1 });
 
 const ClosureDay: Model<IClosureDay> =

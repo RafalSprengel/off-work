@@ -5,26 +5,15 @@ import LeaveRequest from "@/db/models/LeaveRequest";
 import dayjs from "dayjs";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import { getOrganizationId } from "@/utils/getOrganizationId";
+import { getNonWorkingDays } from "@/utils/nonWorkingDays";
 import { CreateLeaveRequestInput } from "@/types/leaveRequest";
 import { getCurrentEmployeeId } from "@/actions/shared/getCurrentEmployeeId";
 import mongoose from "mongoose";
 
 dayjs.extend(isSameOrBefore);
 
-async function getBankHolidays(year: number): Promise<string[]> {
-    try {
-        const res = await fetch("https://gov.uk/bank-holidays.json");
-        const data = await res.json();
-        const englandHolidays = data["england-and-wales"].events;
-        return englandHolidays.map((event: { date: string }) => event.date);
-    } catch (error) {
-        return [];
-    }
-}
-
 export async function createLeaveRequest(data: CreateLeaveRequestInput) {
     await connectDB();
-
     const { startDate, endDate } = data;
 
     const start = dayjs(startDate, "YYYY-MM-DD");
@@ -34,22 +23,25 @@ export async function createLeaveRequest(data: CreateLeaveRequestInput) {
         return { error: "Invalid date range" };
     }
 
-    const bankHolidays = await getBankHolidays(start.year());
+    const organizationId = await getOrganizationId();
+
+    const nonWorkingDays = await getNonWorkingDays(
+        organizationId,
+        start.format("YYYY-MM-DD"),
+        end.format("YYYY-MM-DD")
+    );
 
     let workingDays = 0;
     let current = start;
-
     while (current.isSameOrBefore(end, "day")) {
         const dayOfWeek = current.day();
         const formattedDate = current.format("YYYY-MM-DD");
-
         const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-        const isBankHoliday = bankHolidays.includes(formattedDate);
+        const isNonWorking = nonWorkingDays.has(formattedDate);
 
-        if (!isWeekend && !isBankHoliday) {
+        if (!isWeekend && !isNonWorking) {
             workingDays++;
         }
-
         current = current.add(1, "day");
     }
 
@@ -57,7 +49,6 @@ export async function createLeaveRequest(data: CreateLeaveRequestInput) {
         return { error: "Selected range contains no working days" };
     }
 
-    const organizationId = await getOrganizationId();
     const employee = await getCurrentEmployeeId();
 
     const existingConflict = await LeaveRequest.findOne({

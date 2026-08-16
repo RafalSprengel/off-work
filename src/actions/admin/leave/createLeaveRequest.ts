@@ -5,21 +5,11 @@ import LeaveRequest from "@/db/models/LeaveRequest";
 import dayjs from "dayjs";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import { getOrganizationId } from "@/utils/getOrganizationId";
+import { getNonWorkingDays } from "@/utils/nonWorkingDays";
 import { revalidatePath } from "next/cache";
 import { CreateLeaveRequestParams } from "@/types/leaveRequest";
 
 dayjs.extend(isSameOrBefore);
-
-async function getBankHolidays(year: number): Promise<string[]> {
-    try {
-        const res = await fetch("https://gov.uk/bank-holidays.json");
-        const data = await res.json();
-        const englandHolidays = data["england-and-wales"].events;
-        return englandHolidays.map((event: { date: string }) => event.date);
-    } catch (error) {
-        return [];
-    }
-}
 
 export async function createLeaveRequest(data: CreateLeaveRequestParams) {
     try {
@@ -46,21 +36,23 @@ export async function createLeaveRequest(data: CreateLeaveRequestParams) {
             return { success: false, error: "Invalid date range selected" };
         }
 
-        const bankHolidays = await getBankHolidays(start.year());
+        const nonWorkingDays = await getNonWorkingDays(
+            orgId,
+            start.format("YYYY-MM-DD"),
+            end.format("YYYY-MM-DD")
+        );
+
         let workingDays = 0;
         let current = start;
-
         while (current.isSameOrBefore(end, "day")) {
             const dayOfWeek = current.day();
             const formattedDate = current.format("YYYY-MM-DD");
-
             const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-            const isBankHoliday = bankHolidays.includes(formattedDate);
+            const isNonWorking = nonWorkingDays.has(formattedDate);
 
-            if (!isWeekend && !isBankHoliday) {
+            if (!isWeekend && !isNonWorking) {
                 workingDays++;
             }
-
             current = current.add(1, "day");
         }
 
@@ -69,7 +61,10 @@ export async function createLeaveRequest(data: CreateLeaveRequestParams) {
         if (data.endHalfDay) daysRequested -= 0.5;
 
         if (daysRequested <= 0) {
-            return { success: false, error: "Selected range contains no working days" };
+            return {
+                success: false,
+                error: "Selected range contains no working days",
+            };
         }
 
         const newLeaveRequest = await LeaveRequest.create({
@@ -94,7 +89,9 @@ export async function createLeaveRequest(data: CreateLeaveRequestParams) {
         console.error("Error creating leave request as admin:", error);
         return {
             success: false,
-            error: error instanceof Error ? error.message : "Failed to create leave request",
+            error: error instanceof Error
+                ? error.message
+                : "Failed to create leave request",
         };
     }
 }
