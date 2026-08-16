@@ -40,7 +40,7 @@ export default function FactoryClosuresPage() {
     // Responsywne wartości
     const isMobile = useMatches({ base: true, sm: false });
     const dayHeight = useMatches({ base: 46, sm: 54 });
-    const calendarSize = useMatches<"sm" | "lg">({ base: "md", sm: "lg" });
+    const calendarSize = useMatches<"md" | "lg">({ base: "md", sm: "lg" });
     const titleFontSize = useMatches({ base: "8px", sm: "10px" });
     const maxWidth = useMatches({ base: "100%", sm: 800 });
 
