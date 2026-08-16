@@ -34,7 +34,7 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning>
         <MantineProvider theme={theme} defaultColorScheme="auto">
-          <ModalsProvider>
+          <ModalsProvider modalProps={{ centered: true }}>
             <Notifications />
             {children}
           </ModalsProvider>
