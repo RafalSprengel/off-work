@@ -170,7 +170,7 @@ export default function FactoryClosuresPage() {
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    justifyContent: "flex-start",
+                    justifyContent: "center",
                     width: "100%",
                     height: "100%",
                     paddingTop: 2,
