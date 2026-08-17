@@ -6,6 +6,7 @@ import {
     Badge,
     Button,
     Card,
+    Flex,
     Group,
     Loader,
     Modal,
@@ -32,17 +33,15 @@ export default function FactoryClosuresPage() {
     const [bankHolidays, setBankHolidays] = useState<ClosureDayItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [modalOpened, setModalOpened] = useState(false);
-    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [title, setTitle] = useState("");
     const [saving, setSaving] = useState(false);
     const [isPending, startTransition] = useTransition();
 
-    // Responsywne wartości
     const isMobile = useMatches({ base: true, sm: false });
-    const dayHeight = useMatches({ base: 46, sm: 54 });
-    const calendarSize = useMatches<"md" | "lg">({ base: "md", sm: "lg" });
-    const titleFontSize = useMatches({ base: "8px", sm: "10px" });
-    const maxWidth = useMatches({ base: "100%", sm: 800 });
+    const calendarSize = useMatches<"sm" | "md">({ base: "sm", md: "md" });
+    const containerMaxWidth = useMatches({ base: "100%", sm: 800 });
+    const cardPadding = useMatches({ base: "xs", sm: "md" });
 
     const loadData = async () => {
         setLoading(true);
@@ -76,12 +75,15 @@ export default function FactoryClosuresPage() {
     }, [closures]);
 
     const parseDate = (date: Date | string) => dayjs(date);
+
     const isWeekend = (date: Date | string) => {
         const d = parseDate(date).day();
         return d === 0 || d === 6;
     };
+
     const isBankHoliday = (date: Date | string) =>
         bankHolidaysMap.has(parseDate(date).format("YYYY-MM-DD"));
+
     const isClosure = (date: Date | string) =>
         closuresMap.has(parseDate(date).format("YYYY-MM-DD"));
 
@@ -93,17 +95,26 @@ export default function FactoryClosuresPage() {
 
     const handleSave = async () => {
         if (!selectedDate) {
-            notifications.show({ color: "red", title: "Error", message: "Please select a date." });
+            notifications.show({
+                color: "red",
+                title: "Error",
+                message: "Please select a date.",
+            });
             return;
         }
         if (!title.trim()) {
-            notifications.show({ color: "red", title: "Error", message: "Please enter a title." });
+            notifications.show({
+                color: "red",
+                title: "Error",
+                message: "Please enter a title.",
+            });
             return;
         }
 
         setSaving(true);
+        const formatted = dayjs(selectedDate).format("YYYY-MM-DD");
         const res = await createClosureDay({
-            date: dayjs(selectedDate).format("YYYY-MM-DD"),
+            date: formatted,
             title: title.trim(),
         });
         setSaving(false);
@@ -117,7 +128,11 @@ export default function FactoryClosuresPage() {
             setModalOpened(false);
             await loadData();
         } else {
-            notifications.show({ color: "red", title: "Failed", message: res.error ?? "Unknown error" });
+            notifications.show({
+                color: "red",
+                title: "Failed",
+                message: res.error ?? "Unknown error",
+            });
         }
     };
 
@@ -130,7 +145,11 @@ export default function FactoryClosuresPage() {
                 setClosures((prev) =>
                     prev.map((c) => (c.id === id ? { ...c, enabled: !enabled } : c))
                 );
-                notifications.show({ color: "red", title: "Failed", message: res.error ?? "Unknown error" });
+                notifications.show({
+                    color: "red",
+                    title: "Failed",
+                    message: res.error ?? "Unknown error",
+                });
             }
         });
     };
@@ -159,59 +178,126 @@ export default function FactoryClosuresPage() {
     };
 
     const renderDayCell = (date: Date | string) => {
-        const formattedDate = parseDate(date).format("YYYY-MM-DD");
+        const dayObj = parseDate(date);
+        const dayNum = dayObj.date();
+        const formattedDate = dayObj.format("YYYY-MM-DD");
         const holidayTitle = bankHolidaysMap.get(formattedDate);
         const closureTitle = closuresMap.get(formattedDate);
         const displayTitle = holidayTitle || closureTitle;
+        const isHol = !!holidayTitle;
+        const isClo = !!closureTitle;
 
         return (
-            <div
-                style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: "100%",
-                    height: "100%",
-                    paddingTop: 2,
-                    paddingBottom: 1,
-                    boxSizing: "border-box",
-                    overflow: "hidden",
-                }}
+            <Flex
+                direction="column"
+                align="center"
+                justify="center"
+                style={{ height: "100%", width: "100%" }}
             >
-                <Text size="xs" fw={600} lh={1.2}>
-                    {parseDate(date).date()}
+                <Text size="xs" lh={1} fw={isHol || isClo ? 700 : 400}>
+                    {dayNum}
                 </Text>
-                {displayTitle && (
+                {(isHol || isClo) && displayTitle && (
                     <Text
+                        size="7px"
+                        lh={1.1}
+                        ta="center"
+                        mt={2}
                         style={{
-                            fontSize: titleFontSize,
-                            lineHeight: 1.1,
-                            textAlign: "center",
-                            marginTop: 1,
-                            width: "100%",
+                            whiteSpace: "nowrap",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
+                            width: "100%",
                             paddingLeft: 1,
                             paddingRight: 1,
-                            color: holidayTitle
-                                ? "var(--mantine-color-blue-8)"
-                                : "var(--mantine-color-orange-8)",
+                            color: isHol
+                                ? "var(--mantine-color-green-9)"
+                                : "var(--mantine-color-orange-9)",
                         }}
                         title={displayTitle}
                     >
                         {displayTitle}
                     </Text>
                 )}
-            </div>
+            </Flex>
         );
     };
 
+    const getDayPropsMain = (date: string) => {
+        const hol = isBankHoliday(date);
+        const clo = isClosure(date);
+
+        if (hol) {
+            return {
+                disabled: isWeekend(date),
+                style: {
+                    backgroundColor: "var(--mantine-color-green-1)",
+                    color: "var(--mantine-color-green-9)",
+                    fontWeight: "bold",
+                    borderRadius: "8px",
+                },
+            };
+        }
+
+        if (clo) {
+            return {
+                disabled: isWeekend(date),
+                style: {
+                    backgroundColor: "var(--mantine-color-orange-1)",
+                    color: "var(--mantine-color-orange-9)",
+                    fontWeight: "bold",
+                    borderRadius: "8px",
+                },
+            };
+        }
+
+        return {
+            disabled: isWeekend(date),
+        };
+    };
+
+    const getDayPropsModal = (date: string) => {
+        const hol = isBankHoliday(date);
+        const clo = isClosure(date);
+        const weekend = isWeekend(date);
+
+        if (hol) {
+            return {
+                disabled: true,
+                style: {
+                    backgroundColor: "var(--mantine-color-green-1)",
+                    color: "var(--mantine-color-green-9)",
+                    fontWeight: "bold",
+                    borderRadius: "8px",
+                },
+            };
+        }
+
+        if (clo) {
+            return {
+                disabled: true,
+                style: {
+                    backgroundColor: "var(--mantine-color-orange-1)",
+                    color: "var(--mantine-color-orange-9)",
+                    fontWeight: "bold",
+                    borderRadius: "8px",
+                },
+            };
+        }
+
+        return {
+            disabled: weekend,
+        };
+    };
+
     return (
-        <Stack gap="md" style={{ maxWidth }}>
-            {/* Header - na mobile układa się w kolumnę */}
-            <Group justify="space-between" align="center" wrap={isMobile ? "wrap" : "nowrap"} gap="sm">
+        <Stack gap="md" style={{ maxWidth: containerMaxWidth }}>
+            <Group
+                justify="space-between"
+                align="center"
+                wrap={isMobile ? "wrap" : "nowrap"}
+                gap="sm"
+            >
                 <Title order={isMobile ? 5 : 4} m={0}>
                     Factory Closure Days
                 </Title>
@@ -225,71 +311,53 @@ export default function FactoryClosuresPage() {
                 </Button>
             </Group>
 
-            {/* Kalendarz */}
-            <Card p={isMobile ? "xs" : "md"} radius="sm" withBorder >
-                <Text size="sm" fw={500} mb="xs">
-                    Closure Calendar
-                </Text>
-                <div style={{ overflowX: "auto", overflowY: "hidden" }}>
-                    <Group justify="center" wrap="nowrap">
-                        <DatePicker
-                            value={null}
-                            onChange={() => { }}
-                            size={calendarSize}
-                            styles={{
-                                day: {
-                                    height: dayHeight,
-                                },
-                            }}
-                            getDayProps={(date) => ({
-                                disabled: isWeekend(date),
-                                style: {
-                                    backgroundColor: isBankHoliday(date)
-                                        ? "var(--mantine-color-blue-1)"
-                                        : isClosure(date)
-                                            ? "var(--mantine-color-orange-1)"
-                                            : undefined,
-                                },
-                            })}
-                            renderDay={renderDayCell}
-                        />
-                    </Group>
-                </div>
+            <Card p={cardPadding} radius="sm" withBorder style={{ overflow: "hidden" }}>
+                <Stack align="center">
+                    <Text size="sm" fw={500} mb="xs">
+                        Closure Calendar
+                    </Text>
 
-                {/* Legenda */}
-                <Group gap="sm" mt="xs" wrap="wrap" justify="center">
-                    <Group gap={4} wrap="nowrap">
-                        <div
-                            style={{
-                                width: 12,
-                                height: 12,
-                                borderRadius: 3,
-                                backgroundColor: "var(--mantine-color-blue-3)",
-                                flexShrink: 0,
-                            }}
-                        />
-                        <Text size="xs" c="dimmed">
-                            Bank Holiday
-                        </Text>
+                    <DatePicker
+                        value={null}
+                        onChange={() => { }}
+                        size={calendarSize}
+                        getDayProps={getDayPropsMain}
+                        renderDay={renderDayCell}
+                    />
+
+                    <Group gap="sm" mt="xs" wrap="wrap" justify="center">
+                        <Group gap={4} wrap="nowrap">
+                            <div
+                                style={{
+                                    width: 12,
+                                    height: 12,
+                                    borderRadius: 3,
+                                    backgroundColor: "var(--mantine-color-green-3)",
+                                    flexShrink: 0,
+                                }}
+                            />
+                            <Text size="xs" c="dimmed">
+                                Bank Holiday
+                            </Text>
+                        </Group>
+                        <Group gap={4} wrap="nowrap">
+                            <div
+                                style={{
+                                    width: 12,
+                                    height: 12,
+                                    borderRadius: 3,
+                                    backgroundColor: "var(--mantine-color-orange-3)",
+                                    flexShrink: 0,
+                                }}
+                            />
+                            <Text size="xs" c="dimmed">
+                                Factory Closure
+                            </Text>
+                        </Group>
                     </Group>
-                    <Group gap={4} wrap="nowrap">
-                        <div
-                            style={{
-                                width: 12,
-                                height: 12,
-                                borderRadius: 3,
-                                backgroundColor: "var(--mantine-color-orange-3)",
-                                flexShrink: 0,
-                            }}
-                        />
-                        <Text size="xs" c="dimmed">
-                            Factory Closure
-                        </Text>
-                    </Group>
-                </Group>
+                </Stack>
             </Card>
 
-            {/* Lista closure days */}
             {loading ? (
                 <Group justify="center" py="xl">
                     <Loader size="sm" />
@@ -321,7 +389,9 @@ export default function FactoryClosuresPage() {
                                         )}
                                     </Group>
                                     <Text size="xs" c="dimmed" truncate>
-                                        {dayjs(c.date).format(isMobile ? "D MMM YYYY (ddd)" : "D MMMM YYYY (dddd)")}
+                                        {dayjs(c.date).format(
+                                            isMobile ? "D MMM YYYY (ddd)" : "D MMMM YYYY (dddd)"
+                                        )}
                                     </Text>
                                 </div>
                                 <Group gap="xs" wrap="nowrap" style={{ flexShrink: 0 }}>
@@ -345,45 +415,63 @@ export default function FactoryClosuresPage() {
                 </Stack>
             )}
 
-            {/* Modal dodawania */}
             <Modal
                 opened={modalOpened}
                 onClose={() => setModalOpened(false)}
                 title="Add Factory Closure Day"
                 centered
+                padding={isMobile ? "sm" : "lg"}
+                radius={isMobile ? 0 : "md"}
                 fullScreen={isMobile}
-                transitionProps={{ transition: isMobile ? "slide-up" : "fade" }}
+                transitionProps={{
+                    transition: isMobile ? "slide-up" : "fade",
+                }}
             >
-                <Stack gap="md">
-                    <div style={{ overflowX: "auto" }}>
-                        <Group justify="center" wrap="nowrap">
-                            <DatePicker
-                                value={selectedDate}
-                                onChange={setSelectedDate}
-                                size="sm"
-                                styles={{
-                                    day: {
-                                        height: 42,
-                                    },
-                                }}
-                                getDayProps={(date) => ({
-                                    disabled: isWeekend(date) || isBankHoliday(date) || isClosure(date),
-                                })}
-                                renderDay={renderDayCell}
-                            />
-                        </Group>
-                    </div>
+                <Stack gap="md" align="stretch">
+                    <Flex justify="center" align="center" style={{ width: "100%" }}>
+                        <DatePicker
+                            value={selectedDate}
+                            onChange={setSelectedDate}
+                            size={isMobile ? "sm" : "md"}
+                            getDayProps={getDayPropsModal}
+                            renderDay={renderDayCell}
+                        />
+                    </Flex>
+
+                    {selectedDate && (
+                        <Text size="xs" c="blue" ta="center" fw={500}>
+                            Selected: {dayjs(selectedDate).format("D MMMM YYYY")}
+                        </Text>
+                    )}
+
                     <TextInput
                         label="Closure Title"
                         placeholder="e.g. Annual maintenance shutdown"
                         value={title}
                         onChange={(e) => setTitle(e.currentTarget.value)}
+                        size={isMobile ? "sm" : "md"}
+                        required
                     />
-                    <Group justify="flex-end" gap="xs">
-                        <Button variant="light" onClick={() => setModalOpened(false)} disabled={saving}>
+
+                    <Group
+                        justify="flex-end"
+                        gap="xs"
+                        mt="xs"
+                        wrap={isMobile ? "wrap-reverse" : "nowrap"}
+                    >
+                        <Button
+                            variant="light"
+                            onClick={() => setModalOpened(false)}
+                            disabled={saving}
+                            fullWidth={isMobile}
+                        >
                             Cancel
                         </Button>
-                        <Button onClick={handleSave} loading={saving}>
+                        <Button
+                            onClick={handleSave}
+                            loading={saving}
+                            fullWidth={isMobile}
+                        >
                             Add Closure Day
                         </Button>
                     </Group>
