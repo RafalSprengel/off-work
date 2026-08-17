@@ -39,7 +39,7 @@ export default function FactoryClosuresPage() {
     const [isPending, startTransition] = useTransition();
 
     const isMobile = useMatches({ base: true, sm: false });
-    const calendarSize = useMatches<"sm" | "md">({ base: "sm", md: "md" });
+    const calendarSize = useMatches<"sm" | "md">({ base: "md", md: "md" });
     const containerMaxWidth = useMatches({ base: "100%", sm: 800 });
     const cardPadding = useMatches({ base: "xs", sm: "md" });
 
