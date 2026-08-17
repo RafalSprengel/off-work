@@ -2,7 +2,7 @@
 
 import { createLeaveRequest } from "@/actions/admin/leave/createLeaveRequest";
 import { useEmployees } from "@/hooks/useEmployees";
-import { useUkBankHolidays } from "@/hooks/useUkBankHolidays";
+import { useNonWorkingDays } from "@/hooks/useNonWorkingDays";
 import {
   Button,
   Container,
@@ -28,9 +28,8 @@ import "@mantine/dates/styles.css";
 export default function NewLeaveRequestAsAdminPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
-
   const { employees, loading: isLoadingEmployees } = useEmployees();
-  const { bankHolidays } = useUkBankHolidays();
+  const { bankHolidaysMap, closuresMap, loading: isLoadingNonWorking } = useNonWorkingDays();
 
   const form = useForm({
     initialValues: {
@@ -53,6 +52,7 @@ export default function NewLeaveRequestAsAdminPage() {
 
   const [startDate, endDate] = form.values.dateRange;
 
+  // ✅ Liczenie dni roboczych z wykluczeniem bank holidays I closure days
   const calculateWorkingDays = (start: Date, end: Date): number => {
     let count = 0;
     let current = dayjs(start);
@@ -61,9 +61,10 @@ export default function NewLeaveRequestAsAdminPage() {
     while (current.isBefore(last) || current.isSame(last, "day")) {
       const dayOfWeek = current.day();
       const formattedDate = current.format("YYYY-MM-DD");
-      const isBankHoliday = bankHolidays.includes(formattedDate);
+      const isNonWorking =
+        bankHolidaysMap.has(formattedDate) || closuresMap.has(formattedDate);
 
-      if (dayOfWeek !== 0 && dayOfWeek !== 6 && !isBankHoliday) {
+      if (dayOfWeek !== 0 && dayOfWeek !== 6 && !isNonWorking) {
         count++;
       }
       current = current.add(1, "day");
@@ -72,7 +73,8 @@ export default function NewLeaveRequestAsAdminPage() {
     return count;
   };
 
-  const daysRequested = startDate && endDate ? calculateWorkingDays(startDate, endDate) : 0;
+  const daysRequested =
+    startDate && endDate ? calculateWorkingDays(startDate, endDate) : 0;
 
   const handleSubmit = async (values: typeof form.values) => {
     const [start, end] = values.dateRange;
@@ -108,7 +110,11 @@ export default function NewLeaveRequestAsAdminPage() {
   };
 
   const selectData = employees.map((emp) => {
-    const deptName = typeof emp.department === "object" ? emp.department?.name : emp.department;
+    const deptName =
+      typeof emp.department === "object"
+        ? emp.department?.name
+        : emp.department;
+
     return {
       value: emp._id,
       label: `${emp.firstName} ${emp.lastName}`,
@@ -116,6 +122,8 @@ export default function NewLeaveRequestAsAdminPage() {
       email: emp.email,
     };
   });
+
+  const isDisabled = isLoadingEmployees || isLoadingNonWorking || submitting;
 
   return (
     <Container size="sm" py="lg" px={{ base: "xs", sm: "md" }}>
@@ -126,14 +134,20 @@ export default function NewLeaveRequestAsAdminPage() {
             <Stack gap="md">
               <Select
                 label="Employee"
-                placeholder={isLoadingEmployees ? "Loading employees..." : "Select employee"}
+                placeholder={
+                  isLoadingEmployees
+                    ? "Loading employees..."
+                    : "Select employee"
+                }
                 data={selectData}
                 searchable
-                disabled={isLoadingEmployees || submitting}
+                disabled={isDisabled}
                 nothingFoundMessage="No employees found"
                 {...form.getInputProps("employee")}
                 renderOption={({ option }) => {
-                  const emp = selectData.find((e) => e.value === option.value);
+                  const emp = selectData.find(
+                    (e) => e.value === option.value
+                  );
                   return (
                     <div>
                       <Text size="sm" fw={600}>
@@ -157,16 +171,34 @@ export default function NewLeaveRequestAsAdminPage() {
                 leftSection={<IconCalendar size={18} />}
                 valueFormat="YYYY-MM-DD"
                 clearable
-                disabled={submitting}
+                disabled={isDisabled}
                 getDayProps={(date) => {
-                  const formattedDate = dayjs(date).format("YYYY-MM-DD");
-                  const isBankHoliday = bankHolidays.includes(formattedDate);
+                  const formattedDate = dayjs(date).format(
+                    "YYYY-MM-DD"
+                  );
+                  const isBankHoliday =
+                    bankHolidaysMap.has(formattedDate);
+                  const isClosure =
+                    closuresMap.has(formattedDate);
 
                   if (isBankHoliday) {
                     return {
                       style: {
-                        backgroundColor: "var(--mantine-color-green-1)",
+                        backgroundColor:
+                          "var(--mantine-color-green-1)",
                         color: "var(--mantine-color-green-9)",
+                        fontWeight: "bold",
+                        borderRadius: "8px",
+                      },
+                    };
+                  }
+
+                  if (isClosure) {
+                    return {
+                      style: {
+                        backgroundColor:
+                          "var(--mantine-color-orange-1)",
+                        color: "var(--mantine-color-orange-9)",
                         fontWeight: "bold",
                         borderRadius: "8px",
                       },
@@ -178,17 +210,53 @@ export default function NewLeaveRequestAsAdminPage() {
                 renderDay={(date) => {
                   const dayObj = dayjs(date);
                   const dayNum = dayObj.date();
-                  const formattedDate = dayObj.format("YYYY-MM-DD");
-                  const isBankHoliday = bankHolidays.includes(formattedDate);
+                  const formattedDate = dayObj.format(
+                    "YYYY-MM-DD"
+                  );
+                  const isBankHoliday =
+                    bankHolidaysMap.has(formattedDate);
+                  const isClosure =
+                    closuresMap.has(formattedDate);
+                  const isHighlighted =
+                    isBankHoliday || isClosure;
+                  const title = isBankHoliday
+                    ? bankHolidaysMap.get(formattedDate)
+                    : closuresMap.get(formattedDate);
 
                   return (
-                    <Flex direction="column" align="center" justify="center" style={{ height: "100%", width: "100%" }}>
-                      <Text size="xs" lh={1} fw={isBankHoliday ? 700 : 400}>
+                    <Flex
+                      direction="column"
+                      align="center"
+                      justify="center"
+                      style={{
+                        height: "100%",
+                        width: "100%",
+                      }}
+                    >
+                      <Text
+                        size="xs"
+                        lh={1}
+                        fw={isHighlighted ? 700 : 400}
+                      >
                         {dayNum}
                       </Text>
-                      {isBankHoliday && (
-                        <Text size="7px" lh={1.1} ta="center" mt={2} style={{ whiteSpace: "pre-line" }}>
-                          Bank{"\n"}Holiday
+                      {title && (
+                        <Text
+                          size="7px"
+                          lh={1.1}
+                          ta="center"
+                          mt={2}
+                          style={{
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            maxWidth: "100%",
+                            paddingLeft: 1,
+                            paddingRight: 1,
+                          }}
+                          title={title}
+                        >
+                          {title}
                         </Text>
                       )}
                     </Flex>
@@ -201,19 +269,28 @@ export default function NewLeaveRequestAsAdminPage() {
                 <Checkbox
                   label="Start day is half-day"
                   description="First day counts as 0.5 day"
-                  {...form.getInputProps("startHalfDay", { type: "checkbox" })}
+                  {...form.getInputProps("startHalfDay", {
+                    type: "checkbox",
+                  })}
                   disabled={submitting}
                 />
                 <Checkbox
                   label="End day is half-day"
                   description="Last day counts as 0.5 day"
-                  {...form.getInputProps("endHalfDay", { type: "checkbox" })}
+                  {...form.getInputProps("endHalfDay", {
+                    type: "checkbox",
+                  })}
                   disabled={submitting}
                 />
               </Group>
 
               {daysRequested > 0 && (
-                <Paper p="sm" radius="sm" withBorder bg="var(--mantine-color-gray-0)">
+                <Paper
+                  p="sm"
+                  radius="sm"
+                  withBorder
+                  bg="var(--mantine-color-gray-0)"
+                >
                   <Flex justify="space-between" align="center">
                     <Text size="sm" fw={500}>
                       Total Days Requested:
@@ -221,9 +298,12 @@ export default function NewLeaveRequestAsAdminPage() {
                     <Text size="sm" fw={700} c="blue">
                       {(() => {
                         let days = daysRequested;
-                        if (form.values.startHalfDay) days -= 0.5;
-                        if (form.values.endHalfDay) days -= 0.5;
-                        return `${days} ${days === 1 ? "day" : "days"}`;
+                        if (form.values.startHalfDay)
+                          days -= 0.5;
+                        if (form.values.endHalfDay)
+                          days -= 0.5;
+                        return `${days} ${days === 1 ? "day" : "days"
+                          }`;
                       })()}
                     </Text>
                   </Flex>
@@ -239,13 +319,23 @@ export default function NewLeaveRequestAsAdminPage() {
                 gap="sm"
               >
                 <div>
-                  <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
+                  <Text
+                    size="xs"
+                    c="dimmed"
+                    tt="uppercase"
+                    fw={700}
+                  >
                     Date Completed
                   </Text>
                   <Flex gap={6} align="center">
-                    <IconCalendar size={16} style={{ opacity: 0.7 }} />
+                    <IconCalendar
+                      size={16}
+                      style={{ opacity: 0.7 }}
+                    />
                     <Text size="sm" fw={500}>
-                      {dayjs(form.values.completedDate).format("YYYY-MM-DD")}
+                      {dayjs(
+                        form.values.completedDate
+                      ).format("YYYY-MM-DD")}
                     </Text>
                   </Flex>
                 </div>
