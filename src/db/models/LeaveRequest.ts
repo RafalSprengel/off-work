@@ -7,13 +7,21 @@ export interface ILeaveRequest extends Document {
   startHalfDay: boolean;
   endHalfDay: boolean;
   daysRequested: number;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "cancelled";
   type: "annual" | "sick" | "unpaid" | "other";
   comment?: string;
+  rejectionReason?: string | null;
+  coveringEmployee?: mongoose.Types.ObjectId | null;
+  attachments?: string[];
   organizationId: mongoose.Types.ObjectId;
+  createdBy: mongoose.Types.ObjectId | string;
+  approvedBy?: mongoose.Types.ObjectId | string | null;
+  approvedAt?: Date | null;
+  cancelledAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
+
 const LeaveRequestSchema = new Schema<ILeaveRequest>(
   {
     organizationId: {
@@ -21,29 +29,27 @@ const LeaveRequestSchema = new Schema<ILeaveRequest>(
       ref: "Organization",
       required: true,
     },
-    employee: { type: Schema.Types.ObjectId, ref: "Employee", required: true },
-    startDate: {  // Format: 'YYY-MM-DD'
+    employee: {
+      type: Schema.Types.ObjectId,
+      ref: "Employee",
+      required: true,
+    },
+    startDate: {
       type: String,
       required: true,
       match: [/^\d{4}-\d{2}-\d{2}$/, "Invalid date format, expected YYYY-MM-DD"],
     },
-    endDate: { // Format: 'YYY-MM-DD'
+    endDate: {
       type: String,
       required: true,
       match: [/^\d{4}-\d{2}-\d{2}$/, "Invalid date format, expected YYYY-MM-DD"],
     },
-    startHalfDay: {
-      type: Boolean,
-      default: false,
-    },
-    endHalfDay: {
-      type: Boolean,
-      default: false,
-    },
+    startHalfDay: { type: Boolean, default: false },
+    endHalfDay: { type: Boolean, default: false },
     daysRequested: { type: Number, required: true },
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected"],
+      enum: ["pending", "approved", "rejected", "cancelled"],
       default: "pending",
     },
     type: {
@@ -51,17 +57,33 @@ const LeaveRequestSchema = new Schema<ILeaveRequest>(
       enum: ["annual", "sick", "unpaid", "other"],
       default: "annual",
     },
-    comment: {
-      type: String,
-      trim: true,
-      default: "",
+    comment: { type: String, trim: true, default: "" },
+    rejectionReason: { type: String, trim: true, default: null },
+    coveringEmployee: {
+      type: Schema.Types.ObjectId,
+      ref: "Employee",
+      default: null,
     },
+    attachments: { type: [String], default: [] },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "Employee",
+      required: true,
+    },
+    approvedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "Employee",
+      default: null,
+    },
+    approvedAt: { type: Date, default: null },
+    cancelledAt: { type: Date, default: null },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 LeaveRequestSchema.index({ employee: 1, startDate: 1, endDate: 1 });
-LeaveRequestSchema.index({ organizationId: 1 });
+LeaveRequestSchema.index({ organizationId: 1, status: 1 });
+LeaveRequestSchema.index({ createdBy: 1 });
 
 const LeaveRequest: Model<ILeaveRequest> =
   (mongoose.models.LeaveRequest as Model<ILeaveRequest>) ||

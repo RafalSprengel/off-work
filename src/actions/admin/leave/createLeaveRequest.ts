@@ -8,6 +8,8 @@ import { getOrganizationId } from "@/utils/getOrganizationId";
 import { getNonWorkingDays } from "@/utils/nonWorkingDays";
 import { revalidatePath } from "next/cache";
 import { CreateLeaveRequestParams } from "@/types/leaveRequest";
+import { getCurrentEmployeeId } from "@/actions/shared/getCurrentEmployeeId";
+import mongoose from "mongoose";
 
 dayjs.extend(isSameOrBefore);
 
@@ -36,6 +38,21 @@ export async function createLeaveRequest(data: CreateLeaveRequestParams) {
             return { success: false, error: "Invalid date range selected" };
         }
 
+        const existingConflict = await LeaveRequest.findOne({
+            employee: new mongoose.Types.ObjectId(data.userId),
+            organizationId: orgId,
+            status: { $in: ["pending", "approved"] },
+            startDate: { $lte: end.format("YYYY-MM-DD") },
+            endDate: { $gte: start.format("YYYY-MM-DD") },
+        });
+
+        if (existingConflict) {
+            return {
+                success: false,
+                error: "Selected dates overlap with an existing leave request for this employee.",
+            };
+        }
+
         const nonWorkingDays = await getNonWorkingDays(
             orgId,
             start.format("YYYY-MM-DD"),
@@ -61,11 +78,10 @@ export async function createLeaveRequest(data: CreateLeaveRequestParams) {
         if (data.endHalfDay) daysRequested -= 0.5;
 
         if (daysRequested <= 0) {
-            return {
-                success: false,
-                error: "Selected range contains no working days",
-            };
+            return { success: false, error: "Selected range contains no working days" };
         }
+
+        const adminId = await getCurrentEmployeeId();
 
         const newLeaveRequest = await LeaveRequest.create({
             employee: data.userId,
@@ -76,6 +92,9 @@ export async function createLeaveRequest(data: CreateLeaveRequestParams) {
             endHalfDay: data.endHalfDay || false,
             daysRequested,
             status: "approved",
+            createdBy: adminId,
+            approvedBy: adminId,
+            approvedAt: new Date(),
         });
 
         revalidatePath("/team/leave-requests");
@@ -89,9 +108,7 @@ export async function createLeaveRequest(data: CreateLeaveRequestParams) {
         console.error("Error creating leave request as admin:", error);
         return {
             success: false,
-            error: error instanceof Error
-                ? error.message
-                : "Failed to create leave request",
+            error: error instanceof Error ? error.message : "Failed to create leave request",
         };
     }
 }

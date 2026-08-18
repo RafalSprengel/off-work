@@ -15,18 +15,26 @@ import {
     Text,
     Title,
 } from "@mantine/core";
+import { modals } from "@mantine/modals";
+import { notifications } from "@mantine/notifications";
 import {
     IconArrowLeft,
     IconBriefcase,
     IconCalendarEvent,
+    IconCancel,
+    IconCheck,
+    IconClock,
     IconMail,
     IconMessage,
     IconUser,
     IconUserCheck,
+    IconUserPlus,
 } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import { useParams, useRouter } from "next/navigation";
 import { useLeaveRequestDetails } from "@/hooks/useLeaveRequestDetails";
+import { cancelLeaveRequestAsAdmin } from "@/actions/admin/leave/cancelLeaveRequest";
+import { useState } from "react";
 
 const typeLabels: Record<string, string> = {
     annual: "Annual Leave",
@@ -39,12 +47,14 @@ const statusLabels: Record<string, string> = {
     approved: "Approved",
     rejected: "Rejected",
     pending: "Pending",
+    cancelled: "Cancelled",
 };
 
 const statusColors: Record<string, string> = {
     approved: "green",
     rejected: "red",
     pending: "yellow",
+    cancelled: "gray",
 };
 
 function InfoRow({
@@ -77,6 +87,7 @@ export default function LeaveRequestDetailsPage() {
     const params = useParams<{ id: string }>();
     const router = useRouter();
     const { request, loading, error } = useLeaveRequestDetails(params.id);
+    const [cancelling, setCancelling] = useState(false);
 
     if (loading) {
         return (
@@ -104,6 +115,42 @@ export default function LeaveRequestDetailsPage() {
     }
 
     const manager = request.employee.managerId;
+    const isSelfCreated = request.createdBy?._id === request.employee._id;
+    const canCancel = request.status === "pending" || request.status === "approved";
+
+    const handleCancel = () => {
+        modals.openConfirmModal({
+            title: "Cancel Leave Request",
+            children: (
+                <Text size="sm">
+                    Are you sure you want to cancel this leave request? This action cannot be
+                    undone.
+                </Text>
+            ),
+            labels: { confirm: "Cancel Request", cancel: "Go Back" },
+            confirmProps: { color: "red" },
+            onConfirm: async () => {
+                setCancelling(true);
+                const result = await cancelLeaveRequestAsAdmin(request._id);
+                setCancelling(false);
+
+                if (result.success) {
+                    notifications.show({
+                        title: "Cancelled",
+                        message: "Leave request has been cancelled.",
+                        color: "green",
+                    });
+                    router.refresh();
+                } else {
+                    notifications.show({
+                        title: "Error",
+                        message: result.error || "Failed to cancel request",
+                        color: "red",
+                    });
+                }
+            },
+        });
+    };
 
     return (
         <Container size="sm" py="lg" px={{ base: "xs", sm: "md" }}>
@@ -118,7 +165,6 @@ export default function LeaveRequestDetailsPage() {
                         Back
                     </Button>
                 </Group>
-
                 <Paper p={{ base: "md", sm: "xl" }} radius="md" withBorder>
                     <Stack gap="lg">
                         <Group justify="space-between" align="flex-start">
@@ -146,16 +192,13 @@ export default function LeaveRequestDetailsPage() {
                                 {statusLabels[request.status] ?? request.status}
                             </Badge>
                         </Group>
-
                         <Divider />
-
                         <Stack gap="md">
                             <InfoRow
                                 icon={<IconMail size={18} />}
                                 label="Email"
                                 value={request.employee.email}
                             />
-
                             <InfoRow
                                 icon={<IconBriefcase size={18} />}
                                 label="Leave Type"
@@ -165,7 +208,6 @@ export default function LeaveRequestDetailsPage() {
                                     </Badge>
                                 }
                             />
-
                             <InfoRow
                                 icon={<IconCalendarEvent size={18} />}
                                 label="Leave Period"
@@ -173,14 +215,12 @@ export default function LeaveRequestDetailsPage() {
                                     request.endDate
                                 ).format("D MMM YYYY")}`}
                             />
-
                             <InfoRow
                                 icon={<IconCalendarEvent size={18} />}
                                 label="Working Days"
                                 value={`${request.daysRequested} ${request.daysRequested === 1 ? "day" : "days"
                                     }`}
                             />
-
                             <InfoRow
                                 icon={<IconUserCheck size={18} />}
                                 label="Manager"
@@ -190,12 +230,86 @@ export default function LeaveRequestDetailsPage() {
                                         : "No manager assigned"
                                 }
                             />
-
                             <InfoRow
                                 icon={<IconMessage size={18} />}
                                 label="Employee Comment"
                                 value={request.comment || "No comment provided"}
                             />
+
+                            {/* === REJECTION REASON === */}
+                            {request.status === "rejected" && request.rejectionReason && (
+                                <InfoRow
+                                    icon={<IconCancel size={18} />}
+                                    label="Rejection Reason"
+                                    value={
+                                        <Text c="red" fw={500}>
+                                            {request.rejectionReason}
+                                        </Text>
+                                    }
+                                />
+                            )}
+
+                            <Divider my="xs" />
+
+                            {/* === AUDIT: CREATED BY === */}
+                            <InfoRow
+                                icon={<IconUserPlus size={18} />}
+                                label="Created By"
+                                value={
+                                    request.createdBy ? (
+                                        isSelfCreated ? (
+                                            <Badge variant="light" color="blue" size="sm">
+                                                Self — {request.employee.firstName}{" "}
+                                                {request.employee.lastName}
+                                            </Badge>
+                                        ) : (
+                                            `${request.createdBy.firstName} ${request.createdBy.lastName}`
+                                        )
+                                    ) : (
+                                        <Text c="dimmed" fs="italic">
+                                            Unknown
+                                        </Text>
+                                    )
+                                }
+                            />
+
+                            {/* === AUDIT: APPROVED BY === */}
+                            {(request.status === "approved" || request.status === "rejected") && (
+                                <InfoRow
+                                    icon={<IconCheck size={18} />}
+                                    label={request.status === "approved" ? "Approved By" : "Reviewed By"}
+                                    value={
+                                        <Group gap="xs" wrap="nowrap">
+                                            <Text fw={500}>
+                                                {request.approvedBy
+                                                    ? `${request.approvedBy.firstName} ${request.approvedBy.lastName}`
+                                                    : "Unknown"}
+                                            </Text>
+                                            {request.approvedAt && (
+                                                <Badge variant="light" color="gray" size="xs">
+                                                    <Group gap={4} wrap="nowrap">
+                                                        <IconClock size={12} />
+                                                        {dayjs(request.approvedAt).format(
+                                                            "D MMM YYYY, HH:mm"
+                                                        )}
+                                                    </Group>
+                                                </Badge>
+                                            )}
+                                        </Group>
+                                    }
+                                />
+                            )}
+
+                            {/* === AUDIT: CANCELLED === */}
+                            {request.status === "cancelled" && request.cancelledAt && (
+                                <InfoRow
+                                    icon={<IconCancel size={18} />}
+                                    label="Cancelled On"
+                                    value={dayjs(request.cancelledAt).format(
+                                        "D MMM YYYY, HH:mm"
+                                    )}
+                                />
+                            )}
 
                             <InfoRow
                                 icon={<IconUser size={18} />}
@@ -203,6 +317,24 @@ export default function LeaveRequestDetailsPage() {
                                 value={dayjs(request.createdAt).format("D MMM YYYY, HH:mm")}
                             />
                         </Stack>
+
+                        {/* === CANCEL BUTTON === */}
+                        {canCancel && (
+                            <>
+                                <Divider my="xs" />
+                                <Flex justify="flex-end">
+                                    <Button
+                                        color="red"
+                                        variant="light"
+                                        leftSection={<IconCancel size={16} />}
+                                        onClick={handleCancel}
+                                        loading={cancelling}
+                                    >
+                                        Cancel Request
+                                    </Button>
+                                </Flex>
+                            </>
+                        )}
                     </Stack>
                 </Paper>
             </Stack>

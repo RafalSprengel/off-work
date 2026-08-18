@@ -11,24 +11,30 @@ export interface LeaveRequestDetail {
         firstName: string;
         lastName: string;
         email: string;
-        department?: {
-            _id: string;
-            name: string;
-        };
-        managerId?: {
-            _id: string;
-            firstName: string;
-            lastName: string;
-        } | null;
+        department?: { _id: string; name: string };
+        managerId?: { _id: string; firstName: string; lastName: string } | null;
     };
     startDate: string;
     endDate: string;
     startHalfDay: boolean;
     endHalfDay: boolean;
     daysRequested: number;
-    status: "pending" | "approved" | "rejected";
+    status: "pending" | "approved" | "rejected" | "cancelled";
     type: "annual" | "sick" | "unpaid" | "other";
     comment?: string;
+    rejectionReason?: string | null;
+    createdBy?: {
+        _id: string;
+        firstName: string;
+        lastName: string;
+    } | null;
+    approvedBy?: {
+        _id: string;
+        firstName: string;
+        lastName: string;
+    } | null;
+    approvedAt?: string | null;
+    cancelledAt?: string | null;
     createdAt: string;
     updatedAt: string;
 }
@@ -53,6 +59,14 @@ export async function getLeaveRequestById(id: string) {
                     { path: "department", select: "name" },
                     { path: "managerId", select: "firstName lastName" },
                 ],
+            })
+            .populate({
+                path: "createdBy",
+                select: "firstName lastName",
+            })
+            .populate({
+                path: "approvedBy",
+                select: "firstName lastName",
             })
             .lean();
 

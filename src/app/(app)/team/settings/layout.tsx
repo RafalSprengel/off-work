@@ -38,13 +38,7 @@ export default function SettingsLayout({
                         Manage company preferences, leave policies, and system integrations
                     </Text>
                 </div>
-                <Button
-                    leftSection={<IconCheck size={16} />}
-                    color="green"
-                // hiddenFrom="sm"
-                >
-                    Save Changes
-                </Button>
+
             </Group>
 
             <Paper

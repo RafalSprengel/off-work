@@ -17,9 +17,22 @@ export interface MyLeaveRequestDetail {
     startDate: string;
     endDate: string;
     daysRequested: number;
-    status: "pending" | "approved" | "rejected";
+    status: "pending" | "approved" | "rejected" | "cancelled";
     type: "annual" | "sick" | "unpaid" | "other";
     comment?: string;
+    rejectionReason?: string | null;
+    createdBy?: {
+        _id: string;
+        firstName: string;
+        lastName: string;
+    } | null;
+    approvedBy?: {
+        _id: string;
+        firstName: string;
+        lastName: string;
+    } | null;
+    approvedAt?: string | null;
+    cancelledAt?: string | null;
     createdAt: string;
     updatedAt: string;
 }
@@ -31,7 +44,7 @@ export async function getMyLeaveRequestById(id: string) {
 
         const leaveRequest = await LeaveRequest.findOne({
             _id: id,
-            employee: employeeId, // pracownik widzi tylko własne wnioski
+            employee: employeeId,
         })
             .populate({
                 path: "employee",
@@ -40,6 +53,14 @@ export async function getMyLeaveRequestById(id: string) {
                     { path: "department", select: "name" },
                     { path: "managerId", select: "firstName lastName" },
                 ],
+            })
+            .populate({
+                path: "createdBy",
+                select: "firstName lastName",
+            })
+            .populate({
+                path: "approvedBy",
+                select: "firstName lastName",
             })
             .lean();
 

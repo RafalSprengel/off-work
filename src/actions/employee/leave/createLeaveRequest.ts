@@ -72,6 +72,7 @@ export async function createLeaveRequest(data: CreateLeaveRequestInput) {
         endHalfDay: false,
         daysRequested: workingDays,
         status: "pending",
+        createdBy: employee,
     });
 
     return { success: true, requestId: newRequest._id.toString() };
