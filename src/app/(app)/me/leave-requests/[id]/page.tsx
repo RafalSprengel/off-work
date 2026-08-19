@@ -113,8 +113,7 @@ export default function MyLeaveRequestDetailsPage() {
         );
     }
 
-    const manager = request.employee.managerId;
-    const isSelfCreated = request.createdBy?._id === request.employee._id;
+    const snapshot = request.snapshot;
     const canCancel = request.status === "pending" || request.status === "approved";
 
     const handleCancel = () => {
@@ -169,17 +168,17 @@ export default function MyLeaveRequestDetailsPage() {
                         <Group justify="space-between" align="flex-start">
                             <Group gap="sm">
                                 <Avatar
-                                    name={`${request.employee.firstName} ${request.employee.lastName}`}
+                                    name={snapshot.employeeName}
                                     radius="xl"
                                     size="lg"
                                     color="initials"
                                 />
                                 <Box>
                                     <Text size="lg" fw={600}>
-                                        {request.employee.firstName} {request.employee.lastName}
+                                        {snapshot.employeeName}
                                     </Text>
                                     <Text size="sm" c="dimmed">
-                                        {request.employee.department?.name ?? "No Department"}
+                                        {snapshot.departmentName}
                                     </Text>
                                 </Box>
                             </Group>
@@ -214,11 +213,7 @@ export default function MyLeaveRequestDetailsPage() {
                             <InfoRow
                                 icon={<IconUserCheck size={18} />}
                                 label="Manager"
-                                value={
-                                    manager
-                                        ? `${manager.firstName} ${manager.lastName}`
-                                        : "No manager assigned"
-                                }
+                                value={snapshot.managerName || "No manager assigned"}
                             />
                             <InfoRow
                                 icon={<IconMessage size={18} />}
@@ -246,19 +241,9 @@ export default function MyLeaveRequestDetailsPage() {
                                 icon={<IconUserPlus size={18} />}
                                 label="Created By"
                                 value={
-                                    request.createdBy ? (
-                                        isSelfCreated ? (
-                                            <Badge variant="light" color="blue" size="sm">
-                                                Self
-                                            </Badge>
-                                        ) : (
-                                            `${request.createdBy.firstName} ${request.createdBy.lastName}`
-                                        )
-                                    ) : (
-                                        <Text c="dimmed" fs="italic">
-                                            Unknown
-                                        </Text>
-                                    )
+                                    <Badge variant="light" color="blue" size="sm">
+                                        Self
+                                    </Badge>
                                 }
                             />
 
@@ -272,9 +257,7 @@ export default function MyLeaveRequestDetailsPage() {
                                     value={
                                         <Group gap="xs" wrap="nowrap">
                                             <Text fw={500}>
-                                                {request.approvedBy
-                                                    ? `${request.approvedBy.firstName} ${request.approvedBy.lastName}`
-                                                    : "Unknown"}
+                                                {snapshot.approvedByName || "Unknown"}
                                             </Text>
                                             {request.approvedAt && (
                                                 <Badge variant="light" color="gray" size="xs">

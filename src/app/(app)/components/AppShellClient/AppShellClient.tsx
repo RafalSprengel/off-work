@@ -1,3 +1,4 @@
+// src/app/(app)/components/AppShellClient/AppShellClient.tsx
 "use client";
 
 import {
@@ -8,14 +9,12 @@ import {
   Burger,
   Drawer,
   Group,
-  Indicator,
   Menu,
   Text,
   UnstyledButton,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
-  IconBell,
   IconChevronDown,
   IconLogout,
   IconSettings,
@@ -23,6 +22,7 @@ import {
 } from "@tabler/icons-react";
 import SidebarContent from "../SidebarContent/SidebarContent";
 import styles from "./AppShellClient.module.css";
+import { NotificationsDropdown } from "../NotificationsDropdown/NotificationsDropdown";
 
 export default function LayoutClient({
   children,
@@ -63,11 +63,8 @@ export default function LayoutClient({
           </Group>
 
           <Group gap="sm">
-            <Indicator color="blue" size={8} offset={4} processing>
-              <ActionIcon variant="subtle" color="gray" radius="xl" size="lg" aria-label="Notifications">
-                <IconBell size={20} />
-              </ActionIcon>
-            </Indicator>
+            {/* Notifications Dropdown */}
+            <NotificationsDropdown />
 
             <Menu shadow="md" width={200} position="bottom-end">
               <Menu.Target>

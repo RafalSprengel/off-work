@@ -1,3 +1,4 @@
+// src/app/(app)/team/page.tsx
 'use client';
 
 import {
@@ -55,6 +56,24 @@ function formatDateRange(startDate: string, endDate: string): string {
     return `${start.format("D MMM YYYY")} - ${end.format("D MMM YYYY")}`
 }
 
+// Helper function to safely get employee name
+const getEmployeeName = (employee: any): string => {
+    if (!employee) return "Employee has been deleted"
+    const firstName = employee.firstName || ""
+    const lastName = employee.lastName || ""
+    return `${firstName} ${lastName}`.trim() || "Employee has been deleted"
+}
+
+// Helper function to safely get department name
+const getDepartmentName = (employee: any): string => {
+    if (!employee) return "No Department"
+    if (!employee.department) return "No Department"
+    if (typeof employee.department === 'object') {
+        return employee.department.name || "No Department"
+    }
+    return "No Department"
+}
+
 export default function AdminDashboard() {
     const router = useRouter();
     const { data, loading } = useTeamDashboard()
@@ -78,6 +97,15 @@ export default function AdminDashboard() {
 
     const todayStr = dayjs().format("MMMM D, YYYY")
     const todayAbsences = data.todayAbsences || []
+    const pendingRequests = data.pendingRequests || []
+
+    // Filter out requests with null employee (sieroty po usuniętym koncie)
+    const validPendingRequests = pendingRequests.filter(
+        (req) => req.employee !== null && req.employee !== undefined
+    )
+    const validTodayAbsences = todayAbsences.filter(
+        (req) => req.employee !== null && req.employee !== undefined
+    )
 
     return (
         <Stack gap="lg">
@@ -218,7 +246,7 @@ export default function AdminDashboard() {
                             </Button>
                         </Group>
 
-                        {data.pendingRequests.length === 0 ? (
+                        {validPendingRequests.length === 0 ? (
                             <Text ta="center" py="xl" c="dimmed">
                                 No pending leave requests
                             </Text>
@@ -235,74 +263,83 @@ export default function AdminDashboard() {
                                         </Table.Tr>
                                     </Table.Thead>
                                     <Table.Tbody>
-                                        {data.pendingRequests.map((req) => (
-                                            <Table.Tr key={req._id} onClick={() => router.push(`/team/leave-requests/${req._id}`)}
-                                                style={{ cursor: "pointer" }}>
-                                                <Table.Td>
-                                                    <Group gap="sm" wrap="nowrap">
-                                                        <Avatar
-                                                            name={`${req.employee.firstName} ${req.employee.lastName}`}
-                                                            radius="xl"
-                                                            size="sm"
-                                                            color="initials"
-                                                        />
-                                                        <Box>
-                                                            <Text size="sm" fw={500}>
-                                                                {req.employee.firstName} {req.employee.lastName}
-                                                            </Text>
-                                                            <Text size="xs" c="dimmed">
-                                                                {req.employee.department?.name ?? "No Department"}
-                                                            </Text>
-                                                        </Box>
-                                                    </Group>
-                                                </Table.Td>
-                                                <Table.Td>
-                                                    <Badge variant="light" color="blue" size="sm">
-                                                        {typeLabels[req.type] ?? req.type}
-                                                    </Badge>
-                                                </Table.Td>
-                                                <Table.Td>
-                                                    <Text size="sm">{formatDateRange(req.startDate, req.endDate)}</Text>
-                                                    <Text size="xs" c="dimmed">
-                                                        Submitted {dayjs(req.createdAt).fromNow()}
-                                                    </Text>
-                                                </Table.Td>
-                                                <Table.Td>
-                                                    <Text size="sm" fw={500}>
-                                                        {req.daysRequested}d
-                                                    </Text>
-                                                </Table.Td>
-                                                <Table.Td>
-                                                    <Group gap={4} wrap="nowrap" onClick={(e) => e.stopPropagation()}>
-                                                        <Tooltip label="Approve">
-                                                            <ActionIcon variant="light" color="green" radius="xl">
-                                                                <IconCheck size={16} />
-                                                            </ActionIcon>
-                                                        </Tooltip>
-                                                        <Tooltip label="Reject">
-                                                            <ActionIcon variant="light" color="red" radius="xl">
-                                                                <IconX size={16} />
-                                                            </ActionIcon>
-                                                        </Tooltip>
-                                                        <Menu position="bottom-end" shadow="md">
-                                                            <Menu.Target>
-                                                                <ActionIcon variant="subtle" color="gray" radius="xl">
-                                                                    <IconDotsVertical size={16} />
-                                                                </ActionIcon>
-                                                            </Menu.Target>
-                                                            <Menu.Dropdown>
+                                        {validPendingRequests.map((req) => {
+                                            const fullName = getEmployeeName(req.employee);
+                                            const deptName = getDepartmentName(req.employee);
 
-                                                                <Menu.Item
-                                                                    component={Link}
-                                                                    href={`/team/leave-requests/${req._id}`}
-                                                                >View Details</Menu.Item>
-                                                                <Menu.Item color="blue">Adjust Balance</Menu.Item>
-                                                            </Menu.Dropdown>
-                                                        </Menu>
-                                                    </Group>
-                                                </Table.Td>
-                                            </Table.Tr>
-                                        ))}
+                                            return (
+                                                <Table.Tr
+                                                    key={req._id}
+                                                    onClick={() => router.push(`/team/leave-requests/${req._id}`)}
+                                                    style={{ cursor: "pointer" }}
+                                                >
+                                                    <Table.Td>
+                                                        <Group gap="sm" wrap="nowrap">
+                                                            <Avatar
+                                                                name={fullName}
+                                                                radius="xl"
+                                                                size="sm"
+                                                                color="initials"
+                                                            />
+                                                            <Box>
+                                                                <Text size="sm" fw={500}>
+                                                                    {fullName}
+                                                                </Text>
+                                                                <Text size="xs" c="dimmed">
+                                                                    {deptName}
+                                                                </Text>
+                                                            </Box>
+                                                        </Group>
+                                                    </Table.Td>
+                                                    <Table.Td>
+                                                        <Badge variant="light" color="blue" size="sm">
+                                                            {typeLabels[req.type] ?? req.type}
+                                                        </Badge>
+                                                    </Table.Td>
+                                                    <Table.Td>
+                                                        <Text size="sm">{formatDateRange(req.startDate, req.endDate)}</Text>
+                                                        <Text size="xs" c="dimmed">
+                                                            Submitted {dayjs(req.createdAt).fromNow()}
+                                                        </Text>
+                                                    </Table.Td>
+                                                    <Table.Td>
+                                                        <Text size="sm" fw={500}>
+                                                            {req.daysRequested}d
+                                                        </Text>
+                                                    </Table.Td>
+                                                    <Table.Td>
+                                                        <Group gap={4} wrap="nowrap" onClick={(e) => e.stopPropagation()}>
+                                                            <Tooltip label="Approve">
+                                                                <ActionIcon variant="light" color="green" radius="xl">
+                                                                    <IconCheck size={16} />
+                                                                </ActionIcon>
+                                                            </Tooltip>
+                                                            <Tooltip label="Reject">
+                                                                <ActionIcon variant="light" color="red" radius="xl">
+                                                                    <IconX size={16} />
+                                                                </ActionIcon>
+                                                            </Tooltip>
+                                                            <Menu position="bottom-end" shadow="md">
+                                                                <Menu.Target>
+                                                                    <ActionIcon variant="subtle" color="gray" radius="xl">
+                                                                        <IconDotsVertical size={16} />
+                                                                    </ActionIcon>
+                                                                </Menu.Target>
+                                                                <Menu.Dropdown>
+                                                                    <Menu.Item
+                                                                        component={Link}
+                                                                        href={`/team/leave-requests/${req._id}`}
+                                                                    >
+                                                                        View Details
+                                                                    </Menu.Item>
+                                                                    <Menu.Item color="blue">Adjust Balance</Menu.Item>
+                                                                </Menu.Dropdown>
+                                                            </Menu>
+                                                        </Group>
+                                                    </Table.Td>
+                                                </Table.Tr>
+                                            );
+                                        })}
                                     </Table.Tbody>
                                 </Table>
                             </Table.ScrollContainer>
@@ -350,8 +387,6 @@ export default function AdminDashboard() {
                                 ))}
                             </Stack>
                         )}
-
-
                     </Paper>
                 </Grid.Col>
             </Grid>
@@ -365,70 +400,75 @@ export default function AdminDashboard() {
                         </Title>
                     </Group>
                     <Badge variant="light" color="blue" size="lg" leftSection={<IconUsers size={14} />}>
-                        {todayAbsences.length} ABSENCES
+                        {validTodayAbsences.length} ABSENCES
                     </Badge>
                 </Group>
 
-                {todayAbsences.length === 0 ? (
+                {validTodayAbsences.length === 0 ? (
                     <Text ta="center" py="xl" c="dimmed">
                         No absences for today
                     </Text>
                 ) : (
                     <Stack gap="sm">
-                        {todayAbsences.map((absence) => (
-                            <Paper
-                                key={absence._id}
-                                p="md"
-                                radius="md"
-                                onClick={() => router.push(`/team/leave-requests/${absence._id}`)}
-                                onMouseEnter={() => setHoveredAbsenceId(absence._id)}
-                                onMouseLeave={() => setHoveredAbsenceId(null)}
-                                style={{
-                                    border: "1px solid var(--mantine-color-gray-3)",
-                                    backgroundColor:
-                                        hoveredAbsenceId === absence._id
-                                            ? "var(--mantine-color-gray-1)"
-                                            : "var(--mantine-color-gray-0)",
-                                    cursor: "pointer",
-                                    transition: "background-color 100ms ease",
-                                }}
-                            >
-                                <Group justify="space-between" align="center">
-                                    <Group gap="md">
-                                        <Avatar
-                                            name={`${absence.employee.firstName} ${absence.employee.lastName}`}
-                                            radius="xl"
-                                            size="md"
-                                            color="blue"
-                                            variant="light"
-                                        />
-                                        <Box>
-                                            <Text size="sm" fw={700}>
-                                                {absence.employee.firstName} {absence.employee.lastName}
-                                            </Text>
-                                            <Text size="xs" c="dimmed">
-                                                {absence.employee.department?.name ?? "No Department"} • {typeLabels[absence.type] ?? absence.type}
-                                            </Text>
-                                        </Box>
-                                    </Group>
+                        {validTodayAbsences.map((absence) => {
+                            const fullName = getEmployeeName(absence.employee);
+                            const deptName = getDepartmentName(absence.employee);
 
-                                    <Group gap="md">
-                                        <Text size="sm" fw={600} c="dimmed">
-                                            {dayjs(absence.startDate).format("YYYY-MM-DD")} - {dayjs(absence.endDate).format("YYYY-MM-DD")}
-                                        </Text>
-                                        <Badge
-                                            color="green"
-                                            variant="outline"
-                                            size="lg"
-                                            radius="xl"
-                                            leftSection={<Box style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "var(--mantine-color-green-6)" }} />}
-                                        >
-                                            APPROVED
-                                        </Badge>
+                            return (
+                                <Paper
+                                    key={absence._id}
+                                    p="md"
+                                    radius="md"
+                                    onClick={() => router.push(`/team/leave-requests/${absence._id}`)}
+                                    onMouseEnter={() => setHoveredAbsenceId(absence._id)}
+                                    onMouseLeave={() => setHoveredAbsenceId(null)}
+                                    style={{
+                                        border: "1px solid var(--mantine-color-gray-3)",
+                                        backgroundColor:
+                                            hoveredAbsenceId === absence._id
+                                                ? "var(--mantine-color-gray-1)"
+                                                : "var(--mantine-color-gray-0)",
+                                        cursor: "pointer",
+                                        transition: "background-color 100ms ease",
+                                    }}
+                                >
+                                    <Group justify="space-between" align="center">
+                                        <Group gap="md">
+                                            <Avatar
+                                                name={fullName}
+                                                radius="xl"
+                                                size="md"
+                                                color="blue"
+                                                variant="light"
+                                            />
+                                            <Box>
+                                                <Text size="sm" fw={700}>
+                                                    {fullName}
+                                                </Text>
+                                                <Text size="xs" c="dimmed">
+                                                    {deptName} • {typeLabels[absence.type] ?? absence.type}
+                                                </Text>
+                                            </Box>
+                                        </Group>
+
+                                        <Group gap="md">
+                                            <Text size="sm" fw={600} c="dimmed">
+                                                {dayjs(absence.startDate).format("YYYY-MM-DD")} - {dayjs(absence.endDate).format("YYYY-MM-DD")}
+                                            </Text>
+                                            <Badge
+                                                color="green"
+                                                variant="outline"
+                                                size="lg"
+                                                radius="xl"
+                                                leftSection={<Box style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "var(--mantine-color-green-6)" }} />}
+                                            >
+                                                APPROVED
+                                            </Badge>
+                                        </Group>
                                     </Group>
-                                </Group>
-                            </Paper>
-                        ))}
+                                </Paper>
+                            );
+                        })}
                     </Stack>
                 )}
             </Paper>

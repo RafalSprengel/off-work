@@ -6,16 +6,6 @@ import { getOrganizationId } from "@/utils/getOrganizationId";
 
 export interface TeamLeaveRequestItem {
     _id: string;
-    employee: {
-        _id: string;
-        firstName: string;
-        lastName: string;
-        email: string;
-        department?: {
-            _id: string;
-            name: string;
-        };
-    };
     startDate: string;
     endDate: string;
     startHalfDay: boolean;
@@ -23,6 +13,11 @@ export interface TeamLeaveRequestItem {
     daysRequested: number;
     status: "pending" | "approved" | "rejected";
     type: "annual" | "sick" | "unpaid" | "other";
+    snapshot: {
+        employeeName: string;
+        employeeEmail: string;
+        departmentName: string;
+    };
     createdAt: string;
     updatedAt: string;
 }
@@ -37,14 +32,6 @@ export async function getTeamLeaveRequests() {
         }
 
         const leaveRequests = await LeaveRequest.find({ organizationId: orgId })
-            .populate({
-                path: "employee",
-                select: "firstName lastName email department",
-                populate: {
-                    path: "department",
-                    select: "name",
-                },
-            })
             .sort({ createdAt: -1 })
             .lean();
 

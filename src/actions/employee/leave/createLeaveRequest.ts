@@ -8,7 +8,9 @@ import { getOrganizationId } from "@/utils/getOrganizationId";
 import { getNonWorkingDays } from "@/utils/nonWorkingDays";
 import { CreateLeaveRequestInput } from "@/types/leaveRequest";
 import { getCurrentEmployeeId } from "@/actions/shared/getCurrentEmployeeId";
+import Employee from "@/db/models/Employee";
 import mongoose from "mongoose";
+import { revalidatePath } from "next/cache";
 
 dayjs.extend(isSameOrBefore);
 
@@ -63,6 +65,21 @@ export async function createLeaveRequest(data: CreateLeaveRequestInput) {
         return { error: "Selected dates overlap with an existing request" };
     }
 
+    const employeeDoc = await Employee.findById(employee)
+        .populate("department", "name")
+        .populate("managerId", "firstName lastName")
+        .lean();
+
+    const dept = employeeDoc?.department as { name?: string } | undefined;
+    const mgr = employeeDoc?.managerId as { firstName?: string; lastName?: string } | undefined;
+
+    const snapshot = {
+        employeeName: employeeDoc ? `${employeeDoc.firstName} ${employeeDoc.lastName}` : "Unknown",
+        employeeEmail: employeeDoc?.email || "",
+        departmentName: dept?.name || "",
+        managerName: mgr ? `${mgr.firstName} ${mgr.lastName}` : "",
+    };
+
     const newRequest = await LeaveRequest.create({
         organizationId,
         employee,
@@ -73,7 +90,13 @@ export async function createLeaveRequest(data: CreateLeaveRequestInput) {
         daysRequested: workingDays,
         status: "pending",
         createdBy: employee,
+        snapshot,
     });
+
+    revalidatePath("/me/leave-requests");
+    revalidatePath("/team/leave-requests");
+    revalidatePath("/me/calendar");
+    revalidatePath("/team/calendar");
 
     return { success: true, requestId: newRequest._id.toString() };
 }

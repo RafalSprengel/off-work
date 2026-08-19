@@ -23,19 +23,15 @@ export interface TeamDashboardData {
 
 export interface PendingRequestItem {
     _id: string;
-    employee: {
-        _id: string;
-        firstName: string;
-        lastName: string;
-        department?: {
-            _id: string;
-            name: string;
-        };
-    };
     startDate: string;
     endDate: string;
     daysRequested: number;
     type: "annual" | "sick" | "unpaid" | "other";
+    snapshot: {
+        employeeName: string;
+        employeeEmail: string;
+        departmentName: string;
+    };
     createdAt: string;
 }
 
@@ -100,14 +96,6 @@ export async function getTeamDashboard() {
             startDate: { $lte: today.format("YYYY-MM-DD") },
             endDate: { $gte: today.format("YYYY-MM-DD") },
         })
-            .populate({
-                path: "employee",
-                select: "firstName lastName department",
-                populate: {
-                    path: "department",
-                    select: "name",
-                },
-            })
             .sort({ createdAt: -1 })
             .lean();
 
@@ -119,14 +107,6 @@ export async function getTeamDashboard() {
             organizationId: orgId,
             status: "pending",
         })
-            .populate({
-                path: "employee",
-                select: "firstName lastName department",
-                populate: {
-                    path: "department",
-                    select: "name",
-                },
-            })
             .sort({ createdAt: -1 })
             .limit(4)
             .lean();

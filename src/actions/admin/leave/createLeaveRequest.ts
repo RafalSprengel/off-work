@@ -9,6 +9,7 @@ import { getNonWorkingDays } from "@/utils/nonWorkingDays";
 import { revalidatePath } from "next/cache";
 import { CreateLeaveRequestParams } from "@/types/leaveRequest";
 import { getCurrentEmployeeId } from "@/actions/shared/getCurrentEmployeeId";
+import Employee from "@/db/models/Employee";
 import mongoose from "mongoose";
 
 dayjs.extend(isSameOrBefore);
@@ -83,6 +84,26 @@ export async function createLeaveRequest(data: CreateLeaveRequestParams) {
 
         const adminId = await getCurrentEmployeeId();
 
+        const [employeeDoc, adminDoc] = await Promise.all([
+            Employee.findById(data.userId)
+                .populate("department", "name")
+                .populate("managerId", "firstName lastName")
+                .lean(),
+            Employee.findById(adminId).lean(),
+        ]);
+
+        const dept = employeeDoc?.department as { name?: string } | undefined;
+        const mgr = employeeDoc?.managerId as { firstName?: string; lastName?: string } | undefined;
+
+        // Provide default non-undefined values so Mongoose doesn't strip the entire snapshot subdocument
+        const snapshot = {
+            employeeName: employeeDoc ? `${employeeDoc.firstName} ${employeeDoc.lastName}` : "Unknown",
+            employeeEmail: employeeDoc?.email || "",
+            departmentName: dept?.name || "",
+            managerName: mgr ? `${mgr.firstName} ${mgr.lastName}` : "",
+            approvedByName: adminDoc ? `${adminDoc.firstName} ${adminDoc.lastName}` : "",
+        };
+
         const newLeaveRequest = await LeaveRequest.create({
             employee: data.userId,
             organizationId: orgId,
@@ -95,6 +116,7 @@ export async function createLeaveRequest(data: CreateLeaveRequestParams) {
             createdBy: adminId,
             approvedBy: adminId,
             approvedAt: new Date(),
+            snapshot,
         });
 
         revalidatePath("/team/leave-requests");

@@ -18,6 +18,13 @@ export interface ILeaveRequest extends Document {
   approvedBy?: mongoose.Types.ObjectId | string | null;
   approvedAt?: Date | null;
   cancelledAt?: Date | null;
+  snapshot?: {
+    employeeName?: string;
+    employeeEmail?: string;
+    departmentName?: string;
+    managerName?: string;
+    approvedByName?: string;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -77,6 +84,13 @@ const LeaveRequestSchema = new Schema<ILeaveRequest>(
     },
     approvedAt: { type: Date, default: null },
     cancelledAt: { type: Date, default: null },
+    snapshot: {
+      employeeName: { type: String },
+      employeeEmail: { type: String },
+      departmentName: { type: String },
+      managerName: { type: String },
+      approvedByName: { type: String },
+    },
   },
   { timestamps: true }
 );

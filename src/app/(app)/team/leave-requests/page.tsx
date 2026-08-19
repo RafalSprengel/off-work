@@ -30,6 +30,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useTeamLeaveRequests } from "@/hooks/useTeamLeaveRequests";
+import type { TeamLeaveRequestItem } from "@/actions/manager/leave/getTeamLeaveRequests";
+
+type RequestWithSnapshot = TeamLeaveRequestItem & {
+  snapshot: NonNullable<TeamLeaveRequestItem["snapshot"]>;
+};
 
 dayjs.extend(relativeTime);
 
@@ -54,7 +59,7 @@ export default function TeamLeaveRequestsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("Pending");
 
   const filteredRequests = useMemo(() => {
-    return requests.filter((req) => {
+    return requests.filter((req): req is RequestWithSnapshot => {
       if (statusFilter === "All") return true;
       return req.status === statusFilter.toLowerCase();
     });
@@ -140,18 +145,17 @@ export default function TeamLeaveRequestsPage() {
                         <Table.Td>
                           <Group gap="sm" wrap="nowrap">
                             <Avatar
-                              name={`${req.employee.firstName} ${req.employee.lastName}`}
+                              name={req.snapshot.employeeName}
                               radius="xl"
                               size="sm"
                               color="initials"
                             />
                             <Box>
                               <Text size="sm" fw={500}>
-                                {req.employee.firstName} {req.employee.lastName}
+                                {req.snapshot.employeeName}
                               </Text>
                               <Text size="xs" c="dimmed">
-                                {req.employee.department?.name ??
-                                  "No Department"}
+                                {req.snapshot.departmentName ?? "No Department"}
                               </Text>
                             </Box>
                           </Group>

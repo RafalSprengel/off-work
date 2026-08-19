@@ -1,0 +1,30 @@
+.notificationItem {
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    border-bottom: 1px solid var(--mantine-color-gray-2);
+}
+
+.notificationItem:hover {
+    background-color: var(--mantine-color-gray-0);
+}
+
+.notificationItem:last-child {
+    border-bottom: none;
+}
+
+.dropdown {
+    position: fixed;
+    right: 20px;
+    top: 70px;
+    z-index: 1000;
+    width: 380px;
+    max-width: calc(100vw - 40px);
+}
+
+@media (max-width: 768px) {
+    .dropdown {
+        width: calc(100vw - 40px);
+        right: 20px;
+        top: 60px;
+    }
+}
