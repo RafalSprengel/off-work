@@ -1,6 +1,6 @@
 <img width="1327" height="1054" alt="Zrzut ekranu 2026-08-20 190240" src="https://github.com/user-attachments/assets/98550e69-ca49-4c3e-b878-27b8c33c1b11" />
-<img width="1319" height="1055" alt="Zrzut ekranu 2026-08-20 190309" src="https://github.com/user-attachments/assets/11bcf93d-5174-489e-bc71-0c48879697ef" />
 <img width="1320" height="1053" alt="Zrzut ekranu 2026-08-20 190539" src="https://github.com/user-attachments/assets/1951f905-bf6d-4c1c-a276-3d51bf10ab57" />
+<img width="1319" height="1055" alt="Zrzut ekranu 2026-08-20 190309" src="https://github.com/user-attachments/assets/11bcf93d-5174-489e-bc71-0c48879697ef" />
 # Off Work — Leave Management System (SaaS)
 
 **Off Work** is a multi-tenant SaaS platform that lets companies create an account and manage their employees' holidays and leave requests. Each company signs up as its own organization (tenant) and manages its own employees, departments, holiday policies, and leave requests, fully isolated from other tenants.
