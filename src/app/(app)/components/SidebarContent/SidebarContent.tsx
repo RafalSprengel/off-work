@@ -87,8 +87,7 @@ export default function SidebarContent({
     await authClient.signOut({
       fetchOptions: {
         onSuccess: () => {
-          router.push("/sign-in");
-          router.refresh();
+          window.location.href = "/sign-in";
         },
       },
     });

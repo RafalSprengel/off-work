@@ -1,68 +1,84 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Alert, Button, Center, Loader, Stack } from "@mantine/core";
 import { IconAlertCircle, IconCheck } from "@tabler/icons-react";
 import { authClient } from "@/lib/auth-client";
 import { getCurrentEmployeeRole } from "@/actions/shared/getCurrentEmployeeRole";
 import AuthCard from "../../../(auth)/_components/AuthCard/AuthCard";
+
 type Status = "checking" | "signedOut" | "accepting" | "error" | "success";
 
 export default function AcceptInvitationPage() {
     const params = useParams<{ id: string }>();
     const invitationId = params.id;
-    const router = useRouter();
 
     const [status, setStatus] = useState<Status>("checking");
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     useEffect(() => {
+        let isMounted = true;
+
         async function run() {
-            const session = await authClient.getSession();
+            try {
+                const session = await authClient.getSession();
 
-            if (!session.data?.user) {
-                setStatus("signedOut");
-                return;
-            }
+                if (!isMounted) return;
 
-            setStatus("accepting");
+                if (!session.data?.user) {
+                    setStatus("signedOut");
+                    return;
+                }
 
-            const { data, error } = await authClient.organization.acceptInvitation({
-                invitationId,
-            });
+                setStatus("accepting");
 
-            if (error || !data) {
-                setErrorMessage(
-                    error?.message ||
-                    "This invitation is no longer valid. It may have expired, already been used, or been sent to a different email address."
-                );
+                const { data, error } = await authClient.organization.acceptInvitation({
+                    invitationId,
+                });
+
+                if (!isMounted) return;
+
+                if (error || !data) {
+                    setErrorMessage(
+                        error?.message ||
+                        "This invitation is no longer valid. It may have expired, already been used, or been sent to a different email address."
+                    );
+                    setStatus("error");
+                    return;
+                }
+
+                const organizationId =
+                    (data as any)?.invitation?.organizationId ??
+                    (data as any)?.member?.organizationId;
+
+                if (organizationId) {
+                    await authClient.organization.setActive({ organizationId });
+                }
+
+                const { success, role } = await getCurrentEmployeeRole();
+
+                if (!isMounted) return;
+
+                setStatus("success");
+
+                window.location.href = success && role === "Employee" ? "/me" : "/team";
+
+            } catch (err) {
+                if (!isMounted) return;
+                console.error("Invitation acceptance error:", err);
+                setErrorMessage("An unexpected error occurred. Please try again or contact support.");
                 setStatus("error");
-                return;
             }
-
-            // Better Auth sets the accepted organization as active automatically,
-            // but we set it explicitly too in case the response shape changes.
-            const organizationId =
-                (data as any)?.invitation?.organizationId ??
-                (data as any)?.member?.organizationId;
-
-            if (organizationId) {
-                await authClient.organization.setActive({ organizationId });
-            }
-
-            const { success, role } = await getCurrentEmployeeRole();
-            setStatus("success");
-
-            setTimeout(() => {
-                router.push(success && role === "Employee" ? "/me" : "/team");
-                router.refresh();
-            }, 1200);
         }
 
         run();
-    }, [invitationId, router]);
+
+        return () => {
+            isMounted = false;
+        };
+    }, [invitationId]);
 
     if (status === "checking" || status === "accepting") {
         return (

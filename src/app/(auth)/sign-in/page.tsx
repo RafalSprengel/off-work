@@ -93,11 +93,10 @@ function SignInForm() {
             }
 
             const { success, role } = await getCurrentEmployeeRole();
-
             if (success && role === "Employee") {
-                router.push("/me");
+                window.location.href = "/me";
             } else {
-                router.push("/team");
+                window.location.href = "/team";
             }
 
             router.refresh();

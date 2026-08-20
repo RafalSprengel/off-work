@@ -39,8 +39,7 @@ export default function LayoutClient({
     await authClient.signOut({
       fetchOptions: {
         onSuccess: () => {
-          router.push("/sign-in");
-          router.refresh();
+          window.location.href = "/sign-in";
         },
       },
     });

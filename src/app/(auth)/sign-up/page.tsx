@@ -88,10 +88,8 @@ function SignUpForm() {
             }
 
             if (isInviteFlow) {
-                // Joining an existing company via an invitation - the
-                // accept-invitation page takes it from here.
-                router.push(callbackURL);
-                router.refresh();
+                // ✅ POPRAWKA: Twarde przekierowanie zamiast push + refresh
+                window.location.href = callbackURL;
                 return;
             }
 
@@ -122,8 +120,8 @@ function SignUpForm() {
                 color: "green",
             });
 
-            router.push("/team");
-            router.refresh();
+            // ✅ POPRAWKA: Twarde przekierowanie zamiast push + refresh
+            window.location.href = "/team";
         } catch (err) {
             notifications.show({
                 title: "Error",
