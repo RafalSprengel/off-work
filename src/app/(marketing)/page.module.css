@@ -1,26 +1,38 @@
-.heroTitle {
-  background: linear-gradient(
-    45deg,
-    var(--mantine-color-blue-6),
-    var(--mantine-color-cyan-6)
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.hero {
+  padding: 96px 0 80px;
   text-align: center;
 }
 
-.buttonGroup {
-  width: 100%;
-  max-width: 320px;
+.heroInner {
+  display: flex;
+  justify-content: center;
 }
 
-.homeButton {
-  transition:
-    background-color 0.3s ease,
-    transform 0.2s ease;
+.heroTitle {
+  font-weight: 800;
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  line-height: 1.1;
+  background: linear-gradient(45deg, var(--mantine-color-teal-6), var(--mantine-color-cyan-6));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.homeButton:hover {
+.primaryCta {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.primaryCta:hover {
   transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.35);
+}
+
+.features {
+  padding: 40px 0 96px;
+}
+
+.bottomCta {
+  padding: 64px 0 96px;
+  border-top: 1px solid light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
 }

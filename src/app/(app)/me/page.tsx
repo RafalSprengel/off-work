@@ -17,6 +17,8 @@ import {
   Table,
   ActionIcon,
   Tooltip,
+  Loader,
+  Flex,
 } from "@mantine/core"
 import {
   IconCalendarPlus,
@@ -31,9 +33,12 @@ import {
 } from "@tabler/icons-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation";
+import { useCurrentEmployee } from "@/hooks/useCurrentEmployee";
 
 export default function EmployeeDashboard() {
   const router = useRouter();
+  const { employee, loading } = useCurrentEmployee();
+
   const recentRequests = [
     {
       id: "REQ-104",
@@ -75,13 +80,26 @@ export default function EmployeeDashboard() {
     { name: "Emma Watson", type: "Annual Leave", dates: "25 Aug - 01 Sep" },
   ]
 
+  if (loading) {
+    return (
+      <Flex justify="center" align="center" py={80}>
+        <Loader />
+      </Flex>
+    )
+  }
+
+  const holidayAllowance = employee?.holidayAllowance ?? 0;
+  // TODO: replace with a real count once leave requests are wired to this page.
+  const daysUsedPlaceholder = 8;
+  const daysLeft = Math.max(holidayAllowance - daysUsedPlaceholder, 0);
+
   return (
     <Stack gap="lg">
       <Paper p="lg" radius="md" withBorder style={{ background: "var(--mantine-color-blue-0)" }}>
         <Group justify="space-between" align="center" wrap="wrap">
           <Box>
             <Title order={2} size="h3">
-              Welcome back, John 👋
+              Welcome back, {employee?.firstName ?? "there"} 👋
             </Title>
             <Text size="sm" c="dimmed" mt={4}>
               Here is your leave summary and upcoming team availability.
@@ -110,13 +128,18 @@ export default function EmployeeDashboard() {
           </Group>
           <Group align="flex-end" gap="xs">
             <Text size="xl" fw={700}>
-              18
+              {daysLeft}
             </Text>
             <Text size="sm" c="dimmed" mb={2}>
-              / 26 days left
+              / {holidayAllowance} days left
             </Text>
           </Group>
-          <Progress value={(18 / 26) * 100} mt="md" size="sm" color="blue" />
+          <Progress
+            value={holidayAllowance ? (daysLeft / holidayAllowance) * 100 : 0}
+            mt="md"
+            size="sm"
+            color="blue"
+          />
         </Paper>
 
         <Paper p="md" radius="md" withBorder>

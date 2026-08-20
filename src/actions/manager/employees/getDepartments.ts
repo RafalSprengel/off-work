@@ -13,7 +13,7 @@ export async function getDepartments(): Promise<{ success: boolean, data: IDepar
         const organizationId = await getOrganizationId();
 
         const rawDepartments = await Department.aggregate([
-            { $match: { organization: new mongoose.Types.ObjectId(organizationId) } },
+            { $match: { organization: organizationId } },
             {
                 $lookup: {
                     from: "employees",

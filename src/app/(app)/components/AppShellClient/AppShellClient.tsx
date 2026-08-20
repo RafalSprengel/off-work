@@ -22,6 +22,8 @@ import {
 } from "@tabler/icons-react";
 import SidebarContent from "../SidebarContent/SidebarContent";
 import styles from "./AppShellClient.module.css";
+import { useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
 import { NotificationsDropdown } from "../NotificationsDropdown/NotificationsDropdown";
 
 export default function LayoutClient({
@@ -29,7 +31,20 @@ export default function LayoutClient({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
   const [opened, { toggle, close }] = useDisclosure();
+
+  const handleLogout = async () => {
+    close();
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push("/sign-in");
+          router.refresh();
+        },
+      },
+    });
+  };
 
   return (
     <AppShell
@@ -95,7 +110,11 @@ export default function LayoutClient({
                   Settings
                 </Menu.Item>
                 <Menu.Divider />
-                <Menu.Item color="red" leftSection={<IconLogout size={14} />}>
+                <Menu.Item
+                  color="red"
+                  leftSection={<IconLogout size={14} />}
+                  onClick={handleLogout}
+                >
                   Logout
                 </Menu.Item>
               </Menu.Dropdown>

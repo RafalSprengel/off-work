@@ -13,7 +13,7 @@ export interface ILeaveRequest extends Document {
   rejectionReason?: string | null;
   coveringEmployee?: mongoose.Types.ObjectId | null;
   attachments?: string[];
-  organizationId: mongoose.Types.ObjectId;
+  organizationId: string; // Better Auth organization id
   createdBy: mongoose.Types.ObjectId | string;
   approvedBy?: mongoose.Types.ObjectId | string | null;
   approvedAt?: Date | null;
@@ -32,8 +32,7 @@ export interface ILeaveRequest extends Document {
 const LeaveRequestSchema = new Schema<ILeaveRequest>(
   {
     organizationId: {
-      type: Schema.Types.ObjectId,
-      ref: "Organization",
+      type: String,
       required: true,
     },
     employee: {

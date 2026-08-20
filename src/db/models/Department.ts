@@ -5,7 +5,7 @@ export interface IDepartmentDocument
   extends Omit<IDepartment, "_id" | "organization" | "managers">,
   Document {
   managers: mongoose.Types.ObjectId[];
-  organization: mongoose.Types.ObjectId;
+  organization: string; // Better Auth organization id
   createdAt: Date;
   updatedAt: Date;
 }
@@ -24,8 +24,7 @@ const DepartmentSchema = new Schema<IDepartmentDocument>(
       },
     ],
     organization: {
-      type: Schema.Types.ObjectId,
-      ref: "Organization",
+      type: String,
       required: true,
     },
   },

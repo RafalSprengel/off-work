@@ -1,6 +1,8 @@
 import mongoose, { type Document, type Model, Schema } from "mongoose";
 
 export interface IEmployeeDocument extends Document {
+    userId?: string; // Better Auth user id (1:1 link) - set once the invite is accepted
+    organizationId: string; // Better Auth organization id
     firstName: string;
     lastName: string;
     email: string;
@@ -9,7 +11,6 @@ export interface IEmployeeDocument extends Document {
     holidayAllowance: number;
     employmentDate: Date;
     managerId?: mongoose.Types.ObjectId;
-    organizationId?: mongoose.Types.ObjectId;
     status: "active" | "inactive" | "invited";
     createdAt: Date;
     updatedAt: Date;
@@ -17,6 +18,14 @@ export interface IEmployeeDocument extends Document {
 
 const EmployeeSchema = new Schema<IEmployeeDocument>(
     {
+        userId: {
+            type: String,
+            default: null,
+        },
+        organizationId: {
+            type: String,
+            required: true,
+        },
         firstName: { type: String, required: true, trim: true },
         lastName: { type: String, required: true, trim: true },
         email: {
@@ -33,7 +42,6 @@ const EmployeeSchema = new Schema<IEmployeeDocument>(
         department: {
             type: Schema.Types.ObjectId,
             ref: "Department",
-            required: true,
         },
 
         holidayAllowance: { type: Number, default: 24, min: 0 },
@@ -41,11 +49,6 @@ const EmployeeSchema = new Schema<IEmployeeDocument>(
         managerId: {
             type: Schema.Types.ObjectId,
             ref: "Employee",
-            default: null,
-        },
-        organizationId: {
-            type: Schema.Types.ObjectId,
-            ref: "Organization",
             default: null,
         },
         status: {
@@ -57,9 +60,9 @@ const EmployeeSchema = new Schema<IEmployeeDocument>(
     { timestamps: true }
 );
 
-
-EmployeeSchema.index({ email: 1 }, { unique: true });
-EmployeeSchema.index({ department: 1, status: 1 });
+EmployeeSchema.index({ userId: 1 }, { unique: true, sparse: true });
+EmployeeSchema.index({ email: 1, organizationId: 1 }, { unique: true });
+EmployeeSchema.index({ organizationId: 1, department: 1, status: 1 });
 
 const Employee: Model<IEmployeeDocument> =
     (mongoose.models.Employee as Model<IEmployeeDocument>) ||

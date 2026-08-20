@@ -4,7 +4,6 @@ import dbConnect from "@/db/connection";
 import ClosureDay from "@/db/models/ClosureDay";
 import { revalidatePath } from "next/cache";
 import { getOrganizationId } from "@/utils/getOrganizationId";
-import mongoose from "mongoose";
 import dayjs from "dayjs";
 
 export interface CreateClosureDayInput {
@@ -42,10 +41,10 @@ export async function createClosureDay(
         }
 
         await dbConnect();
-        const orgObjectId = new mongoose.Types.ObjectId(await getOrganizationId());
+        const organizationId = await getOrganizationId();
 
         const existing = await ClosureDay.findOne({
-            organizationId: orgObjectId,
+            organizationId,
             date: date,
         });
 
@@ -57,7 +56,7 @@ export async function createClosureDay(
         }
 
         await ClosureDay.create({
-            organizationId: orgObjectId,
+            organizationId,
             date: date,
             title: title.trim(),
             type: "company_closure",

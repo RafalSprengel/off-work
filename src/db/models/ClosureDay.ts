@@ -11,7 +11,7 @@ export interface IClosureDay extends Document {
   batchLabel: string | null;
   enabled: boolean;
   isCustom: boolean;
-  organizationId: mongoose.Types.ObjectId;
+  organizationId: string; // Better Auth organization id
   createdAt: Date;
   updatedAt: Date;
 }
@@ -51,8 +51,7 @@ const ClosureDaySchema = new Schema<IClosureDay>(
       default: false,
     },
     organizationId: {
-      type: Schema.Types.ObjectId,
-      ref: "Organization",
+      type: String,
       required: true,
     },
   },

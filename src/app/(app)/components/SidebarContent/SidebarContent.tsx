@@ -28,6 +28,7 @@ import {
 } from "@tabler/icons-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
 import styles from "./SidebarContent.module.css";
 
 interface SidebarContentProps {
@@ -79,6 +80,18 @@ export default function SidebarContent({
   const toggleColorScheme = () => {
     setColorScheme(colorScheme === "dark" ? "light" : "dark");
     onClose();
+  };
+
+  const handleLogout = async () => {
+    onClose();
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push("/sign-in");
+          router.refresh();
+        },
+      },
+    });
   };
 
   return (
@@ -318,7 +331,7 @@ export default function SidebarContent({
                 <IconMoon size={18} />
               )}
             </ActionIcon>
-            <UnstyledButton className={styles.logoutBtn} onClick={onClose}>
+            <UnstyledButton className={styles.logoutBtn} onClick={handleLogout}>
               <IconLogout size={18} />
             </UnstyledButton>
           </Group>

@@ -4,7 +4,6 @@ import dbConnect from "@/db/connection";
 import ClosureDay, { type UkBankHolidayRegion } from "@/db/models/ClosureDay";
 import { revalidatePath } from "next/cache";
 import { getOrganizationId } from "@/utils/getOrganizationId";
-import mongoose from "mongoose";
 
 interface GovUkBankHolidayEvent {
     title: string;
@@ -51,18 +50,18 @@ export async function importUkBankHolidays(
         }
 
         await dbConnect();
-        const orgObjectId = new mongoose.Types.ObjectId(await getOrganizationId());
+        const organizationId = await getOrganizationId();
 
         const operations = events.map((event) => ({
             updateOne: {
                 filter: {
-                    organizationId: orgObjectId,
+                    organizationId,
                     type: "bank_holiday" as const,
                     date: event.date,
                 },
                 update: {
                     $setOnInsert: {
-                        organizationId: orgObjectId,
+                        organizationId,
                         type: "bank_holiday" as const,
                         date: event.date,
                         title: event.title,

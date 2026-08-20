@@ -5,6 +5,8 @@ import Employee from "@/db/models/Employee";
 import mongoose from "mongoose";
 import type { ICreateEmployeeInput, IEmployee } from "@/types/employees";
 import { getOrganizationId } from "@/utils/getOrganizationId";
+import { getAuth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 export async function createEmployee(data: ICreateEmployeeInput): Promise<{ success: boolean; data?: IEmployee; error?: string; errorCode?: string }> {
@@ -21,9 +23,30 @@ export async function createEmployee(data: ICreateEmployeeInput): Promise<{ succ
             holidayAllowance: data.holidayAllowance,
             employmentDate: new Date(data.employmentDate),
             ...(data.managerId ? { managerId: new mongoose.Types.ObjectId(data.managerId) } : {}),
-            organizationId: new mongoose.Types.ObjectId(organizationId),
+            organizationId,
             status: "invited" as const,
         });
+
+        // Send the actual Better Auth organization invitation so the new
+        // hire gets an email and can create their account via
+        // /accept-invitation/[id]. Without this, the Employee row above is
+        // just a placeholder nobody can ever activate.
+        try {
+            const auth = await getAuth();
+            await auth.api.createInvitation({
+                body: {
+                    email: data.email,
+                    role: data.role === "Manager" ? "admin" : "member",
+                    organizationId,
+                },
+                headers: await headers(),
+            });
+        } catch (invitationError) {
+            // Roll back the Employee row so we don't leave behind an
+            // "invited" placeholder that can never actually be invited.
+            await employee.deleteOne();
+            throw invitationError;
+        }
 
         revalidatePath("/employees");
         return { success: true };
