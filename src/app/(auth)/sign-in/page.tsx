@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -18,7 +18,7 @@ import { authClient } from "@/lib/auth-client";
 import { getCurrentEmployeeRole } from "@/actions/shared/getCurrentEmployeeRole";
 import AuthCard from "../_components/AuthCard/AuthCard";
 
-export default function SignInPage() {
+function SignInForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const callbackURL = searchParams.get("callbackURL");
@@ -150,5 +150,13 @@ export default function SignInPage() {
                 </Anchor>
             </Text>
         </AuthCard>
+    );
+}
+
+export default function SignInPage() {
+    return (
+        <Suspense fallback={null}>
+            <SignInForm />
+        </Suspense>
     );
 }

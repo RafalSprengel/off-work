@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -28,7 +28,7 @@ function slugify(value: string): string {
     return base ? `${base}-${suffix}` : `org-${suffix}`;
 }
 
-export default function SignUpPage() {
+function SignUpForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const callbackURL = searchParams.get("callbackURL");
@@ -197,5 +197,13 @@ export default function SignUpPage() {
                 </Anchor>
             </Text>
         </AuthCard>
+    );
+}
+
+export default function SignUpPage() {
+    return (
+        <Suspense fallback={null}>
+            <SignUpForm />
+        </Suspense>
     );
 }
