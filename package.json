@@ -20,6 +20,7 @@
     "@mantine/nprogress": "^9.5.1",
     "@mantine/schedule": "^9.5.1",
     "@tabler/icons-react": "^3.45.0",
+    "better-auth": "^1.7.1",
     "dayjs": "^1.11.21",
     "mongoose": "^9.8.1",
     "next": "16.2.10",
