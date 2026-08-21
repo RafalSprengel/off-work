@@ -132,7 +132,7 @@ export default function AdminDashboard() {
                         </Button>
                         <Button
                             component={Link}
-                            href="/admin/settings"
+                            href="/team/settings"
                             variant="default"
                             size="sm"
                             leftSection={<IconSettings size={16} />}

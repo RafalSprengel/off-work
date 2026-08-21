@@ -92,14 +92,26 @@ function SignInForm() {
                 }
             }
 
-            const { success, role } = await getCurrentEmployeeRole();
+            const { success, role, error } = await getCurrentEmployeeRole();
+
+            console.log("[sign-in] getCurrentEmployeeRole result:", { success, role, error });
+
             if (success && role === "Employee") {
                 window.location.href = "/me";
-            } else {
-                window.location.href = "/team";
+                return;
             }
 
-            router.refresh();
+            if (success && role === "Manager") {
+                window.location.href = "/team";
+                return;
+            }
+
+            // Fallback if getCurrentEmployeeRole fails (e.g. stale cache,
+            // missing Employee profile, etc.) - redirect to /team anyway.
+            // The dashboard layout will redirect back to /sign-in if the
+            // session is invalid.
+            console.error("[sign-in] getCurrentEmployeeRole failed, falling back to /team:", error);
+            window.location.href = "/team";
         } catch (err) {
             notifications.show({
                 title: "Error",

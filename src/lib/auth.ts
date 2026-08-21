@@ -11,13 +11,13 @@ function createAuth(db: Db) {
     return betterAuth({
         database: mongodbAdapter(db),
 
-        // Same pattern as the accommodation-booking project: don't hit the DB
-        // on every protected route transition, only every 5 minutes (or when
-        // the session actually changes).
+        // Disabled cookieCache to ensure fresh session data is always returned
+        // after operations like setActive() that update the session in the DB.
+        // Without this, server actions like getCurrentEmployeeRole() can read
+        // stale cached data that doesn't reflect the latest changes.
         session: {
             cookieCache: {
-                enabled: true,
-                maxAge: 60 * 5, // 5 minutes
+                enabled: false,
             },
         },
 
