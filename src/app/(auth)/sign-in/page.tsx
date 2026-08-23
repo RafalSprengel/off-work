@@ -92,13 +92,10 @@ function SignInForm() {
                 }
             }
 
-            // Use the client-side session userId (always fresh) to bypass the
-            // server-side session cookie cache that may still hold stale data
-            // right after setActive().
-            const freshSession = await authClient.getSession();
-            const currentUserId = freshSession.data?.user?.id;
-
-            const { success, role, error } = await getCurrentEmployeeRole(currentUserId);
+            // getCurrentEmployeeRole uses disableCookieCache internally to
+            // always fetch a fresh session, so the cookie cache is bypassed
+            // only for this one call – no need to pass userId from the client.
+            const { success, role, error } = await getCurrentEmployeeRole();
 
             console.log("[sign-in] getCurrentEmployeeRole result:", { success, role, error });
 

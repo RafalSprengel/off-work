@@ -5,34 +5,31 @@ import { headers } from "next/headers";
 import dbConnect from "@/db/connection";
 import Employee from "@/db/models/Employee";
 
-/**
- * Resolve the current user's role.
- *
- * When called from the sign-in flow **right after setActive()** the server-side
- * session cookie may still be cached (cookieCache maxAge = 5 min).  Pass the
- * `userId` obtained from the *client-side* `authClient.getSession()` (which is
- * always fresh) to bypass the cache and read the Employee record directly.
- */
-export async function getCurrentEmployeeRole(
-    userId?: string | null,
-): Promise<{
+export async function getCurrentEmployeeRole(): Promise<{
     success: boolean;
     role: "Manager" | "Employee" | null;
     error: string | null;
 }> {
     try {
-        let resolvedUserId = userId;
+        const auth = await getAuth();
+        const reqHeaders = await headers();
 
-        if (!resolvedUserId) {
-            const auth = await getAuth();
-            const session = await auth.api.getSession({
-                headers: await headers(),
-            });
-            if (!session?.user) {
-                return { success: false, role: null, error: "Unauthorized: No active session" };
-            }
-            resolvedUserId = session.user.id;
+        // Always fetch a fresh session here, bypassing the cookie cache.
+        // This is safe: the userId comes from the verified session token,
+        // never from the client. Needed because right after sign-in +
+        // setActive() the cookie cache may still hold stale data.
+        const session = await auth.api.getSession({
+            headers: reqHeaders,
+            query: {
+                disableCookieCache: true,
+            },
+        });
+
+        if (!session?.user) {
+            return { success: false, role: null, error: "Unauthorized: No active session" };
         }
+
+        const resolvedUserId = session.user.id;
 
         await dbConnect();
 
