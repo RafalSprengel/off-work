@@ -5,7 +5,9 @@ import { headers } from "next/headers";
 import dbConnect from "@/db/connection";
 import Employee from "@/db/models/Employee";
 
-export async function getCurrentEmployeeRole(): Promise<{
+export async function getCurrentEmployeeRole(options?: {
+    freshSession?: boolean;
+}): Promise<{
     success: boolean;
     role: "Manager" | "Employee" | null;
     error: string | null;
@@ -14,15 +16,9 @@ export async function getCurrentEmployeeRole(): Promise<{
         const auth = await getAuth();
         const reqHeaders = await headers();
 
-        // Always fetch a fresh session here, bypassing the cookie cache.
-        // This is safe: the userId comes from the verified session token,
-        // never from the client. Needed because right after sign-in +
-        // setActive() the cookie cache may still hold stale data.
         const session = await auth.api.getSession({
             headers: reqHeaders,
-            query: {
-                disableCookieCache: true,
-            },
+            ...(options?.freshSession ? { query: { disableCookieCache: true } } : {}),
         });
 
         if (!session?.user) {

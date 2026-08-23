@@ -95,7 +95,7 @@ function SignInForm() {
             // getCurrentEmployeeRole uses disableCookieCache internally to
             // always fetch a fresh session, so the cookie cache is bypassed
             // only for this one call – no need to pass userId from the client.
-            const { success, role, error } = await getCurrentEmployeeRole();
+            const { success, role, error } = await getCurrentEmployeeRole({ freshSession: true });
 
             console.log("[sign-in] getCurrentEmployeeRole result:", { success, role, error });
 

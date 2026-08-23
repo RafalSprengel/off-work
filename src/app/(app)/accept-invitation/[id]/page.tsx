@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Alert, Button, Center, Loader, Stack } from "@mantine/core";
@@ -18,7 +18,13 @@ export default function AcceptInvitationPage() {
     const [status, setStatus] = useState<Status>("checking");
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+    // Prevent double execution in React 18 Strict Mode (dev mode)
+    const executedRef = useRef(false);
+
     useEffect(() => {
+        if (executedRef.current) return;
+        executedRef.current = true;
+
         let isMounted = true;
 
         async function run() {
@@ -57,7 +63,10 @@ export default function AcceptInvitationPage() {
                     await authClient.organization.setActive({ organizationId });
                 }
 
-                const { success, role } = await getCurrentEmployeeRole();
+                // Fresh session is needed here because accept-invitation just
+                // changed the active organization – the cookie cache may still
+                // hold stale data.
+                const { success, role } = await getCurrentEmployeeRole({ freshSession: true });
 
                 if (!isMounted) return;
 
