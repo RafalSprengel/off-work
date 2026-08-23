@@ -5,16 +5,7 @@ import ClosureDay from "@/db/models/ClosureDay";
 import { revalidatePath } from "next/cache";
 import { getOrganizationId } from "@/utils/getOrganizationId";
 import dayjs from "dayjs";
-
-export interface CreateClosureDayInput {
-    date: string; // YYYY-MM-DD
-    title: string;
-}
-
-export interface CreateClosureDayResult {
-    success: boolean;
-    error: string | null;
-}
+import type { CreateClosureDayInput, CreateClosureDayResult } from "@/types/closureDay";
 
 export async function createClosureDay(
     input: CreateClosureDayInput

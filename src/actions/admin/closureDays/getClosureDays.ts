@@ -3,23 +3,7 @@
 import dbConnect from "@/db/connection";
 import ClosureDay, { type ClosureDayType } from "@/db/models/ClosureDay";
 import { getOrganizationId } from "@/utils/getOrganizationId";
-
-export interface ClosureDayItem {
-    id: string;
-    date: string; // "YYYY-MM-DD"
-    title: string;
-    type: ClosureDayType;
-    region: string | null;
-    batchLabel: string | null;
-    enabled: boolean;
-    isCustom: boolean;
-}
-
-export interface GetClosureDaysResult {
-    success: boolean;
-    data: ClosureDayItem[];
-    error: string | null;
-}
+import type { ClosureDayItem, GetClosureDaysResult } from "@/types/closureDay";
 
 export async function getClosureDays(
     type?: ClosureDayType,

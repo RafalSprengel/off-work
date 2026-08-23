@@ -4,12 +4,7 @@ import dbConnect from "@/db/connection";
 import ClosureDay from "@/db/models/ClosureDay";
 import { revalidatePath } from "next/cache";
 import { getOrganizationId } from "@/utils/getOrganizationId";
-
-export interface ClearBankHolidaysResult {
-    success: boolean;
-    deletedCount: number;
-    error: string | null;
-}
+import type { ClearBankHolidaysResult } from "@/types/closureDay";
 
 export async function clearBankHolidays(): Promise<ClearBankHolidaysResult> {
     try {

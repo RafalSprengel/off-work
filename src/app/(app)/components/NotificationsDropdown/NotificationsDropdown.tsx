@@ -27,7 +27,7 @@ import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { getTeamLeaveRequests } from "@/actions/manager/leave/getTeamLeaveRequests";
-import type { TeamLeaveRequestItem } from "@/actions/manager/leave/getTeamLeaveRequests";
+import type { TeamLeaveRequestItem } from "@/types/leaveRequest";
 
 dayjs.extend(relativeTime);
 

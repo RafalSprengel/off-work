@@ -3,28 +3,7 @@
 import connectDB from "@/db/connection";
 import LeaveRequest from "@/db/models/LeaveRequest";
 import { getCurrentEmployeeId } from "@/actions/shared/getCurrentEmployeeId";
-
-export interface MyLeaveRequestDetail {
-    _id: string;
-    startDate: string;
-    endDate: string;
-    daysRequested: number;
-    status: "pending" | "approved" | "rejected" | "cancelled";
-    type: "annual" | "sick" | "unpaid" | "other";
-    comment?: string;
-    rejectionReason?: string | null;
-    approvedAt?: string | null;
-    cancelledAt?: string | null;
-    snapshot: {
-        employeeName: string;
-        employeeEmail: string;
-        departmentName: string;
-        managerName?: string;
-        approvedByName?: string;
-    };
-    createdAt: string;
-    updatedAt: string;
-}
+import type { MyLeaveRequestDetail } from "@/types/leaveRequest";
 
 export async function getMyLeaveRequestById(id: string) {
     try {

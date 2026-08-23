@@ -1,6 +1,7 @@
 "use client";
 
-import { getTeamLeaveRequests, type TeamLeaveRequestItem } from "@/actions/manager/leave/getTeamLeaveRequests";
+import { getTeamLeaveRequests } from "@/actions/manager/leave/getTeamLeaveRequests";
+import type { TeamLeaveRequestItem } from "@/types/leaveRequest";
 import { notifications } from "@mantine/notifications";
 import { IconX } from "@tabler/icons-react";
 import { useEffect, useState } from "react";

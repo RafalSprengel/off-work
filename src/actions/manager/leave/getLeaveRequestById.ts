@@ -3,30 +3,7 @@
 import connectDB from "@/db/connection";
 import LeaveRequest from "@/db/models/LeaveRequest";
 import { getOrganizationId } from "@/utils/getOrganizationId";
-
-export interface LeaveRequestDetail {
-    _id: string;
-    startDate: string;
-    endDate: string;
-    startHalfDay: boolean;
-    endHalfDay: boolean;
-    daysRequested: number;
-    status: "pending" | "approved" | "rejected" | "cancelled";
-    type: "annual" | "sick" | "unpaid" | "other";
-    comment?: string;
-    rejectionReason?: string | null;
-    approvedAt?: string | null;
-    cancelledAt?: string | null;
-    snapshot: {
-        employeeName: string;
-        employeeEmail: string;
-        departmentName: string;
-        managerName?: string;
-        approvedByName?: string;
-    };
-    createdAt: string;
-    updatedAt: string;
-}
+import type { LeaveRequestDetail } from "@/types/leaveRequest";
 
 export async function getLeaveRequestById(id: string) {
     try {

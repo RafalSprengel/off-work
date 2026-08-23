@@ -2,8 +2,8 @@
 
 import {
     getTeamDashboard,
-    type TeamDashboardData,
 } from "@/actions/manager/leave/getTeamDashboard";
+import type { TeamDashboardData } from "@/types/dashboard";
 import { notifications } from "@mantine/notifications";
 import { IconX } from "@tabler/icons-react";
 import { useEffect, useState } from "react";

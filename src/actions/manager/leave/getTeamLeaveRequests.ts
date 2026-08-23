@@ -3,24 +3,7 @@
 import connectDB from "@/db/connection";
 import LeaveRequest from "@/db/models/LeaveRequest";
 import { getOrganizationId } from "@/utils/getOrganizationId";
-
-export interface TeamLeaveRequestItem {
-    _id: string;
-    startDate: string;
-    endDate: string;
-    startHalfDay: boolean;
-    endHalfDay: boolean;
-    daysRequested: number;
-    status: "pending" | "approved" | "rejected";
-    type: "annual" | "sick" | "unpaid" | "other";
-    snapshot: {
-        employeeName: string;
-        employeeEmail: string;
-        departmentName: string;
-    };
-    createdAt: string;
-    updatedAt: string;
-}
+import type { TeamLeaveRequestItem } from "@/types/leaveRequest";
 
 export async function getTeamLeaveRequests() {
     try {

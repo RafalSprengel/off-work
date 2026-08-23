@@ -2,8 +2,8 @@
 
 import {
     getLeaveRequestById,
-    type LeaveRequestDetail,
 } from "@/actions/manager/leave/getLeaveRequestById";
+import type { LeaveRequestDetail } from "@/types/leaveRequest";
 import { notifications } from "@mantine/notifications";
 import { IconX } from "@tabler/icons-react";
 import { useEffect, useState } from "react";

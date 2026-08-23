@@ -30,7 +30,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useTeamLeaveRequests } from "@/hooks/useTeamLeaveRequests";
-import type { TeamLeaveRequestItem } from "@/actions/manager/leave/getTeamLeaveRequests";
+import type { TeamLeaveRequestItem } from "@/types/leaveRequest";
 
 type RequestWithSnapshot = TeamLeaveRequestItem & {
   snapshot: NonNullable<TeamLeaveRequestItem["snapshot"]>;

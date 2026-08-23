@@ -2,8 +2,8 @@
 
 import {
     getMyLeaveRequestById,
-    type MyLeaveRequestDetail,
 } from "@/actions/employee/leave/getMyLeaveRequestById";
+import type { MyLeaveRequestDetail } from "@/types/leaveRequest";
 import { notifications } from "@mantine/notifications";
 import { IconX } from "@tabler/icons-react";
 import { useEffect, useState } from "react";

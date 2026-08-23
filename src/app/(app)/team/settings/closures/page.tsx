@@ -23,7 +23,8 @@ import { notifications } from "@mantine/notifications";
 import { IconPlus, IconTrash } from "@tabler/icons-react";
 import dayjs from "dayjs";
 
-import { getClosureDays, type ClosureDayItem } from "@/actions/admin/closureDays/getClosureDays";
+import { getClosureDays } from "@/actions/admin/closureDays/getClosureDays";
+import type { ClosureDayItem } from "@/types/closureDay";
 import { createClosureDay } from "@/actions/admin/closureDays/createClosureDay";
 import { toggleClosureDay } from "@/actions/admin/closureDays/toggleClosureDay";
 import { deleteClosureDay } from "@/actions/admin/closureDays/deleteClosureDay";
