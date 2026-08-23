@@ -175,6 +175,7 @@ export default function SidebarContent({
                 data-active={isActive("/me")}
                 component={Link}
                 href="/me"
+                prefetch={false}
                 onClick={onClose}
               >
                 <Group gap="sm">
@@ -188,6 +189,7 @@ export default function SidebarContent({
                 data-active={isActive("/me/leave-requests")}
                 component={Link}
                 href="/me/leave-requests"
+                prefetch={false}
                 onClick={onClose}
               >
                 <Group gap="sm">
@@ -201,6 +203,7 @@ export default function SidebarContent({
                 data-active={isActive("/me/calendar")}
                 component={Link}
                 href="/me/calendar"
+                prefetch={false}
                 onClick={onClose}
               >
                 <Group gap="sm">
@@ -220,6 +223,7 @@ export default function SidebarContent({
                 data-active={isActive("/team")}
                 component={Link}
                 href="/team"
+                prefetch={false}
                 onClick={onClose}
               >
                 <Group gap="sm">
@@ -233,6 +237,7 @@ export default function SidebarContent({
                 data-active={isActive("/team/leave-requests")}
                 component={Link}
                 href="/team/leave-requests"
+                prefetch={false}
                 onClick={onClose}
               >
                 <Group gap="sm">
@@ -246,6 +251,7 @@ export default function SidebarContent({
                 data-active={isActive("/team/calendar")}
                 component={Link}
                 href="/team/calendar"
+                prefetch={false}
                 onClick={onClose}
               >
                 <Group gap="sm">
@@ -263,6 +269,7 @@ export default function SidebarContent({
                 data-active={isActive("/team/departments")}
                 component={Link}
                 href="/team/departments"
+                prefetch={false}
                 onClick={onClose}
               >
                 <Group gap="sm">
@@ -276,6 +283,7 @@ export default function SidebarContent({
                 data-active={isActive("/team/employees")}
                 component={Link}
                 href="/team/employees"
+                prefetch={false}
                 onClick={onClose}
               >
                 <Group gap="sm">
@@ -289,6 +297,7 @@ export default function SidebarContent({
                 data-active={isActive("/team/settings")}
                 component={Link}
                 href="/team/settings"
+                prefetch={false}
                 onClick={onClose}
               >
                 <Group gap="sm">
