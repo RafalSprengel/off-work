@@ -5,25 +5,38 @@ import { headers } from "next/headers";
 import dbConnect from "@/db/connection";
 import Employee from "@/db/models/Employee";
 
-export async function getCurrentEmployeeRole(): Promise<{
+/**
+ * Resolve the current user's role.
+ *
+ * When called from the sign-in flow **right after setActive()** the server-side
+ * session cookie may still be cached (cookieCache maxAge = 5 min).  Pass the
+ * `userId` obtained from the *client-side* `authClient.getSession()` (which is
+ * always fresh) to bypass the cache and read the Employee record directly.
+ */
+export async function getCurrentEmployeeRole(
+    userId?: string | null,
+): Promise<{
     success: boolean;
     role: "Manager" | "Employee" | null;
     error: string | null;
 }> {
     try {
-        const auth = await getAuth();
+        let resolvedUserId = userId;
 
-        const session = await auth.api.getSession({
-            headers: await headers(),
-        });
-
-        if (!session?.user) {
-            return { success: false, role: null, error: "Unauthorized: No active session" };
+        if (!resolvedUserId) {
+            const auth = await getAuth();
+            const session = await auth.api.getSession({
+                headers: await headers(),
+            });
+            if (!session?.user) {
+                return { success: false, role: null, error: "Unauthorized: No active session" };
+            }
+            resolvedUserId = session.user.id;
         }
 
         await dbConnect();
 
-        const employee = await Employee.findOne({ userId: session.user.id }).lean();
+        const employee = await Employee.findOne({ userId: resolvedUserId }).lean();
 
         if (!employee) {
             return { success: false, role: null, error: "No Employee profile linked to this account" };

@@ -11,13 +11,14 @@ function createAuth(db: Db) {
     return betterAuth({
         database: mongodbAdapter(db),
 
-        // Disabled cookieCache to ensure fresh session data is always returned
-        // after operations like setActive() that update the session in the DB.
-        // Without this, server actions like getCurrentEmployeeRole() can read
-        // stale cached data that doesn't reflect the latest changes.
+        // Cache session data for 5 minutes to avoid hitting MongoDB on every
+        // protected route transition. Server actions that need the absolute
+        // freshest data (e.g. right after setActive()) should accept the
+        // userId from the client instead of relying on the cached session.
         session: {
             cookieCache: {
-                enabled: false,
+                enabled: true,
+                maxAge: 60 * 5, // 5 minutes
             },
         },
 

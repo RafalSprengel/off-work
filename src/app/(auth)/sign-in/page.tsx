@@ -92,7 +92,13 @@ function SignInForm() {
                 }
             }
 
-            const { success, role, error } = await getCurrentEmployeeRole();
+            // Use the client-side session userId (always fresh) to bypass the
+            // server-side session cookie cache that may still hold stale data
+            // right after setActive().
+            const freshSession = await authClient.getSession();
+            const currentUserId = freshSession.data?.user?.id;
+
+            const { success, role, error } = await getCurrentEmployeeRole(currentUserId);
 
             console.log("[sign-in] getCurrentEmployeeRole result:", { success, role, error });
 
@@ -106,10 +112,9 @@ function SignInForm() {
                 return;
             }
 
-            // Fallback if getCurrentEmployeeRole fails (e.g. stale cache,
-            // missing Employee profile, etc.) - redirect to /team anyway.
-            // The dashboard layout will redirect back to /sign-in if the
-            // session is invalid.
+            // Fallback if getCurrentEmployeeRole fails - redirect to /team anyway.
+            // The dashboard layout will redirect back to /sign-in if the session
+            // is invalid.
             console.error("[sign-in] getCurrentEmployeeRole failed, falling back to /team:", error);
             window.location.href = "/team";
         } catch (err) {
