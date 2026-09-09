@@ -1,3 +1,4 @@
+"use client";
 import { useEffect, useState } from "react";
 import { getManagers } from "@/actions/manager/employees/getManagers";
 import type { IManager } from "@/types/employees";

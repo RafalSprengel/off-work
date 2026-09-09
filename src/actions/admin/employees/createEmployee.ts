@@ -33,7 +33,7 @@ export async function createEmployee(data: ICreateEmployeeInput): Promise<{ succ
         // just a placeholder nobody can ever activate.
         try {
             const auth = await getAuth();
-            await auth.api.createInvitation({
+            const invitation = await auth.api.createInvitation({
                 body: {
                     email: data.email,
                     role: data.role === "Manager" ? "admin" : "member",
@@ -41,7 +41,10 @@ export async function createEmployee(data: ICreateEmployeeInput): Promise<{ succ
                 },
                 headers: await headers(),
             });
+            console.log(`[createEmployee] Invitation created successfully for ${data.email}, invitationId=${invitation?.id}`);
+            // Email jest wysyłany automatycznie przez Better Auth poprzez callback sendInvitationEmail w src/lib/auth.ts
         } catch (invitationError) {
+            console.error("[createEmployee] Invitation creation failed:", invitationError instanceof Error ? invitationError.message : invitationError);
             // Roll back the Employee row so we don't leave behind an
             // "invited" placeholder that can never actually be invited.
             await employee.deleteOne();

@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
     Anchor,
@@ -17,37 +17,24 @@ import { IconX } from "@tabler/icons-react";
 import { authClient } from "@/lib/auth-client";
 import AuthCard from "../_components/AuthCard/AuthCard";
 
-function slugify(value: string): string {
-    const base = value
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "");
-
-    const suffix = Date.now().toString(36).slice(-4);
-    return base ? `${base}-${suffix}` : `org-${suffix}`;
-}
-
 function SignUpForm() {
-    const router = useRouter();
     const searchParams = useSearchParams();
     const callbackURL = searchParams.get("callbackURL");
     const isInviteFlow = !!callbackURL;
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSignedUp, setIsSignedUp] = useState(false);
+    const [signUpEmail, setSignUpEmail] = useState("");
 
     const form = useForm({
         initialValues: {
             fullName: "",
-            companyName: "",
             email: "",
             password: "",
             confirmPassword: "",
         },
         validate: {
             fullName: (value) => (value.trim() ? null : "Your name is required"),
-            companyName: (value) =>
-                isInviteFlow || value.trim() ? null : "Company name is required",
             email: (value) =>
                 /^\S+@\S+\.\S+$/.test(value) ? null : "Enter a valid email",
             password: (value) =>
@@ -64,11 +51,13 @@ function SignUpForm() {
         setIsSubmitting(true);
 
         try {
-            const { error: signUpError } = await authClient.signUp.email({
-                name: form.values.fullName,
-                email: form.values.email,
-                password: form.values.password,
-            });
+            const { error: signUpError } =
+                await authClient.signUp.email({
+                    name: form.values.fullName,
+                    email: form.values.email,
+                    password: form.values.password,
+                    callbackURL: "/verify-email/callback",
+                });
 
             if (signUpError) {
                 if (
@@ -88,40 +77,17 @@ function SignUpForm() {
             }
 
             if (isInviteFlow) {
-                // ✅ POPRAWKA: Twarde przekierowanie zamiast push + refresh
+                // Invite flow — redirect to accept the invitation
                 window.location.href = callbackURL;
                 return;
             }
 
-            const { data: orgData, error: orgError } =
-                await authClient.organization.create({
-                    name: form.values.companyName,
-                    slug: slugify(form.values.companyName),
-                });
+            // New org flow — user is created but NOT logged in yet
+            // (requireEmailVerification blocks auto-sign-in).
+            // After email verification, they'll be redirected to /onboarding.
 
-            if (orgError || !orgData) {
-                notifications.show({
-                    title: "Error",
-                    message:
-                        orgError?.message || "Account created, but the company setup failed.",
-                    color: "red",
-                    icon: <IconX />,
-                });
-                return;
-            }
-
-            await authClient.organization.setActive({
-                organizationId: orgData.id,
-            });
-
-            notifications.show({
-                title: "Welcome to Off-Work",
-                message: "Your account and company have been created.",
-                color: "green",
-            });
-
-            // ✅ POPRAWKA: Twarde przekierowanie zamiast push + refresh
-            window.location.href = "/team";
+            setSignUpEmail(form.values.email);
+            setIsSignedUp(true);
         } catch (err) {
             notifications.show({
                 title: "Error",
@@ -134,13 +100,57 @@ function SignUpForm() {
         }
     }
 
+    if (isSignedUp) {
+        return (
+            <AuthCard
+                title="Check your email"
+                subtitle={`We sent a verification link to ${signUpEmail}. Click the link to verify your email, then you can set up your organization.`}
+            >
+                <Stack gap="md">
+                    <Text c="dimmed" size="sm">
+                        You won't be able to sign in until you verify your email address.
+                    </Text>
+
+                    <Button
+                        fullWidth
+                        variant="light"
+                        onClick={() => {
+                            // Allow resending the verification email
+                            authClient.sendVerificationEmail({
+                                email: signUpEmail,
+                                callbackURL: "/verify-email/callback",
+                            });
+                            notifications.show({
+                                title: "Verification email sent",
+                                message: "Check your inbox for the new verification link.",
+                                color: "blue",
+                            });
+                        }}
+                    >
+                        Resend verification email
+                    </Button>
+
+                    <Text size="sm" ta="center" mt="md">
+                        <Anchor
+                            component={Link}
+                            href="/sign-in"
+                            fw={600}
+                        >
+                            Go to sign in
+                        </Anchor>
+                    </Text>
+                </Stack>
+            </AuthCard>
+        );
+    }
+
     return (
         <AuthCard
             title="Create your account"
             subtitle={
                 isInviteFlow
                     ? "Set a password to join your team on Off-Work."
-                    : "Set up your company on Off-Work in a couple of minutes."
+                    : "Create your account to get started."
             }
         >
             <form
@@ -155,13 +165,6 @@ function SignUpForm() {
                         placeholder="e.g. John Smith"
                         {...form.getInputProps("fullName")}
                     />
-                    {!isInviteFlow && (
-                        <TextInput
-                            label="Company name"
-                            placeholder="e.g. Acme Ltd"
-                            {...form.getInputProps("companyName")}
-                        />
-                    )}
                     <TextInput
                         label="Work email"
                         placeholder="you@company.com"

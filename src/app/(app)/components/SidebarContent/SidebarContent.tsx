@@ -34,11 +34,13 @@ import styles from "./SidebarContent.module.css";
 interface SidebarContentProps {
   onClose: () => void;
   isMobile: boolean;
+  role: "Manager" | "Employee" | null;
 }
 
 export default function SidebarContent({
   onClose,
   isMobile,
+  role,
 }: SidebarContentProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -46,7 +48,7 @@ export default function SidebarContent({
   const [mounted, setMounted] = useState(false);
 
   const [viewMode, setViewMode] = useState<string>(() =>
-    pathname.startsWith("/team") ? "team" : "me"
+    role === "Employee" ? "me" : pathname.startsWith("/team") ? "team" : "me"
   );
 
   useEffect(() => {
@@ -54,12 +56,14 @@ export default function SidebarContent({
   }, []);
 
   useEffect(() => {
-    if (pathname.startsWith("/team")) {
+    if (role === "Employee") {
+      setViewMode("me");
+    } else if (pathname.startsWith("/team")) {
       setViewMode("team");
     } else if (pathname.startsWith("/me")) {
       setViewMode("me");
     }
-  }, [pathname]);
+  }, [pathname, role]);
 
   const handleViewModeChange = (value: string) => {
     setViewMode(value);
@@ -134,32 +138,34 @@ export default function SidebarContent({
           )}
         </Group>
 
-        <SegmentedControl
-          fullWidth
-          mt="lg"
-          value={viewMode}
-          onChange={handleViewModeChange}
-          data={[
-            { label: "TEAM", value: "team" },
-            { label: "ME", value: "me" },
-          ]}
-          styles={{
-            root: {
-              backgroundColor: "rgba(255, 255, 255, 0.05)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
-              padding: "4px",
-            },
-            indicator: {
-              backgroundColor: "rgba(255, 255, 255, 0.12)",
-            },
-            label: {
-              color: "var(--mantine-color-dimmed)",
-              fontWeight: 600,
-              fontSize: "12px",
-              letterSpacing: "0.5px",
-            },
-          }}
-        />
+        {role === "Manager" && (
+          <SegmentedControl
+            fullWidth
+            mt="lg"
+            value={viewMode}
+            onChange={handleViewModeChange}
+            data={[
+              { label: "TEAM", value: "team" },
+              { label: "ME", value: "me" },
+            ]}
+            styles={{
+              root: {
+                backgroundColor: "rgba(255, 255, 255, 0.05)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                padding: "4px",
+              },
+              indicator: {
+                backgroundColor: "rgba(255, 255, 255, 0.12)",
+              },
+              label: {
+                color: "var(--mantine-color-dimmed)",
+                fontWeight: 600,
+                fontSize: "12px",
+                letterSpacing: "0.5px",
+              },
+            }}
+          />
+        )}
       </div>
 
       <div className={styles.scrollSection}>

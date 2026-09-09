@@ -7,6 +7,7 @@ export interface IEmployeeDocument extends Document {
     lastName: string;
     email: string;
     role: "Manager" | "Employee";
+    isOwner: boolean;
     department: mongoose.Types.ObjectId;
     holidayAllowance: number;
     employmentDate: Date;
@@ -20,7 +21,6 @@ const EmployeeSchema = new Schema<IEmployeeDocument>(
     {
         userId: {
             type: String,
-            default: null,
         },
         organizationId: {
             type: String,
@@ -38,6 +38,10 @@ const EmployeeSchema = new Schema<IEmployeeDocument>(
             type: String,
             enum: ["Manager", "Employee"],
             default: "Employee",
+        },
+        isOwner: {
+            type: Boolean,
+            default: false,
         },
         department: {
             type: Schema.Types.ObjectId,

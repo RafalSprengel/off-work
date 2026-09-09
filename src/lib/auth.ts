@@ -25,6 +25,7 @@ function createAuth(db: Db) {
         emailAndPassword: {
             enabled: true,
             minPasswordLength: 8,
+            requireEmailVerification: true,
             sendResetPassword: async ({ url, user }) => {
                 await sendEmail({
                     to: user.email,
@@ -40,6 +41,9 @@ function createAuth(db: Db) {
         },
 
         emailVerification: {
+            sendOnSignUp: true,
+            sendOnSignIn: true,
+            autoSignInAfterVerification: true,
             sendVerificationEmail: async ({ user, url }) => {
                 try {
                     await sendEmail({
@@ -55,6 +59,14 @@ function createAuth(db: Db) {
                     console.error("[auth] sendVerificationEmail: send error:", err);
                 }
             },
+            afterEmailVerification: async (verifiedUser) => {
+                // After email verification and auto-sign-in, Better Auth
+                // redirects to /verify-email/callback, which in turn sends
+                // the user to /onboarding to create their organization.
+                console.log(
+                    `[auth:afterEmailVerification] Email verified for user ${verifiedUser.id} (${verifiedUser.email})`
+                );
+            },
         },
 
         user: {
@@ -67,18 +79,52 @@ function createAuth(db: Db) {
             // --- Tenancy: source of truth for organizations/members/invitations ---
             organization({
                 creatorRole: "owner",
-
+                invitationExpiresIn: 3600 * 24 * 7, // 7 days invitation expire time
                 sendInvitationEmail: async (data) => {
                     const inviteUrl = `${process.env.BETTER_AUTH_URL ?? "http://localhost:3000"}/accept-invitation/${data.id}`;
-                    await sendEmail({
-                        to: data.email,
-                        subject: `You've been invited to join ${data.organization.name} on Off Work`,
-                        html: `
-                            <p>Hi,</p>
-                            <p>${data.inviter.user.name || data.inviter.user.email} invited you to join <strong>${data.organization.name}</strong> on Off Work.</p>
-                            <p><a href="${inviteUrl}">Accept invitation</a></p>
-                        `,
-                    });
+                    try {
+                        await sendEmail({
+                            to: data.email,
+                            subject: `You've been invited to join ${data.organization.name} on Off Work`,
+                            html: `
+                                <!DOCTYPE html>
+                                <html>
+                                <head><meta charset="utf-8"></head>
+                                <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f6f9fc; margin: 0; padding: 0;">
+                                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f6f9fc; padding: 40px 0;">
+                                        <tr>
+                                            <td align="center">
+                                                <table width="480" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                                                    <tr>
+                                                        <td style="padding: 40px 48px 32px;">
+                                                            <h1 style="font-size: 24px; font-weight: 700; color: #1a1a2e; margin: 0 0 8px;">You're invited! 🎉</h1>
+                                                            <p style="font-size: 16px; color: #64748b; line-height: 1.5; margin: 0 0 24px;">${data.inviter.user.name || data.inviter.user.email} invited you to join <strong>${data.organization.name}</strong> on <strong>Off Work</strong> — the simplest way to manage your team's leave and holidays.</p>
+                                                            <table cellpadding="0" cellspacing="0">
+                                                                <tr>
+                                                                    <td align="center" style="background-color: #228be6; border-radius: 6px; padding: 12px 32px;">
+                                                                        <a href="${inviteUrl}" style="color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; display: inline-block;">Accept invitation</a>
+                                                                    </td>
+                                                                </tr>
+                                                            </table>
+                                                            <p style="font-size: 14px; color: #94a3b8; line-height: 1.5; margin: 24px 0 0;">If you didn't expect this invitation, you can safely ignore this email.</p>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="padding: 24px 48px; border-top: 1px solid #e2e8f0;">
+                                                            <p style="font-size: 12px; color: #94a3b8; margin: 0;">Off Work — Leave management made simple</p>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </body>
+                                </html>
+                            `,
+                        });
+                    } catch (emailError) {
+                        console.error("[auth:sendInvitationEmail] Failed to send invitation email:", emailError instanceof Error ? emailError.message : emailError);
+                    }
                 },
 
                 // Automatically create the matching HR "Employee" profile the
@@ -86,41 +132,53 @@ function createAuth(db: Db) {
                 // both the org creator and anyone accepting an invite).
                 organizationHooks: {
                     afterAddMember: async ({ member, user, organization: org }) => {
-                        await dbConnect();
+                        try {
+                            await dbConnect();
 
-                        // If an admin already created an "invited" Employee row
-                        // for this email (via createEmployee.ts), just link it
-                        // to the newly-created Better Auth account.
-                        const invited = await Employee.findOne({
-                            email: user.email.toLowerCase(),
-                            organizationId: org.id,
-                            userId: null,
-                        });
+                            // If an admin already created an "invited" Employee row
+                            // for this email (via createEmployee.ts), just link it
+                            // to the newly-created Better Auth account.
+                            const employee = await Employee.findOneAndUpdate(
+                                {
+                                    email: user.email.toLowerCase(),
+                                    organizationId: org.id,
+                                    status: "invited",
+                                },
+                                {
+                                    $set: {
+                                        userId: member.userId,
+                                        status: "active",
+                                    },
+                                },
+                                { new: true }
+                            );
 
-                        if (invited) {
-                            invited.userId = member.userId;
-                            invited.status = "active";
-                            await invited.save();
-                            return;
+                            if (employee) {
+                                console.log(`[auth:afterAddMember] Activated invited employee ${employee.email} (userId=${member.userId})`);
+                                return;
+                            }
+
+                            // No pre-created record (e.g. this user created/owns the
+                            // organization itself) - create a fresh HR profile.
+                            const alreadyLinked = await Employee.findOne({ userId: member.userId });
+                            if (alreadyLinked) return;
+
+                            const [firstName, ...rest] = (user.name || user.email.split("@")[0]).split(" ");
+
+                            await Employee.create({
+                                userId: member.userId,
+                                organizationId: org.id,
+                                firstName: firstName || "New",
+                                lastName: rest.join(" ") || "Employee",
+                                email: user.email,
+                                role: member.role === "admin" ? "Manager" : "Employee",
+                                isOwner: member.role === "owner",
+                                employmentDate: new Date(),
+                                status: "active",
+                            });
+                        } catch (error) {
+                            console.error("[auth:afterAddMember] Error:", error);
                         }
-
-                        // No pre-created record (e.g. this user created/owns the
-                        // organization itself) - create a fresh HR profile.
-                        const alreadyLinked = await Employee.findOne({ userId: member.userId });
-                        if (alreadyLinked) return;
-
-                        const [firstName, ...rest] = (user.name || user.email.split("@")[0]).split(" ");
-
-                        await Employee.create({
-                            userId: member.userId,
-                            organizationId: org.id,
-                            firstName: firstName || "New",
-                            lastName: rest.join(" ") || "Employee",
-                            email: user.email,
-                            role: member.role === "owner" || member.role === "admin" ? "Manager" : "Employee",
-                            employmentDate: new Date(),
-                            status: "active",
-                        });
                     },
                 },
             }),

@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
+    Alert,
     Anchor,
     Button,
     PasswordInput,
@@ -13,7 +14,7 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
-import { IconX } from "@tabler/icons-react";
+import { IconAlertCircle, IconMail } from "@tabler/icons-react";
 import { authClient } from "@/lib/auth-client";
 import { getCurrentEmployeeRole } from "@/actions/shared/getCurrentEmployeeRole";
 import AuthCard from "../_components/AuthCard/AuthCard";
@@ -23,7 +24,9 @@ function SignInForm() {
     const searchParams = useSearchParams();
     const callbackURL = searchParams.get("callbackURL");
 
+    const [signInError, setSignInError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [signInErrorCode, setSignInErrorCode] = useState<string | null>(null);
 
     const form = useForm({
         initialValues: {
@@ -41,6 +44,7 @@ function SignInForm() {
         const { hasErrors } = form.validate();
         if (hasErrors) return;
 
+        setSignInError(null);
         setIsSubmitting(true);
 
         try {
@@ -51,12 +55,16 @@ function SignInForm() {
                 });
 
             if (signInError || !signInData) {
-                notifications.show({
-                    title: "Sign in failed",
-                    message: signInError?.message || "Invalid email or password.",
-                    color: "red",
-                    icon: <IconX />,
-                });
+                // Provide a helpful message when the email is not yet verified
+                if (signInError?.code === "EMAIL_NOT_VERIFIED") {
+                    setSignInErrorCode("EMAIL_NOT_VERIFIED");
+                    setSignInError(
+                        "Please verify your email address first. Check your inbox for the verification link, or request a new one."
+                    );
+                } else {
+                    setSignInErrorCode(null);
+                    setSignInError(signInError?.message || "Invalid email or password.");
+                }
                 return;
             }
 
@@ -109,6 +117,17 @@ function SignInForm() {
                 return;
             }
 
+            // Account deactivated or no employee profile — sign out and inform the user
+            if (error === "Account is deactivated") {
+                await authClient.signOut();
+                await authClient.clearCache();
+                setIsSubmitting(false);
+                setSignInError(
+                    "Your account has been deactivated. Contact your administrator for more information."
+                );
+                return;
+            }
+
             // Fallback if getCurrentEmployeeRole fails - redirect to /team anyway.
             // The dashboard layout will redirect back to /sign-in if the session
             // is invalid.
@@ -139,12 +158,63 @@ function SignInForm() {
                         label="Email"
                         placeholder="you@company.com"
                         {...form.getInputProps("email")}
+                        onChange={(e) => {
+                            form.getInputProps("email").onChange(e);
+                            if (signInError) {
+                                setSignInError(null);
+                                setSignInErrorCode(null);
+                            }
+                        }}
                     />
                     <PasswordInput
                         label="Password"
                         placeholder="Your password"
                         {...form.getInputProps("password")}
+                        onChange={(e) => {
+                            form.getInputProps("password").onChange(e);
+                            if (signInError) {
+                                setSignInError(null);
+                                setSignInErrorCode(null);
+                            }
+                        }}
                     />
+
+                    {signInError && (
+                        <Alert
+                            variant="light"
+                            title={signInErrorCode === "EMAIL_NOT_VERIFIED" ? "Email not verified" : "Sign in failed"}
+                            color={signInErrorCode === "EMAIL_NOT_VERIFIED" ? "blue" : "red"}
+                            icon={signInErrorCode === "EMAIL_NOT_VERIFIED" ? <IconMail /> : <IconAlertCircle />}
+                            withCloseButton
+                            closeButtonLabel="Dismiss"
+                            onClose={() => {
+                                setSignInError(null);
+                                setSignInErrorCode(null);
+                            }}
+                        >
+                            {signInError}
+                            {signInErrorCode === "EMAIL_NOT_VERIFIED" && (
+                                <Button
+                                    variant="subtle"
+                                    size="xs"
+                                    mt="xs"
+                                    onClick={() => {
+                                        authClient.sendVerificationEmail({
+                                            email: form.values.email,
+                                            callbackURL: "/verify-email/callback",
+                                        });
+                                        notifications.show({
+                                            title: "Verification email sent",
+                                            message: "Check your inbox for the verification link.",
+                                            color: "blue",
+                                        });
+                                    }}
+                                >
+                                    Resend verification email
+                                </Button>
+                            )}
+                        </Alert>
+                    )}
 
                     <Button type="submit" fullWidth mt="sm" loading={isSubmitting}>
                         Log in

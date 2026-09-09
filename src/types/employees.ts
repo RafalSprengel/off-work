@@ -5,7 +5,8 @@ export interface IEmployee {
     firstName: string;
     lastName: string;
     email: string;
-    role: string;
+    role: "Manager" | "Employee";
+    isOwner: boolean;
     department?: IDepartment | string;
     holidayAllowance: number;
     employmentDate: string;
@@ -14,11 +15,11 @@ export interface IEmployee {
     status: "active" | "inactive" | "invited";
 }
 
-export type ICreateEmployeeInput = Omit<IEmployee, "_id" | "status" | "organizationId" | "department"> & {
+export type ICreateEmployeeInput = Omit<IEmployee, "_id" | "status" | "organizationId" | "department" | "isOwner"> & {
     department: string;
 };
 
-export type IUpdateEmployeeInput = Omit<IEmployee, "status" | "organizationId" | "department"> & {
+export type IUpdateEmployeeInput = Omit<IEmployee, "status" | "organizationId" | "department" | "isOwner"> & {
     department: string;
 };
 

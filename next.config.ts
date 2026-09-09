@@ -1,3 +1,6 @@
+// Rewrite not needed — /verify-email route handler rewrites the URL
+// internally before passing it to Better Auth's handler.
+// See src/app/verify-email/route.ts
 import type { NextConfig } from "next";
 import os from "node:os";
 

@@ -5,12 +5,21 @@ import Employee from "@/db/models/Employee";
 import mongoose from "mongoose";
 import type { IEmployee, IUpdateEmployeeInput } from "@/types/employees";
 import { getOrganizationId } from "@/utils/getOrganizationId";
+import { getAuth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 export async function updateEmployee(data: IUpdateEmployeeInput): Promise<{ success: boolean; data?: IEmployee; error?: string; errorCode?: string }> {
     try {
         await dbConnect();
         const organizationId = await getOrganizationId();
+
+        // Fetch the existing employee BEFORE updating to check if the email changed
+        const existingEmployee = await Employee.findOne({ _id: data._id, organizationId });
+
+        if (!existingEmployee) {
+            return { success: false, error: "Employee not found or access denied." };
+        }
 
         const employee = await Employee.findOneAndUpdate(
             { _id: data._id, organizationId },
@@ -29,6 +38,24 @@ export async function updateEmployee(data: IUpdateEmployeeInput): Promise<{ succ
 
         if (!employee) {
             return { success: false, error: "Employee not found or access denied." };
+        }
+
+        // If the email changed and the employee has a linked Better Auth user,
+        // update the Better Auth user's email as well to keep them in sync.
+        const emailChanged = existingEmployee.email !== data.email;
+        if (emailChanged && existingEmployee.userId) {
+            try {
+                const auth = await getAuth();
+                // Access the internal adapter via auth.$context to update the user email
+                const ctx = await auth.$context;
+                await ctx.internalAdapter.updateUser(existingEmployee.userId, {
+                    email: data.email,
+                });
+                console.log(`[updateEmployee] Better Auth user email updated from ${existingEmployee.email} to ${data.email}`);
+            } catch (authError) {
+                console.error("[updateEmployee] Failed to update Better Auth user email:", authError);
+                // Don't block the employee update - log and continue
+            }
         }
 
         revalidatePath("/employees", "page");

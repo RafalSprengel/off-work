@@ -2,62 +2,62 @@
 
 import { useState } from "react";
 import { Button, Group, Text } from "@mantine/core";
-import { deleteEmployee } from "@/actions/admin/employees/deleteEmployee";
+import { deactivateEmployee } from "@/actions/admin/employees/deactivateEmployee";
 import type { IEmployee } from "@/types/employees";
 
-export default function DeleteEmployeeModal({
+export default function DeactivateEmployeeModal({
     closeModal,
     employee,
 }: {
     closeModal: () => void;
     employee: IEmployee;
 }) {
-    const [deleting, setDeleting] = useState(false);
-    const [deleteError, setDeleteError] = useState<string | null>(null);
+    const [deactivating, setDeactivating] = useState(false);
+    const [deactivateError, setDeactivateError] = useState<string | null>(null);
 
-    async function handleDelete() {
-        setDeleting(true);
-        setDeleteError(null);
+    async function handleDeactivate() {
+        setDeactivating(true);
+        setDeactivateError(null);
 
-        const result = await deleteEmployee(employee._id);
+        const result = await deactivateEmployee(employee._id);
 
-        setDeleting(false);
+        setDeactivating(false);
 
         if (result.success) {
             closeModal();
         } else {
-            setDeleteError(result.error || "An error occurred");
+            setDeactivateError(result.error || "An error occurred");
         }
     }
 
     return (
         <>
             <Text size="sm">
-                Are you sure you want to delete{" "}
+                Are you sure you want to deactivate{" "}
                 <Text component="span" fw={600}>
                     {employee.firstName} {employee.lastName}
                 </Text>
-                ? This action cannot be undone.
+                ? They will no longer be able to log in, but their historical data will be preserved in the system.
             </Text>
-            {deleteError && (
+            {deactivateError && (
                 <Text c="red" size="sm" mt="xs">
-                    {deleteError}
+                    {deactivateError}
                 </Text>
             )}
             <Group grow mt="md">
                 <Button
                     variant="light"
                     onClick={closeModal}
-                    disabled={deleting}
+                    disabled={deactivating}
                 >
                     Cancel
                 </Button>
                 <Button
-                    color="red"
-                    onClick={handleDelete}
-                    loading={deleting}
+                    color="orange"
+                    onClick={handleDeactivate}
+                    loading={deactivating}
                 >
-                    Delete
+                    Deactivate
                 </Button>
             </Group>
         </>

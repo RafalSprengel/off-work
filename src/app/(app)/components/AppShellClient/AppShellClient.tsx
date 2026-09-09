@@ -28,8 +28,10 @@ import { NotificationsDropdown } from "../NotificationsDropdown/NotificationsDro
 
 export default function LayoutClient({
   children,
+  role,
 }: {
   children: React.ReactNode;
+  role: "Manager" | "Employee" | null;
 }) {
   const router = useRouter();
   const [opened, { toggle, close }] = useDisclosure();
@@ -123,7 +125,7 @@ export default function LayoutClient({
       </AppShell.Header>
 
       <AppShell.Navbar className={styles.sidebar} visibleFrom="sm">
-        <SidebarContent onClose={close} isMobile={false} />
+        <SidebarContent onClose={close} isMobile={false} role={role} />
       </AppShell.Navbar>
 
       <Drawer
@@ -139,7 +141,7 @@ export default function LayoutClient({
           overlay: { backdropFilter: "blur(4px)" },
         }}
       >
-        <SidebarContent onClose={close} isMobile={true} />
+        <SidebarContent onClose={close} isMobile={true} role={role} />
       </Drawer>
 
       <AppShell.Main className={styles.main}>{children}</AppShell.Main>
