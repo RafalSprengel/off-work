@@ -19,20 +19,10 @@ export default async function DashboardLayout({
     redirect("/sign-in");
   }
 
-  // Read the current pathname from the headers to decide how to render.
-  const headersList = await headers();
-  const pathname = headersList.get("x-invoke-path") || headersList.get("next-url") || "";
-  const isOnboarding = pathname.includes("/onboarding");
-
-  if (isOnboarding) {
-    // Onboarding is for users who just verified their email and don't
-    // have an organization yet — just pass children through without
-    // the app shell (no org/employee data to drive it).
-    return <>{children}</>;
-  }
-
+  // If the user has no active organization yet (e.g. just verified email
+  // and hasn't completed onboarding), render without the app shell.
   if (!session.session.activeOrganizationId) {
-    redirect("/sign-in");
+    return <>{children}</>;
   }
 
   const { success, role } = await getCurrentEmployeeRole({ freshSession: true });

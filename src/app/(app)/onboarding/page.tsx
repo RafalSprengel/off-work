@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+
 import { useForm } from "@mantine/form";
 import {
     Button,
@@ -26,7 +26,7 @@ function slugify(value: string): string {
 }
 
 export default function OnboardingPage() {
-    const router = useRouter();
+
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const form = useForm({
@@ -78,7 +78,7 @@ export default function OnboardingPage() {
                 color: "green",
             });
 
-            router.replace("/team");
+            window.location.replace("/team");
         } catch (err) {
             notifications.show({
                 title: "Error",

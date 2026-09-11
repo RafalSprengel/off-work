@@ -89,13 +89,9 @@ function SignInForm() {
                         organizationId: organizations[0].id,
                     });
                 } else {
-                    notifications.show({
-                        title: "No company found",
-                        message:
-                            "Your account isn't linked to a company yet. Contact your administrator.",
-                        color: "red",
-                        icon: <IconX />,
-                    });
+                    // User has a valid session but no organization yet
+                    // (e.g. just verified email). Redirect to onboarding.
+                    window.location.href = "/onboarding";
                     return;
                 }
             }

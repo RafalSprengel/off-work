@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Text, Loader, Center, Stack, Title, Button } from "@mantine/core";
 import { authClient } from "@/lib/auth-client";
@@ -88,5 +88,9 @@ function CallbackHandler() {
 }
 
 export default function VerificationCallbackPage() {
-    return <CallbackHandler />;
+    return (
+        <Suspense fallback={null}>
+            <CallbackHandler />
+        </Suspense>
+    );
 }
