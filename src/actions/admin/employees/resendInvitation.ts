@@ -6,6 +6,7 @@ import { getAuth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { getOrganizationId } from "@/utils/getOrganizationId";
 import { revalidatePath } from "next/cache";
+import dayjs from "dayjs";
 import { sendEmail } from "@/lib/sendEmail";
 
 export async function resendInvitation(employeeId: string): Promise<{ success: boolean; error?: string }> {
@@ -40,6 +41,7 @@ export async function resendInvitation(employeeId: string): Promise<{ success: b
         // Send the invitation email directly (reliable fallback)
         if (invitation?.id) {
             const inviteUrl = `${process.env.BETTER_AUTH_URL ?? "http://localhost:3000"}/accept-invitation/${invitation.id}`;
+            const expiresAt = dayjs().add(7, "day").format("MMMM D, YYYY");
             try {
                 await sendEmail({
                     to: employee.email,
@@ -57,6 +59,7 @@ export async function resendInvitation(employeeId: string): Promise<{ success: b
                                                 <td style="padding: 40px 48px 32px;">
                                                     <h1 style="font-size: 24px; font-weight: 700; color: #1a1a2e; margin: 0 0 8px;">You're invited! 🎉</h1>
                                                     <p style="font-size: 16px; color: #64748b; line-height: 1.5; margin: 0 0 24px;">This is a reminder to accept your invitation. Click the button below to set up your account.</p>
+                                                    <p style="font-size: 14px; color: #64748b; line-height: 1.5; margin: 0 0 24px;">This invitation is valid until <strong>${expiresAt}</strong>.</p>
                                                     <table cellpadding="0" cellspacing="0">
                                                         <tr>
                                                             <td align="center" style="background-color: #228be6; border-radius: 6px; padding: 12px 32px;">

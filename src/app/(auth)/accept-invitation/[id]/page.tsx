@@ -186,50 +186,10 @@ export default function AcceptInvitationPage() {
                 return;
             }
 
-            setStatus("accepting");
-            const { data, error } = await authClient.organization.acceptInvitation({
-                invitationId,
-            });
-
-            if (error || !data) {
-                setErrorMessage(
-                    error?.message ||
-                    "Account created but the invitation could not be accepted. Try logging in and clicking the invitation link again."
-                );
-                setStatus("error");
-                return;
-            }
-
-            const organizationId =
-                (data as any)?.invitation?.organizationId ??
-                (data as any)?.member?.organizationId;
-
-            if (organizationId) {
-                await authClient.organization.setActive({ organizationId });
-            }
-
-            // Activate the Employee record in our DB (safety net on top of the hook)
-            if (organizationId) {
-                await activateEmployeeAfterInvite({
-                    email: form.values.email,
-                    organizationId,
-                });
-            }
-
-            // Retry a few times — the afterAddMember hook needs to finish
-            // linking the Employee record with the new userId before we can
-            // detect the role and redirect correctly.
-            let roleResult: { success: boolean; role: "Manager" | "Employee" | null } | null = null;
-            for (let attempt = 0; attempt < 5; attempt++) {
-                roleResult = await getCurrentEmployeeRole({ freshSession: true });
-                if (roleResult.success && roleResult.role) break;
-                if (attempt < 4) await new Promise((r) => setTimeout(r, 500));
-            }
-
-            if (!isMountedRef.current) return;
-
-            setStatus("success");
-            window.location.href = roleResult?.success && roleResult?.role === "Employee" ? "/me" : "/team";
+            // Account created, but requireEmailVerification blocks auto-sign-in.
+            // Redirect to sign-in so the user can log in (after verifying their email)
+            // and then be redirected back to accept the invitation.
+            window.location.href = `/sign-in?callbackURL=${encodeURIComponent(`/accept-invitation/${invitationId}`)}`;
         } catch (err) {
             console.error("Account creation error:", err);
             setErrorMessage("An unexpected error occurred. Please try again or contact support.");

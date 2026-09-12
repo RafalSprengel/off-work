@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import dbConnect from "@/db/connection";
 import { sendEmail } from "@/lib/sendEmail";
 import { Db } from "mongodb";
+import dayjs from "dayjs";
 import Employee from "@/db/models/Employee";
 
 function createAuth(db: Db) {
@@ -82,6 +83,7 @@ function createAuth(db: Db) {
                 invitationExpiresIn: 3600 * 24 * 7, // 7 days invitation expire time
                 sendInvitationEmail: async (data) => {
                     const inviteUrl = `${process.env.BETTER_AUTH_URL ?? "http://localhost:3000"}/accept-invitation/${data.id}`;
+                    const expiresAt = dayjs().add(7, "day").format("MMMM D, YYYY");
                     try {
                         await sendEmail({
                             to: data.email,
@@ -99,6 +101,7 @@ function createAuth(db: Db) {
                                                         <td style="padding: 40px 48px 32px;">
                                                             <h1 style="font-size: 24px; font-weight: 700; color: #1a1a2e; margin: 0 0 8px;">You're invited! 🎉</h1>
                                                             <p style="font-size: 16px; color: #64748b; line-height: 1.5; margin: 0 0 24px;">${data.inviter.user.name || data.inviter.user.email} invited you to join <strong>${data.organization.name}</strong> on <strong>Off Work</strong> — the simplest way to manage your team's leave and holidays.</p>
+                                                            <p style="font-size: 14px; color: #64748b; line-height: 1.5; margin: 0 0 24px;">This invitation is valid until <strong>${expiresAt}</strong>.</p>
                                                             <table cellpadding="0" cellspacing="0">
                                                                 <tr>
                                                                     <td align="center" style="background-color: #228be6; border-radius: 6px; padding: 12px 32px;">
