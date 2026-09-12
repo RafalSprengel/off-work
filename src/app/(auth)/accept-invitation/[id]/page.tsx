@@ -11,6 +11,7 @@ import { authClient } from "@/lib/auth-client";
 import { getCurrentEmployeeRole } from "@/actions/shared/getCurrentEmployeeRole";
 import { getInvitationData } from "@/actions/public/invitation/getInvitationData";
 import { activateEmployeeAfterInvite } from "@/actions/public/invitation/acceptInvitation";
+import { verifyInvitedUserEmail } from "@/actions/public/invitation/verifyInvitedUserEmail";
 import AuthCard from "../../_components/AuthCard/AuthCard";
 
 type Status = "checking" | "form" | "accepting" | "error" | "success";
@@ -186,10 +187,34 @@ export default function AcceptInvitationPage() {
                 return;
             }
 
-            // Account created, but requireEmailVerification blocks auto-sign-in.
-            // Redirect to sign-in so the user can log in (after verifying their email)
-            // and then be redirected back to accept the invitation.
-            window.location.href = `/sign-in?callbackURL=${encodeURIComponent(`/accept-invitation/${invitationId}`)}`;
+            // The user clicked a link sent to their email address, so they have
+            // already proven ownership of that address. Mark the email as verified
+            // immediately so that requireEmailVerification does not block sign-in.
+            await verifyInvitedUserEmail({
+                email: form.values.email,
+                invitationId,
+            });
+
+            // Sign the user in automatically now that the email is verified.
+            const { error: signInError } = await authClient.signIn.email({
+                email: form.values.email,
+                password: form.values.password,
+            });
+
+            if (signInError) {
+                // Fallback: send them to the sign-in page manually
+                notifications.show({
+                    title: "Account created",
+                    message: "Your account is ready. Please log in to continue.",
+                    color: "blue",
+                    icon: <IconCheck size={16} />,
+                });
+                window.location.href = `/sign-in?callbackURL=${encodeURIComponent(`/accept-invitation/${invitationId}`)}`;
+                return;
+            }
+
+            // Signed in — let the invitation page handle the rest (accept + redirect)
+            window.location.href = `/accept-invitation/${invitationId}`;
         } catch (err) {
             console.error("Account creation error:", err);
             setErrorMessage("An unexpected error occurred. Please try again or contact support.");
