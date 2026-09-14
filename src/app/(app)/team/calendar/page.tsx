@@ -33,11 +33,15 @@ const typeColors: Record<string, string> = {
   other: "gray",
 };
 
-const typeLabels: Record<string, string> = {
-  annual: "Annual Leave",
-  sick: "Sick Leave",
-  unpaid: "Unpaid Leave",
-  other: "Other Leave",
+// "John Kowalski" -> "J. Kowalski" (pierwsza litera imienia + kropka + nazwisko)
+const formatShortName = (name?: string): string => {
+  if (!name) return "";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "";
+  if (parts.length === 1) return parts[0];
+  const firstName = parts[0];
+  const lastName = parts.slice(1).join(" ");
+  return `${firstName[0]}. ${lastName}`;
 };
 
 export default function TeamCalendarPage() {
@@ -85,16 +89,19 @@ export default function TeamCalendarPage() {
 
   const scheduleEvents: ScheduleEventData[] = useMemo(() => {
     return filteredRequests.map((req) => {
-      const fullName = `${req.employee?.firstName || ""} ${req.employee?.lastName || ""}`.trim();
-      const typeLabel = typeLabels[req.type] || req.type;
-      const statusLabel = req.status.charAt(0).toUpperCase() + req.status.slice(1);
+      const shortName = formatShortName(req.employeeName);
+      const name = shortName || "No name";
+      const days = req.daysRequested;
+      const title = days
+        ? `${name} (${days} ${days === 1 ? "day" : "days"})`
+        : name;
 
       const startDateFormatted = dayjs(req.startDate).format("YYYY-MM-DD");
       const endDateFormatted = dayjs(req.endDate).format("YYYY-MM-DD");
 
       return {
         id: req._id,
-        title: `${fullName} - ${typeLabel} (${statusLabel})`,
+        title,
         start: `${startDateFormatted} 00:00:00`,
         end: `${endDateFormatted} 23:59:59`,
         color: typeColors[req.type] || "gray",

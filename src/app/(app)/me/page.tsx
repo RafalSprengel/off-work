@@ -1,42 +1,45 @@
-'use client'
+"use client";
 
 import {
-  Card,
-  Text,
-  Title,
-  Button,
+  ActionIcon,
   Badge,
-  Group,
-  Stack,
-  SimpleGrid,
-  Grid,
-  ThemeIcon,
   Box,
+  Button,
+  Card,
+  Flex,
+  Grid,
+  Group,
+  Loader,
   Paper,
   Progress,
+  SimpleGrid,
+  Stack,
   Table,
-  ActionIcon,
+  Text,
+  ThemeIcon,
+  Title,
   Tooltip,
-  Loader,
-  Flex,
-} from "@mantine/core"
+} from "@mantine/core";
 import {
+  IconAlertCircle,
   IconCalendarPlus,
   IconCalendarStats,
-  IconClock,
   IconCheck,
-  IconX,
-  IconAlertCircle,
-  IconUsers,
   IconChevronRight,
+  IconClock,
   IconPlaneDeparture,
-} from "@tabler/icons-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation";
-import { useCurrentEmployee } from "@/hooks/useCurrentEmployee";
-import { useMyLeaveRequests } from "@/hooks/useMyLeaveRequests";
+  IconUsers,
+  IconX,
+} from "@tabler/icons-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useMemo } from "react";
+import { useCurrentEmployee } from "@/hooks/useCurrentEmployee";
+import { useEmployees } from "@/hooks/useEmployees";
+import { useMyLeaveRequests } from "@/hooks/useMyLeaveRequests";
+import { useTeamLeaveRequests } from "@/hooks/useTeamLeaveRequests";
 
 dayjs.extend(relativeTime);
 
@@ -44,13 +47,16 @@ export default function EmployeeDashboard() {
   const router = useRouter();
   const { employee, loading } = useCurrentEmployee();
   const { requests, loading: requestsLoading } = useMyLeaveRequests();
+  const { employees, loading: loadingEmployees } = useEmployees();
+  const { requests: teamRequests, loading: loadingTeamRequests } =
+    useTeamLeaveRequests();
 
   const typeLabels: Record<string, string> = {
     annual: "Annual Leave",
     sick: "Sick Leave",
     unpaid: "Unpaid Leave",
     other: "Other",
-  }
+  };
 
   const recentRequests = requests.map((req) => ({
     id: req._id,
@@ -59,20 +65,50 @@ export default function EmployeeDashboard() {
     days: req.daysRequested,
     status: req.status,
     submitted: dayjs(req.createdAt).fromNow(),
-  }))
+  }));
 
-  const upcomingTeamAbsences = [
-    { name: "Sarah Connor", type: "Annual Leave", dates: "Tomorrow" },
-    { name: "Mike Ross", type: "Remote Work", dates: "18 Aug - 20 Aug" },
-    { name: "Emma Watson", type: "Annual Leave", dates: "25 Aug - 01 Sep" },
-  ]
+  // Pracownicy z mojego dzialu (bez mnie) z zatwierdzonym urlopem
+  const colleaguesOnLeave = useMemo(() => {
+    if (!employee) return [];
 
-  if (loading || requestsLoading) {
+    const myDeptId =
+      typeof employee.department === "object"
+        ? employee.department?._id
+        : employee.department;
+
+    if (!myDeptId) return [];
+
+    const colleagueIds = new Set(
+      employees
+        .filter((emp) => emp._id !== employee._id)
+        .filter((emp) => {
+          const deptId =
+            typeof emp.department === "object"
+              ? emp.department?._id
+              : emp.department;
+          return deptId === myDeptId;
+        })
+        .map((emp) => emp._id),
+    );
+
+    return teamRequests
+      .filter(
+        (req) =>
+          req.status === "approved" &&
+          req.employee &&
+          colleagueIds.has(req.employee),
+      )
+      .sort(
+        (a, b) => dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf(),
+      );
+  }, [employee, employees, teamRequests]);
+
+  if (loading || requestsLoading || loadingEmployees || loadingTeamRequests) {
     return (
       <Flex justify="center" align="center" py={80}>
         <Loader />
       </Flex>
-    )
+    );
   }
 
   const holidayAllowance = employee?.holidayAllowance ?? 0;
@@ -82,7 +118,12 @@ export default function EmployeeDashboard() {
 
   return (
     <Stack gap="lg">
-      <Paper p="lg" radius="md" withBorder style={{ background: "var(--mantine-color-blue-0)" }}>
+      <Paper
+        p="lg"
+        radius="md"
+        withBorder
+        style={{ background: "var(--mantine-color-blue-0)" }}
+      >
         <Group justify="space-between" align="center" wrap="wrap">
           <Box>
             <Title order={2} size="h3">
@@ -226,8 +267,13 @@ export default function EmployeeDashboard() {
                 </Table.Thead>
                 <Table.Tbody>
                   {recentRequests.map((req) => (
-                    <Table.Tr key={req.id} onClick={() => router.push(`/me/leave-requests/${req.id}`)}
-                      style={{ cursor: "pointer" }}>
+                    <Table.Tr
+                      key={req.id}
+                      onClick={() =>
+                        router.push(`/me/leave-requests/${req.id}`)
+                      }
+                      style={{ cursor: "pointer" }}
+                    >
                       <Table.Td>
                         <Text size="sm" fw={500}>
                           {req.type}
@@ -276,19 +322,32 @@ export default function EmployeeDashboard() {
             </Text>
 
             <Stack gap="md">
-              {upcomingTeamAbsences.map((item, index) => (
-                <Paper key={index} p="xs" radius="sm" withBorder bg="var(--mantine-color-gray-0)">
+              {colleaguesOnLeave.length === 0 && (
+                <Text size="sm" c="dimmed">
+                  No one from your team is on leave.
+                </Text>
+              )}
+
+              {colleaguesOnLeave.map((req) => (
+                <Paper
+                  key={req._id}
+                  p="xs"
+                  radius="sm"
+                  withBorder
+                  bg="var(--mantine-color-gray-0)"
+                >
                   <Group justify="space-between" align="center">
                     <Box>
                       <Text size="sm" fw={500}>
-                        {item.name}
+                        {req.employeeName || "Team member"}
                       </Text>
-                      <Text size="xs" c="dimmed">
-                        {item.type}
+                      <Text size="xs" c="dimmed" tt="capitalize">
+                        {typeLabels[req.type] ?? req.type}
                       </Text>
                     </Box>
                     <Badge variant="outline" color="gray" size="sm">
-                      {item.dates}
+                      {dayjs(req.startDate).format("MMM D")} -{" "}
+                      {dayjs(req.endDate).format("MMM D")}
                     </Badge>
                   </Group>
                 </Paper>
@@ -298,30 +357,38 @@ export default function EmployeeDashboard() {
         </Grid.Col>
       </Grid>
     </Stack>
-  )
+  );
 }
 
 function StatusBadge({ status }: { status: string }) {
   switch (status) {
     case "approved":
       return (
-        <Badge color="green" variant="light" leftSection={<IconCheck size={12} />}>
+        <Badge
+          color="green"
+          variant="light"
+          leftSection={<IconCheck size={12} />}
+        >
           Approved
         </Badge>
-      )
+      );
     case "pending":
       return (
-        <Badge color="orange" variant="light" leftSection={<IconClock size={12} />}>
+        <Badge
+          color="orange"
+          variant="light"
+          leftSection={<IconClock size={12} />}
+        >
           Pending
         </Badge>
-      )
+      );
     case "rejected":
       return (
         <Badge color="red" variant="light" leftSection={<IconX size={12} />}>
           Rejected
         </Badge>
-      )
+      );
     default:
-      return <Badge color="gray">{status}</Badge>
+      return <Badge color="gray">{status}</Badge>;
   }
 }
