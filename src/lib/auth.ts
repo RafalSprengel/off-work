@@ -7,6 +7,7 @@ import { sendEmail } from "@/lib/sendEmail";
 import { Db } from "mongodb";
 import dayjs from "dayjs";
 import Employee from "@/db/models/Employee";
+import Department from "@/db/models/Department";
 
 function createAuth(db: Db) {
     return betterAuth({
@@ -166,6 +167,20 @@ function createAuth(db: Db) {
                             const alreadyLinked = await Employee.findOne({ userId: member.userId });
                             if (alreadyLinked) return;
 
+                            // For the org creator, ensure the default "Administration"
+                            // department exists and assign the owner to it.
+                            let departmentId: mongoose.Types.ObjectId | undefined;
+
+                            if (member.role === "owner") {
+                                const adminDepartment = await Department.findOneAndUpdate(
+                                    { name: "Administration", organization: org.id },
+                                    { $setOnInsert: { name: "Administration", organization: org.id, managers: [] } },
+                                    { new: true, upsert: true }
+                                );
+                                departmentId = adminDepartment._id;
+                                console.log(`[auth:afterAddMember] Ensured "Administration" department for org ${org.id}`);
+                            }
+
                             const [firstName, ...rest] = (user.name || user.email.split("@")[0]).split(" ");
 
                             await Employee.create({
@@ -174,8 +189,9 @@ function createAuth(db: Db) {
                                 firstName: firstName || "New",
                                 lastName: rest.join(" ") || "Employee",
                                 email: user.email,
-                                role: member.role === "admin" ? "Manager" : "Employee",
+                                role: (member.role === "admin" || member.role === "owner") ? "Manager" : "Employee",
                                 isOwner: member.role === "owner",
+                                department: departmentId,
                                 employmentDate: new Date(),
                                 status: "active",
                             });

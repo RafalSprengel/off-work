@@ -56,24 +56,6 @@ function formatDateRange(startDate: string, endDate: string): string {
     return `${start.format("D MMM YYYY")} - ${end.format("D MMM YYYY")}`
 }
 
-// Helper function to safely get employee name
-const getEmployeeName = (employee: any): string => {
-    if (!employee) return "Employee has been deleted"
-    const firstName = employee.firstName || ""
-    const lastName = employee.lastName || ""
-    return `${firstName} ${lastName}`.trim() || "Employee has been deleted"
-}
-
-// Helper function to safely get department name
-const getDepartmentName = (employee: any): string => {
-    if (!employee) return "No Department"
-    if (!employee.department) return "No Department"
-    if (typeof employee.department === 'object') {
-        return employee.department.name || "No Department"
-    }
-    return "No Department"
-}
-
 export default function AdminDashboard() {
     const router = useRouter();
     const { data, loading } = useTeamDashboard()
@@ -99,14 +81,9 @@ export default function AdminDashboard() {
     const todayAbsences = data.todayAbsences || []
     const pendingRequests = data.pendingRequests || []
 
-    // Filter out requests with null employee (sieroty po usuniętym koncie)
-    const validPendingRequests = pendingRequests.filter(
-        (req) => req.employee !== null && req.employee !== undefined
-    )
-    const validTodayAbsences = todayAbsences.filter(
-        (req) => req.employee !== null && req.employee !== undefined
-    )
-
+    // Filter out requests that have no employeeName (e.g. orphaned records)
+    const validPendingRequests = pendingRequests.filter((req) => req.employeeName)
+    const validTodayAbsences = todayAbsences.filter((req) => req.employeeName)
     return (
         <Stack gap="lg">
             <Paper p="lg" radius="md" withBorder style={{ background: "var(--mantine-color-dark-8)", color: "var(--mantine-color-white)" }}>
@@ -264,8 +241,8 @@ export default function AdminDashboard() {
                                     </Table.Thead>
                                     <Table.Tbody>
                                         {validPendingRequests.map((req) => {
-                                            const fullName = getEmployeeName(req.employee);
-                                            const deptName = getDepartmentName(req.employee);
+                                            const fullName = req.employeeName || "Employee has been deleted";
+                                            const deptName = req.departmentName || "No Department";
 
                                             return (
                                                 <Table.Tr
@@ -411,8 +388,8 @@ export default function AdminDashboard() {
                 ) : (
                     <Stack gap="sm">
                         {validTodayAbsences.map((absence) => {
-                            const fullName = getEmployeeName(absence.employee);
-                            const deptName = getDepartmentName(absence.employee);
+                            const fullName = absence.employeeName || "Employee has been deleted";
+                            const deptName = absence.departmentName || "No Department";
 
                             return (
                                 <Paper

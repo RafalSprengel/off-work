@@ -113,7 +113,6 @@ export default function MyLeaveRequestDetailsPage() {
         );
     }
 
-    const snapshot = request.snapshot;
     const canCancel = request.status === "pending" || request.status === "approved";
 
     const handleCancel = () => {
@@ -168,17 +167,17 @@ export default function MyLeaveRequestDetailsPage() {
                         <Group justify="space-between" align="flex-start">
                             <Group gap="sm">
                                 <Avatar
-                                    name={snapshot.employeeName}
+                                    name={request.employeeName}
                                     radius="xl"
                                     size="lg"
                                     color="initials"
                                 />
                                 <Box>
                                     <Text size="lg" fw={600}>
-                                        {snapshot.employeeName}
+                                        {request.employeeName}
                                     </Text>
                                     <Text size="sm" c="dimmed">
-                                        {snapshot.departmentName}
+                                        {request.departmentName}
                                     </Text>
                                 </Box>
                             </Group>
@@ -213,7 +212,7 @@ export default function MyLeaveRequestDetailsPage() {
                             <InfoRow
                                 icon={<IconUserCheck size={18} />}
                                 label="Manager"
-                                value={snapshot.managerName || "No manager assigned"}
+                                value={request.managerName || "No manager assigned"}
                             />
                             <InfoRow
                                 icon={<IconMessage size={18} />}
@@ -257,13 +256,13 @@ export default function MyLeaveRequestDetailsPage() {
                                     value={
                                         <Group gap="xs" wrap="nowrap">
                                             <Text fw={500}>
-                                                {snapshot.approvedByName || "Unknown"}
+                                                {request.reviewedByName || "Unknown"}
                                             </Text>
-                                            {request.approvedAt && (
+                                            {request.reviewedAt && (
                                                 <Badge variant="light" color="gray" size="xs">
                                                     <Group gap={4} wrap="nowrap">
                                                         <IconClock size={12} />
-                                                        {dayjs(request.approvedAt).format(
+                                                        {dayjs(request.reviewedAt).format(
                                                             "D MMM YYYY, HH:mm"
                                                         )}
                                                     </Group>

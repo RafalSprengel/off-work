@@ -14,11 +14,9 @@ export interface PendingRequestItem {
     endDate: string;
     daysRequested: number;
     type: "annual" | "sick" | "unpaid" | "other";
-    snapshot: {
-        employeeName: string;
-        employeeEmail: string;
-        departmentName: string;
-    };
+    employeeName?: string;
+    employeeEmail?: string;
+    departmentName?: string;
     createdAt: string;
 }
 

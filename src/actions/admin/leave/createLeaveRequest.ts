@@ -95,13 +95,12 @@ export async function createLeaveRequest(data: CreateLeaveRequestParams) {
         const dept = employeeDoc?.department as { name?: string } | undefined;
         const mgr = employeeDoc?.managerId as { firstName?: string; lastName?: string } | undefined;
 
-        // Provide default non-undefined values so Mongoose doesn't strip the entire snapshot subdocument
-        const snapshot = {
+        const employeeInfo = {
             employeeName: employeeDoc ? `${employeeDoc.firstName} ${employeeDoc.lastName}` : "Unknown",
             employeeEmail: employeeDoc?.email || "",
             departmentName: dept?.name || "",
             managerName: mgr ? `${mgr.firstName} ${mgr.lastName}` : "",
-            approvedByName: adminDoc ? `${adminDoc.firstName} ${adminDoc.lastName}` : "",
+            reviewedByName: adminDoc ? `${adminDoc.firstName} ${adminDoc.lastName}` : "",
         };
 
         const newLeaveRequest = await LeaveRequest.create({
@@ -114,9 +113,9 @@ export async function createLeaveRequest(data: CreateLeaveRequestParams) {
             daysRequested,
             status: "approved",
             createdBy: adminId,
-            approvedBy: adminId,
-            approvedAt: new Date(),
-            snapshot,
+            reviewedBy: adminId,
+            reviewedAt: new Date(),
+            ...employeeInfo,
         });
 
         revalidatePath("/team/leave-requests");

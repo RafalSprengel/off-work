@@ -15,16 +15,14 @@ export interface ILeaveRequest extends Document {
   attachments?: string[];
   organizationId: string; // Better Auth organization id
   createdBy: mongoose.Types.ObjectId | string;
-  approvedBy?: mongoose.Types.ObjectId | string | null;
-  approvedAt?: Date | null;
+  reviewedBy?: mongoose.Types.ObjectId | string | null;
+  reviewedAt?: Date | null;
   cancelledAt?: Date | null;
-  snapshot?: {
-    employeeName?: string;
-    employeeEmail?: string;
-    departmentName?: string;
-    managerName?: string;
-    approvedByName?: string;
-  };
+  employeeName?: string;
+  employeeEmail?: string;
+  departmentName?: string;
+  managerName?: string;
+  reviewedByName?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -76,20 +74,18 @@ const LeaveRequestSchema = new Schema<ILeaveRequest>(
       ref: "Employee",
       required: true,
     },
-    approvedBy: {
+    reviewedBy: {
       type: Schema.Types.ObjectId,
       ref: "Employee",
       default: null,
     },
-    approvedAt: { type: Date, default: null },
+    reviewedAt: { type: Date, default: null },
     cancelledAt: { type: Date, default: null },
-    snapshot: {
-      employeeName: { type: String },
-      employeeEmail: { type: String },
-      departmentName: { type: String },
-      managerName: { type: String },
-      approvedByName: { type: String },
-    },
+    employeeName: { type: String },
+    employeeEmail: { type: String },
+    departmentName: { type: String },
+    managerName: { type: String },
+    reviewedByName: { type: String },
   },
   { timestamps: true }
 );

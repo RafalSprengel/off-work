@@ -1,6 +1,7 @@
 "use client";
 
 import { createLeaveRequest } from "@/actions/employee/leave/createLeaveRequest";
+import { useCurrentEmployee } from "@/hooks/useCurrentEmployee";
 import {
     Button,
     Container,
@@ -9,6 +10,8 @@ import {
     Paper,
     Stack,
     Text,
+    TextInput,
+    Textarea,
     Title,
 } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
@@ -22,10 +25,12 @@ import "@mantine/dates/styles.css";
 export default function NewEmployeeLeaveRequestPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const { employee, loading: employeeLoading } = useCurrentEmployee();
 
     const form = useForm({
         initialValues: {
             dateRange: [null, null] as [Date | null, Date | null],
+            comment: "",
         },
         validate: {
             dateRange: (value) => {
@@ -67,6 +72,7 @@ export default function NewEmployeeLeaveRequestPage() {
         const result = await createLeaveRequest({
             startDate: dayjs(startDate).format("YYYY-MM-DD"),
             endDate: dayjs(endDate).format("YYYY-MM-DD"),
+            comment: form.values.comment ?? "",
         });
 
         setLoading(false);
@@ -85,6 +91,19 @@ export default function NewEmployeeLeaveRequestPage() {
                 <Paper p={{ base: "md", sm: "xl" }} radius="md" withBorder>
                     <form onSubmit={form.onSubmit(handleSubmit)}>
                         <Stack gap="md">
+                            <TextInput
+                                label="Submitted By"
+                                description="First and last name of the person submitting the request"
+                                value={
+                                    employee
+                                        ? `${employee.firstName} ${employee.lastName}`
+                                        : ""
+                                }
+                                placeholder="Loading name..."
+                                readOnly
+                                disabled={employeeLoading}
+                            />
+
                             <DatePickerInput
                                 type="range"
                                 label="Select Holiday Dates"
@@ -109,6 +128,15 @@ export default function NewEmployeeLeaveRequestPage() {
                             )}
 
                             <Divider my="xs" />
+
+                            <Textarea
+                                label="Comment"
+                                placeholder="Add any additional details (optional)"
+                                autosize
+                                minRows={2}
+                                maxRows={4}
+                                {...form.getInputProps("comment")}
+                            />
 
                             <Flex
                                 direction={{ base: "column", xs: "row" }}

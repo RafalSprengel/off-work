@@ -34,45 +34,32 @@ import {
 import Link from "next/link"
 import { useRouter } from "next/navigation";
 import { useCurrentEmployee } from "@/hooks/useCurrentEmployee";
+import { useMyLeaveRequests } from "@/hooks/useMyLeaveRequests";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
+dayjs.extend(relativeTime);
 
 export default function EmployeeDashboard() {
   const router = useRouter();
   const { employee, loading } = useCurrentEmployee();
+  const { requests, loading: requestsLoading } = useMyLeaveRequests();
 
-  const recentRequests = [
-    {
-      id: "REQ-104",
-      type: "Annual Leave",
-      dates: "24 Aug 2026 - 28 Aug 2026",
-      days: 5,
-      status: "pending",
-      submitted: "2 hours ago",
-    },
-    {
-      id: "REQ-098",
-      type: "Sick Leave",
-      dates: "12 Jul 2026 - 13 Jul 2026",
-      days: 2,
-      status: "approved",
-      submitted: "12 Jul 2026",
-    },
-    {
-      id: "REQ-082",
-      type: "Remote Work",
-      dates: "01 Jun 2026 - 02 Jun 2026",
-      days: 2,
-      status: "approved",
-      submitted: "28 May 2026",
-    },
-    {
-      id: "REQ-071",
-      type: "Unpaid Leave",
-      dates: "15 Apr 2026 - 16 Apr 2026",
-      days: 2,
-      status: "rejected",
-      submitted: "10 Apr 2026",
-    },
-  ]
+  const typeLabels: Record<string, string> = {
+    annual: "Annual Leave",
+    sick: "Sick Leave",
+    unpaid: "Unpaid Leave",
+    other: "Other",
+  }
+
+  const recentRequests = requests.map((req) => ({
+    id: req._id,
+    type: typeLabels[req.type] ?? req.type,
+    dates: `${dayjs(req.startDate).format("D MMM YYYY")} - ${dayjs(req.endDate).format("D MMM YYYY")}`,
+    days: req.daysRequested,
+    status: req.status,
+    submitted: dayjs(req.createdAt).fromNow(),
+  }))
 
   const upcomingTeamAbsences = [
     { name: "Sarah Connor", type: "Annual Leave", dates: "Tomorrow" },
@@ -80,7 +67,7 @@ export default function EmployeeDashboard() {
     { name: "Emma Watson", type: "Annual Leave", dates: "25 Aug - 01 Sep" },
   ]
 
-  if (loading) {
+  if (loading || requestsLoading) {
     return (
       <Flex justify="center" align="center" py={80}>
         <Loader />
@@ -217,7 +204,7 @@ export default function EmployeeDashboard() {
               </Box>
               <Button
                 component={Link}
-                href="/leave/history"
+                href="/me/leave-requests"
                 variant="subtle"
                 size="xs"
                 rightSection={<IconChevronRight size={14} />}

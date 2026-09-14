@@ -15,9 +15,12 @@ import {
   Stack,
   Table,
   Text,
+  TextInput,
   Title,
   Tooltip,
 } from "@mantine/core";
+import { modals } from "@mantine/modals";
+import { notifications } from "@mantine/notifications";
 import {
   IconCheck,
   IconChevronRight,
@@ -28,13 +31,13 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTeamLeaveRequests } from "@/hooks/useTeamLeaveRequests";
 import type { TeamLeaveRequestItem } from "@/types/leaveRequest";
-
-type RequestWithSnapshot = TeamLeaveRequestItem & {
-  snapshot: NonNullable<TeamLeaveRequestItem["snapshot"]>;
-};
+import {
+  approveLeaveRequestAsAdmin,
+  rejectLeaveRequestAsAdmin,
+} from "@/actions/admin/leave/reviewLeaveRequest";
 
 dayjs.extend(relativeTime);
 
@@ -54,21 +57,106 @@ function formatDateRange(startDate: string, endDate: string): string {
 export default function TeamLeaveRequestsPage() {
   const router = useRouter();
 
-  const { requests, loading } = useTeamLeaveRequests();
+  const { requests, loading, refetch } = useTeamLeaveRequests();
 
   const [statusFilter, setStatusFilter] = useState<string>("Pending");
+  const rejectReasonRef = useRef("");
 
   const filteredRequests = useMemo(() => {
-    return requests.filter((req): req is RequestWithSnapshot => {
+    return requests.filter((req) => {
       if (statusFilter === "All") return true;
       return req.status === statusFilter.toLowerCase();
     });
   }, [requests, statusFilter]);
 
-  const pendingCount = useMemo(
-    () => requests.filter((r) => r.status === "pending").length,
-    [requests],
-  );
+  const pendingCount = requests.filter((r) => r.status === "pending").length;
+
+  const rejectedCount = requests.filter((r) => r.status === "rejected").length;
+
+  const approvedCount = requests.filter((r) => r.status === "approved").length;
+
+  const handleApprove = (req: TeamLeaveRequestItem) => {
+    modals.openConfirmModal({
+      title: "Approve Leave Request",
+      children: (
+        <Text size="sm">
+          Are you sure you want to approve this holiday request&nbsp;for{" "}
+          {req.employeeName || "this employee"}?
+        </Text>
+      ),
+      labels: { confirm: "Approve", cancel: "Cancel" },
+      confirmProps: { color: "green" },
+      onConfirm: async () => {
+        const result = await approveLeaveRequestAsAdmin(req._id);
+
+        if (result.success) {
+          notifications.show({
+            title: "Approved",
+            message: `Leave request for ${req.employeeName || "employee"} has been approved.`,
+            color: "green",
+            icon: <IconCheck size={16} />,
+          });
+          await refetch();
+        } else {
+          notifications.show({
+            title: "Error",
+            message: result.error || "Failed to approve leave request",
+            color: "red",
+            icon: <IconX size={16} />,
+          });
+        }
+      },
+    });
+  };
+
+  const handleReject = (req: TeamLeaveRequestItem) => {
+    rejectReasonRef.current = "";
+    modals.openConfirmModal({
+      title: "Reject Leave Request",
+      children: (
+        <>
+          <Text size="sm">
+            Are you sure you want to reject this holiday request&nbsp;for{" "}
+            {req.employeeName || "this employee"}? This action cannot be undone.
+          </Text>
+          <TextInput
+            label="Rejection Reason"
+            description="Optional reason shown to the employee"
+            placeholder="Why are you rejecting this request?"
+            onChange={(e) => {
+              rejectReasonRef.current = e.currentTarget.value;
+            }}
+            mt="sm"
+          />
+        </>
+      ),
+      labels: { confirm: "Reject", cancel: "Cancel" },
+      confirmProps: { color: "red" },
+      onConfirm: async () => {
+        const result = await rejectLeaveRequestAsAdmin(
+          req._id,
+          rejectReasonRef.current,
+        );
+
+        if (result.success) {
+          notifications.show({
+            title: "Rejected",
+            message: `Leave request for ${req.employeeName || "employee"} has been rejected.`,
+            color: "red",
+            icon: <IconX size={16} />,
+          });
+          await refetch();
+        } else {
+          notifications.show({
+            title: "Error",
+            message: result.error || "Failed to reject leave request",
+            color: "red",
+            icon: <IconX size={16} />,
+          });
+        }
+      },
+    });
+  };
 
   return (
     <Stack gap="lg">
@@ -103,9 +191,9 @@ export default function TeamLeaveRequestsPage() {
                 onChange={setStatusFilter}
                 data={[
                   { label: `Pending (${pendingCount})`, value: "Pending" },
-                  { label: "Approved", value: "Approved" },
-                  { label: "Rejected", value: "Rejected" },
-                  { label: "All", value: "All" },
+                  { label: `Approved (${approvedCount})`, value: "Approved" },
+                  { label: `Rejected (${rejectedCount})`, value: "Rejected" },
+                  { label: `All (${requests.length})`, value: "All" },
                 ]}
                 radius="xl"
                 color="blue"
@@ -145,17 +233,17 @@ export default function TeamLeaveRequestsPage() {
                         <Table.Td>
                           <Group gap="sm" wrap="nowrap">
                             <Avatar
-                              name={req.snapshot.employeeName}
+                              name={req.employeeName}
                               radius="xl"
                               size="sm"
                               color="initials"
                             />
                             <Box>
                               <Text size="sm" fw={500}>
-                                {req.snapshot.employeeName}
+                                {req.employeeName}
                               </Text>
                               <Text size="xs" c="dimmed">
-                                {req.snapshot.departmentName ?? "No Department"}
+                                {req.departmentName ?? "No Department"}
                               </Text>
                             </Box>
                           </Group>
@@ -203,7 +291,10 @@ export default function TeamLeaveRequestsPage() {
                                     variant="light"
                                     color="green"
                                     radius="xl"
-                                    onClick={(e) => e.stopPropagation()}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleApprove(req);
+                                    }}
                                   >
                                     <IconCheck size={16} />
                                   </ActionIcon>
@@ -213,7 +304,10 @@ export default function TeamLeaveRequestsPage() {
                                     variant="light"
                                     color="red"
                                     radius="xl"
-                                    onClick={(e) => e.stopPropagation()}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleReject(req);
+                                    }}
                                   >
                                     <IconX size={16} />
                                   </ActionIcon>

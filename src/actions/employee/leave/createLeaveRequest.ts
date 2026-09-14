@@ -16,7 +16,7 @@ dayjs.extend(isSameOrBefore);
 
 export async function createLeaveRequest(data: CreateLeaveRequestInput) {
     await connectDB();
-    const { startDate, endDate } = data;
+    const { startDate, endDate, comment } = data;
 
     const start = dayjs(startDate, "YYYY-MM-DD");
     const end = dayjs(endDate, "YYYY-MM-DD");
@@ -73,7 +73,7 @@ export async function createLeaveRequest(data: CreateLeaveRequestInput) {
     const dept = employeeDoc?.department as { name?: string } | undefined;
     const mgr = employeeDoc?.managerId as { firstName?: string; lastName?: string } | undefined;
 
-    const snapshot = {
+    const employeeInfo = {
         employeeName: employeeDoc ? `${employeeDoc.firstName} ${employeeDoc.lastName}` : "Unknown",
         employeeEmail: employeeDoc?.email || "",
         departmentName: dept?.name || "",
@@ -90,7 +90,8 @@ export async function createLeaveRequest(data: CreateLeaveRequestInput) {
         daysRequested: workingDays,
         status: "pending",
         createdBy: employee,
-        snapshot,
+        comment: comment || "",
+        ...employeeInfo,
     });
 
     revalidatePath("/me/leave-requests");

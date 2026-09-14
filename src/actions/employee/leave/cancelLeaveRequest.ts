@@ -10,6 +10,11 @@ import mongoose from "mongoose";
 export async function cancelMyLeaveRequest(id: string) {
     try {
         await connectDB();
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return { success: false, error: "Leave request not found." };
+        }
+
         const employeeId = await getCurrentEmployeeId();
         const organizationId = await getOrganizationId();
 
