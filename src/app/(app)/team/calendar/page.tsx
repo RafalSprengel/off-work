@@ -1,30 +1,35 @@
 "use client";
 
 import {
+  ActionIcon,
   Badge,
+  Center,
+  Flex,
   Group,
+  Loader,
   MultiSelect,
   Paper,
+  SegmentedControl,
   Select,
   Stack,
   Text,
   Title,
-  Loader,
-  Center,
-  SegmentedControl,
-  ActionIcon,
-  Flex,
 } from "@mantine/core";
 import {
-  Schedule,
   MobileMonthView,
+  Schedule,
   type ScheduleEventData,
 } from "@mantine/schedule";
-import { IconChevronLeft, IconChevronRight, IconFilter, IconUsers } from "@tabler/icons-react";
-import { useMemo, useState } from "react";
+import {
+  IconChevronLeft,
+  IconChevronRight,
+  IconFilter,
+  IconUsers,
+} from "@tabler/icons-react";
 import dayjs from "dayjs";
-import { useTeamLeaveRequests } from "@/hooks/useTeamLeaveRequests";
 import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+import { useTeamLeaveRequests } from "@/hooks/useTeamLeaveRequests";
 
 const typeColors: Record<string, string> = {
   annual: "blue",
@@ -46,15 +51,20 @@ const formatShortName = (name?: string): string => {
 
 export default function TeamCalendarPage() {
   const router = useRouter();
-  const [selectedDepartment, setSelectedDepartment] = useState<string | null>("All");
+  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(
+    "All",
+  );
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [mobileView, setMobileView] = useState<"calendar" | "list">("calendar");
   const [mobileDate, setMobileDate] = useState(dayjs().format("YYYY-MM-DD"));
   const [mobileSelectedDate, setMobileSelectedDate] = useState<string | null>(
-    dayjs().format("YYYY-MM-DD")
+    dayjs().format("YYYY-MM-DD"),
   );
 
   const { requests, loading } = useTeamLeaveRequests();
+
+  // Dostepne widoki: bez "day"
+  const viewSelectProps = { views: ["week", "month", "year"] } as const;
 
   const departmentsList = useMemo(() => {
     const depts = new Set<string>();
@@ -144,7 +154,6 @@ export default function TeamCalendarPage() {
             onChange={setSelectedTypes}
             style={{ flexGrow: 1 }}
           />
-
         </Group>
       </Paper>
 
@@ -183,18 +192,26 @@ export default function TeamCalendarPage() {
             <Schedule
               events={scheduleEvents}
               defaultView="month"
-              onEventClick={(event) => router.push(`/team/leave-requests/${event.id}`)}
+              onEventClick={(event) =>
+                router.push(`/team/leave-requests/${event.id}`)
+              }
               monthViewProps={{
                 firstDayOfWeek: 1,
+                viewSelectProps,
               }}
               weekViewProps={{
                 firstDayOfWeek: 1,
                 startTime: "08:00:00",
                 endTime: "18:00:00",
+                viewSelectProps,
               }}
               dayViewProps={{
                 startTime: "08:00:00",
                 endTime: "18:00:00",
+                viewSelectProps,
+              }}
+              yearViewProps={{
+                viewSelectProps,
               }}
             />
           </Paper>
@@ -212,7 +229,7 @@ export default function TeamCalendarPage() {
                 variant="subtle"
                 onClick={() =>
                   setMobileDate(
-                    dayjs(mobileDate).subtract(1, "month").format("YYYY-MM-DD")
+                    dayjs(mobileDate).subtract(1, "month").format("YYYY-MM-DD"),
                   )
                 }
               >
@@ -225,7 +242,7 @@ export default function TeamCalendarPage() {
                 variant="subtle"
                 onClick={() =>
                   setMobileDate(
-                    dayjs(mobileDate).add(1, "month").format("YYYY-MM-DD")
+                    dayjs(mobileDate).add(1, "month").format("YYYY-MM-DD"),
                   )
                 }
               >
@@ -252,18 +269,26 @@ export default function TeamCalendarPage() {
             <Schedule
               events={scheduleEvents}
               defaultView="month"
-              onEventClick={(event) => router.push(`/team/leave-requests/${event.id}`)}
+              onEventClick={(event) =>
+                router.push(`/team/leave-requests/${event.id}`)
+              }
               monthViewProps={{
                 firstDayOfWeek: 1,
+                viewSelectProps,
               }}
               weekViewProps={{
                 firstDayOfWeek: 1,
                 startTime: "08:00:00",
                 endTime: "18:00:00",
+                viewSelectProps,
               }}
               dayViewProps={{
                 startTime: "08:00:00",
                 endTime: "18:00:00",
+                viewSelectProps,
+              }}
+              yearViewProps={{
+                viewSelectProps,
               }}
             />
           </Paper>

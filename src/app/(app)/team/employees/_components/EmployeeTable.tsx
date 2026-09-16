@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { Stack, Group, Title, Badge, Button, Paper, Table, ActionIcon, Card, Text, useMatches, Menu, SegmentedControl } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
@@ -218,6 +219,7 @@ function EmployeeActionsMenu({ employee }: { employee: IEmployee }) {
 }
 
 export default function EmployeeTable({ employees }: { employees: IEmployee[] }) {
+    const router = useRouter();
     const isMobile = useMatches({
         base: true,
         sm: false,
@@ -307,15 +309,19 @@ export default function EmployeeTable({ employees }: { employees: IEmployee[] })
     }
 
     const rows = filteredEmployees.map((empl) => (
-        <Table.Tr key={empl.email}>
-            <Table.Td>{empl.firstName} {empl.lastName}</Table.Td>
+        <Table.Tr
+            key={empl.email}
+            onClick={() => router.push(`/team/employees/${empl._id}/profile`)}
+            style={{ cursor: "pointer" }}
+        >
+            <Table.Td fw={600}>{empl.firstName} {empl.lastName}</Table.Td>
             <Table.Td>{empl.email}</Table.Td>
             <Table.Td>{typeof empl.department === 'object' ? empl.department?.name ?? "-" : empl.department ?? "-"}</Table.Td>
             <Table.Td>{empl.role}</Table.Td>
             <Table.Td>
                 <InvitationStatusBadge status={empl.status} />
             </Table.Td>
-            <Table.Td>
+            <Table.Td onClick={(e) => e.stopPropagation()}>
                 <Group gap={4} justify="flex-end" wrap="nowrap">
                     <EmployeeActionsMenu employee={empl} />
                 </Group>
@@ -324,7 +330,15 @@ export default function EmployeeTable({ employees }: { employees: IEmployee[] })
     ))
 
     const mobileCards = filteredEmployees.map((empl) => (
-        <Card key={empl.email} withBorder shadow="xs" radius="md" padding="md">
+        <Card
+            key={empl.email}
+            withBorder
+            shadow="xs"
+            radius="md"
+            padding="md"
+            onClick={() => router.push(`/team/employees/${empl._id}/profile`)}
+            style={{ cursor: "pointer" }}
+        >
             <Group justify="space-between" align="flex-start" mb="xs" wrap="nowrap">
                 <div>
                     <Text fw={600} size="md">
@@ -334,7 +348,7 @@ export default function EmployeeTable({ employees }: { employees: IEmployee[] })
                         {empl.email}
                     </Text>
                 </div>
-                <Group gap={4} wrap="nowrap">
+                <Group gap={4} wrap="nowrap" onClick={(e) => e.stopPropagation()}>
                     <EmployeeActionsMenu employee={empl} />
                 </Group>
             </Group>
