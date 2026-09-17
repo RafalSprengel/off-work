@@ -127,7 +127,7 @@ export default function EmployeeDashboard() {
         <Group justify="space-between" align="center" wrap="wrap">
           <Box>
             <Title order={2} size="h3">
-              Welcome back, {employee?.firstName ?? "there"} 👋
+              Welcome back, {employee?.firstName ?? "there"}.
             </Title>
             <Text size="sm" c="dimmed" mt={4}>
               Here is your leave summary and upcoming team availability.

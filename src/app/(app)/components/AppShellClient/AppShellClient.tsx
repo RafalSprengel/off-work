@@ -25,6 +25,7 @@ import styles from "./AppShellClient.module.css";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { NotificationsDropdown } from "../NotificationsDropdown/NotificationsDropdown";
+import { useCurrentEmployee } from "@/hooks/useCurrentEmployee";
 
 export default function LayoutClient({
   children,
@@ -35,6 +36,10 @@ export default function LayoutClient({
 }) {
   const router = useRouter();
   const [opened, { toggle, close }] = useDisclosure();
+
+  const { employee, loading } = useCurrentEmployee();
+  const fullName = `${employee?.firstName || ""} ${employee?.lastName || ""}`.trim();
+  const initials = `${employee?.firstName?.[0] || ""}${employee?.lastName?.[0] || ""}`.toUpperCase();
 
   const handleLogout = async () => {
     close();
@@ -87,14 +92,14 @@ export default function LayoutClient({
                 <UnstyledButton>
                   <Group gap={8}>
                     <Avatar color="blue" radius="xl" size="sm">
-                      RS
+                      {initials || "?"}
                     </Avatar>
                     <Box visibleFrom="sm">
                       <Text size="sm" fw={600} lh={1.2}>
-                        Rafał Sprengel
+                        {loading ? "..." : fullName || "User"}
                       </Text>
                       <Text size="xs" c="dimmed" lh={1}>
-                        Admin
+                        {role}
                       </Text>
                     </Box>
                     <IconChevronDown size={14} style={{ opacity: 0.5 }} />
@@ -107,9 +112,14 @@ export default function LayoutClient({
                 <Menu.Item leftSection={<IconUser size={14} />}>
                   Profile
                 </Menu.Item>
-                <Menu.Item leftSection={<IconSettings size={14} />}>
-                  Settings
-                </Menu.Item>
+                {role === "Manager" && (
+                  <Menu.Item
+                    leftSection={<IconSettings size={14} />}
+                    onClick={() => router.push("/team/settings/general")}
+                  >
+                    Settings
+                  </Menu.Item>
+                )}
                 <Menu.Divider />
                 <Menu.Item
                   color="red"
