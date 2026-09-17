@@ -20,13 +20,17 @@ export interface EmployeeScheduleEvent {
 
 interface HolidayScheduleProps {
   events: EmployeeScheduleEvent[];
+  closures?: EmployeeScheduleEvent[];
 }
 
-export default function HolidaySchedule({ events }: HolidayScheduleProps) {
-  const scheduleEvents: ScheduleEventData[] = events.map((event) => ({
-    ...event,
-    color: "blue",
-  }));
+export default function HolidaySchedule({
+  events,
+  closures = [],
+}: HolidayScheduleProps) {
+  const scheduleEvents: ScheduleEventData[] = [
+    ...events.map((event) => ({ ...event, color: "blue" })),
+    ...closures.map((event) => ({ ...event, color: "gray" })),
+  ];
 
   // Dostepne widoki: tylko rok i miesiac (bez week i day)
   const viewSelectProps = { views: ["year", "month"] } as const;
@@ -63,6 +67,20 @@ export default function HolidaySchedule({ events }: HolidayScheduleProps) {
           <Text size="sm">Annual leave</Text>
         </Group>
       </Paper>
+
+      {closures.length > 0 && (
+        <Paper withBorder radius="md" p="sm">
+          <Group gap="xs" align="center">
+            <span
+              style={{
+                ...dotStyle,
+                background: "var(--mantine-color-gray-6)",
+              }}
+            />
+            <Text size="sm">Closure days</Text>
+          </Group>
+        </Paper>
+      )}
     </Stack>
   );
 }

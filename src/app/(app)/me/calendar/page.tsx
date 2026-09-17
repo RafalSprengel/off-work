@@ -19,6 +19,7 @@ import { useCurrentEmployee } from "@/hooks/useCurrentEmployee";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useMyLeaveRequests } from "@/hooks/useMyLeaveRequests";
 import { useTeamLeaveRequests } from "@/hooks/useTeamLeaveRequests";
+import { useNonWorkingDays } from "@/hooks/useNonWorkingDays";
 
 const dotStyle: React.CSSProperties = {
   width: 6,
@@ -37,12 +38,14 @@ export default function EmployeeCalendarPage() {
     useMyLeaveRequests();
   const { requests: teamRequests, loading: loadingTeamRequests } =
     useTeamLeaveRequests();
+  const { closuresMap, loading: loadingClosures } = useNonWorkingDays();
 
   const loading =
     loadingEmployee ||
     loadingEmployees ||
     loadingMyRequests ||
-    loadingTeamRequests;
+    loadingTeamRequests ||
+    loadingClosures;
 
   // Wszystkie moje zatwierdzone urlopy -> zielone kropki
   const myApprovedDates = useMemo(() => {
@@ -122,10 +125,15 @@ export default function EmployeeCalendarPage() {
           dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf(),
       );
   }, [teamRequests, colleagueIds]);
+
+  // Dni zamkniecia firmy (Closure days)
+  const closureDates = useMemo(() => new Set(closuresMap.keys()), [closuresMap]);
+
   const renderDay = (date: Date | string) => {
     const key = dayjs(date).format("YYYY-MM-DD");
     const hasMine = myApprovedDates.has(key);
     const hasDept = deptApprovedDates.has(key);
+    const hasClosure = closureDates.has(key);
 
     return (
       <Stack align="center" justify="center" gap={2} h="100%">
@@ -143,6 +151,11 @@ export default function EmployeeCalendarPage() {
           {hasDept && (
             <span
               style={{ ...dotStyle, background: "var(--mantine-color-blue-6)" }}
+            />
+          )}
+          {hasClosure && (
+            <span
+              style={{ ...dotStyle, background: "var(--mantine-color-gray-6)" }}
             />
           )}
         </Flex>
@@ -194,6 +207,7 @@ export default function EmployeeCalendarPage() {
               <Stack gap="xs" align="flex-start" w="100%">
                 {renderLegend("green", "My approved leave")}
                 {renderLegend("blue", "Team members on leave")}
+                {renderLegend("gray", "Closure days")}
               </Stack>
             </Stack>
           </Paper>

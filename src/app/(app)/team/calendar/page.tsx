@@ -30,12 +30,21 @@ import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useTeamLeaveRequests } from "@/hooks/useTeamLeaveRequests";
+import { useNonWorkingDays } from "@/hooks/useNonWorkingDays";
 
 const typeColors: Record<string, string> = {
   annual: "blue",
   sick: "red",
   unpaid: "orange",
   other: "gray",
+};
+
+const closureDotStyle: React.CSSProperties = {
+  width: 6,
+  height: 6,
+  borderRadius: "50%",
+  flexShrink: 0,
+  background: "var(--mantine-color-gray-6)",
 };
 
 // "John Kowalski" -> "J. Kowalski" (pierwsza litera imienia + kropka + nazwisko)
@@ -62,6 +71,7 @@ export default function TeamCalendarPage() {
   );
 
   const { requests, loading } = useTeamLeaveRequests();
+  const { closuresMap, loading: loadingClosures } = useNonWorkingDays();
 
   // Dostepne widoki: bez "day"
   const viewSelectProps = { views: ["week", "month", "year"] } as const;
@@ -97,8 +107,18 @@ export default function TeamCalendarPage() {
     });
   }, [requests, selectedDepartment, selectedTypes]);
 
+  const closureEvents: ScheduleEventData[] = useMemo(() => {
+    return Array.from(closuresMap, ([date, title]) => ({
+      id: `closure-${date}`,
+      title,
+      start: `${date} 00:00:00`,
+      end: `${date} 23:59:59`,
+      color: "gray",
+    }));
+  }, [closuresMap]);
+
   const scheduleEvents: ScheduleEventData[] = useMemo(() => {
-    return filteredRequests.map((req) => {
+    const leaveEvents: ScheduleEventData[] = filteredRequests.map((req) => {
       const shortName = formatShortName(req.employeeName);
       const name = shortName || "No name";
       const days = req.daysRequested;
@@ -117,7 +137,9 @@ export default function TeamCalendarPage() {
         color: typeColors[req.type] || "gray",
       };
     });
-  }, [filteredRequests]);
+
+    return [...closureEvents, ...leaveEvents];
+  }, [filteredRequests, closureEvents]);
 
   return (
     <Stack gap="lg">
@@ -157,7 +179,7 @@ export default function TeamCalendarPage() {
         </Group>
       </Paper>
 
-      {loading ? (
+      {loading || loadingClosures ? (
         <Center py="xl">
           <Loader size="md" />
         </Center>
@@ -192,9 +214,10 @@ export default function TeamCalendarPage() {
             <Schedule
               events={scheduleEvents}
               defaultView="month"
-              onEventClick={(event) =>
-                router.push(`/team/leave-requests/${event.id}`)
-              }
+              onEventClick={(event) => {
+                if (String(event.id).startsWith("closure-")) return;
+                router.push(`/team/leave-requests/${event.id}`);
+              }}
               monthViewProps={{
                 firstDayOfWeek: 1,
                 viewSelectProps,
@@ -269,9 +292,10 @@ export default function TeamCalendarPage() {
             <Schedule
               events={scheduleEvents}
               defaultView="month"
-              onEventClick={(event) =>
-                router.push(`/team/leave-requests/${event.id}`)
-              }
+              onEventClick={(event) => {
+                if (String(event.id).startsWith("closure-")) return;
+                router.push(`/team/leave-requests/${event.id}`);
+              }}
               monthViewProps={{
                 firstDayOfWeek: 1,
                 viewSelectProps,
@@ -291,6 +315,13 @@ export default function TeamCalendarPage() {
                 viewSelectProps,
               }}
             />
+          </Paper>
+
+          <Paper p="sm" radius="md" withBorder>
+            <Group gap="xs" align="center">
+              <span style={closureDotStyle} />
+              <Text size="sm">Closure days</Text>
+            </Group>
           </Paper>
         </>
       )}

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { getEmployeeById } from "@/actions/manager/employees/getEmployeeById";
 import { getEmployeeLeaveRequests } from "@/actions/manager/leave/getEmployeeLeaveRequests";
+import { getClosureDays } from "@/actions/admin/closureDays/getClosureDays";
 import HolidaySchedule, { type EmployeeScheduleEvent } from "./HolidaySchedule";
 
 export default async function EmployeeCalendarPage({
@@ -30,5 +31,20 @@ export default async function EmployeeCalendarPage({
         }))
     : [];
 
-  return <HolidaySchedule events={events} />;
+  // Dni zamkniecia firmy (Closure days)
+  const { success: closuresSuccess, data: closureDays } = await getClosureDays(
+    "company_closure",
+  );
+  const closureEvents: EmployeeScheduleEvent[] = closuresSuccess
+    ? closureDays
+        .filter((c) => c.enabled)
+        .map((c) => ({
+          id: `closure-${c.date}`,
+          title: c.title,
+          start: `${c.date} 00:00:00`,
+          end: `${c.date} 23:59:59`,
+        }))
+    : [];
+
+  return <HolidaySchedule events={events} closures={closureEvents} />;
 }
