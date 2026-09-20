@@ -17,6 +17,13 @@ export const theme = createTheme({
         content: classes.modalContent,
       },
     },
-
+    Combobox: {
+      defaultProps: {
+        // Positions the dropdown relative to the viewport instead of the
+        // (centered, fixed) modal. Fixes the modal "jumping" / repositioning
+        // loop on mobile when a Select/MultiSelect dropdown is opened.
+        floatingStrategy: "fixed",
+      },
+    },
   },
 });
