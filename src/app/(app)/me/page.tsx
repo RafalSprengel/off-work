@@ -112,9 +112,20 @@ export default function EmployeeDashboard() {
   }
 
   const holidayAllowance = employee?.holidayAllowance ?? 0;
-  // TODO: replace with a real count once leave requests are wired to this page.
-  const daysUsedPlaceholder = 8;
-  const daysLeft = Math.max(holidayAllowance - daysUsedPlaceholder, 0);
+
+  // Only approved annual leave counts as used allowance.
+  const annualDaysUsed = requests
+    .filter((req) => req.status === "approved" && req.type === "annual")
+    .reduce((sum, req) => sum + req.daysRequested, 0);
+  const daysLeft = Math.max(holidayAllowance - annualDaysUsed, 0);
+
+  // Stats for leave requests still awaiting approval.
+  const pendingRequests = requests.filter((req) => req.status === "pending");
+  const pendingCount = pendingRequests.length;
+  const pendingDays = pendingRequests.reduce(
+    (sum, req) => sum + req.daysRequested,
+    0,
+  );
 
   return (
     <Stack gap="lg">
@@ -201,13 +212,23 @@ export default function EmployeeDashboard() {
           </Group>
           <Group align="flex-end" gap="xs">
             <Text size="xl" fw={700}>
-              1
+              {pendingCount}
             </Text>
             <Text size="sm" c="dimmed" mb={2}>
-              request (5 days)
+              {pendingCount} {pendingCount === 1 ? "request" : "requests"} ·{" "}
+              {pendingDays} {pendingDays === 1 ? "day" : "days"}
             </Text>
           </Group>
-          <Progress value={100} mt="md" size="sm" color="orange" />
+          <Progress
+            value={
+              holidayAllowance
+                ? Math.min((pendingDays / holidayAllowance) * 100, 100)
+                : 0
+            }
+            mt="md"
+            size="sm"
+            color="orange"
+          />
         </Paper>
 
         <Paper p="md" radius="md" withBorder>
