@@ -6,6 +6,7 @@ import { getCurrentEmployeeId } from "@/actions/shared/getCurrentEmployeeId";
 import { getOrganizationId } from "@/utils/getOrganizationId";
 import { revalidatePath } from "next/cache";
 import mongoose from "mongoose";
+import dayjs from "dayjs";
 
 export async function cancelMyLeaveRequest(id: string) {
     try {
@@ -34,6 +35,13 @@ export async function cancelMyLeaveRequest(id: string) {
 
         if (request.status === "rejected") {
             return { success: false, error: "Cannot cancel a rejected leave request." };
+        }
+
+        if (dayjs(request.endDate).isBefore(dayjs(), "day")) {
+            return {
+                success: false,
+                error: "Cannot cancel a leave request that has already ended.",
+            };
         }
 
         request.status = "cancelled";

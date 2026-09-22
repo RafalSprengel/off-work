@@ -20,6 +20,7 @@ import {
     Menu,
     Loader,
     Flex,
+    TextInput,
 } from "@mantine/core"
 import {
     IconUsers,
@@ -34,12 +35,19 @@ import {
     IconAdjustments,
     IconCalendar,
 } from "@tabler/icons-react"
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
 import Link from "next/link"
 import { useTeamDashboard } from "@/hooks/useTeamDashboard"
+import { modals } from "@mantine/modals";
+import { notifications } from "@mantine/notifications";
+import {
+    approveLeaveRequestAsAdmin,
+    rejectLeaveRequestAsAdmin,
+} from "@/actions/admin/leave/reviewLeaveRequest";
+import type { PendingRequestItem } from "@/types/dashboard";
 
 dayjs.extend(relativeTime)
 
@@ -58,8 +66,92 @@ function formatDateRange(startDate: string, endDate: string): string {
 
 export default function AdminDashboard() {
     const router = useRouter();
-    const { data, loading } = useTeamDashboard()
+    const { data, loading, refetch } = useTeamDashboard()
     const [hoveredAbsenceId, setHoveredAbsenceId] = useState<string | null>(null);
+    const rejectReasonRef = useRef("");
+
+    const handleApprove = (req: PendingRequestItem) => {
+        modals.openConfirmModal({
+            title: "Approve Leave Request",
+            children: (
+                <Text size="sm">
+                    Are you sure you want to approve this holiday request&nbsp;for{" "}
+                    {req.employeeName || "this employee"}?
+                </Text>
+            ),
+            labels: { confirm: "Approve", cancel: "Cancel" },
+            confirmProps: { color: "green" },
+            onConfirm: async () => {
+                const result = await approveLeaveRequestAsAdmin(req._id);
+
+                if (result.success) {
+                    notifications.show({
+                        title: "Approved",
+                        message: `Leave request for ${req.employeeName || "employee"} has been approved.`,
+                        color: "green",
+                        icon: <IconCheck size={16} />,
+                    });
+                    await refetch();
+                } else {
+                    notifications.show({
+                        title: "Error",
+                        message: result.error || "Failed to approve leave request",
+                        color: "red",
+                        icon: <IconX size={16} />,
+                    });
+                }
+            },
+        });
+    };
+
+    const handleReject = (req: PendingRequestItem) => {
+        rejectReasonRef.current = "";
+        modals.openConfirmModal({
+            title: "Reject Leave Request",
+            children: (
+                <>
+                    <Text size="sm">
+                        Are you sure you want to reject this holiday request&nbsp;for{" "}
+                        {req.employeeName || "this employee"}? This action cannot be undone.
+                    </Text>
+                    <TextInput
+                        label="Rejection Reason"
+                        description="Optional reason shown to the employee"
+                        placeholder="Why are you rejecting this request?"
+                        onChange={(e) => {
+                            rejectReasonRef.current = e.currentTarget.value;
+                        }}
+                        mt="sm"
+                    />
+                </>
+            ),
+            labels: { confirm: "Reject", cancel: "Cancel" },
+            confirmProps: { color: "red" },
+            onConfirm: async () => {
+                const result = await rejectLeaveRequestAsAdmin(
+                    req._id,
+                    rejectReasonRef.current,
+                );
+
+                if (result.success) {
+                    notifications.show({
+                        title: "Rejected",
+                        message: `Leave request for ${req.employeeName || "employee"} has been rejected.`,
+                        color: "red",
+                        icon: <IconX size={16} />,
+                    });
+                    await refetch();
+                } else {
+                    notifications.show({
+                        title: "Error",
+                        message: result.error || "Failed to reject leave request",
+                        color: "red",
+                        icon: <IconX size={16} />,
+                    });
+                }
+            },
+        });
+    };
 
     if (loading) {
         return (
@@ -287,12 +379,22 @@ export default function AdminDashboard() {
                                                     <Table.Td>
                                                         <Group gap={4} wrap="nowrap" onClick={(e) => e.stopPropagation()}>
                                                             <Tooltip label="Approve">
-                                                                <ActionIcon variant="light" color="green" radius="xl">
+                                                                <ActionIcon
+                                                                    variant="light"
+                                                                    color="green"
+                                                                    radius="xl"
+                                                                    onClick={() => handleApprove(req)}
+                                                                >
                                                                     <IconCheck size={16} />
                                                                 </ActionIcon>
                                                             </Tooltip>
                                                             <Tooltip label="Reject">
-                                                                <ActionIcon variant="light" color="red" radius="xl">
+                                                                <ActionIcon
+                                                                    variant="light"
+                                                                    color="red"
+                                                                    radius="xl"
+                                                                    onClick={() => handleReject(req)}
+                                                                >
                                                                     <IconX size={16} />
                                                                 </ActionIcon>
                                                             </Tooltip>

@@ -93,12 +93,7 @@ export default function NewLeaveRequestAsAdminPage() {
     setSubmitting(false);
 
     if (result.error) {
-      notifications.show({
-        title: "Error",
-        message: result.error,
-        color: "red",
-        icon: <IconX size={16} />,
-      });
+      form.setFieldError("dateRange", result.error);
     } else {
       notifications.show({
         title: "Success",

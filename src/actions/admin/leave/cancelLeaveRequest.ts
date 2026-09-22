@@ -4,6 +4,7 @@ import connectDB from "@/db/connection";
 import LeaveRequest from "@/db/models/LeaveRequest";
 import { getOrganizationId } from "@/utils/getOrganizationId";
 import { revalidatePath } from "next/cache";
+import dayjs from "dayjs";
 
 export async function cancelLeaveRequestAsAdmin(id: string) {
     try {
@@ -25,6 +26,13 @@ export async function cancelLeaveRequestAsAdmin(id: string) {
 
         if (request.status === "rejected") {
             return { success: false, error: "Cannot cancel a rejected leave request." };
+        }
+
+        if (dayjs(request.endDate).isBefore(dayjs(), "day")) {
+            return {
+                success: false,
+                error: "Cannot cancel a leave request that has already ended.",
+            };
         }
 
         request.status = "cancelled";

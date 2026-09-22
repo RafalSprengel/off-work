@@ -114,7 +114,9 @@ export default function LeaveRequestDetailsPage() {
         );
     }
 
-    const canCancel = request.status === "pending" || request.status === "approved";
+    const hasEnded = dayjs(request.endDate).isBefore(dayjs(), "day");
+    const canCancel =
+        (request.status === "pending" || request.status === "approved") && !hasEnded;
 
     const handleCancel = () => {
         modals.openConfirmModal({
@@ -316,6 +318,16 @@ export default function LeaveRequestDetailsPage() {
                                 </Flex>
                             </>
                         )}
+                        {hasEnded &&
+                            (request.status === "pending" || request.status === "approved") && (
+                                <>
+                                    <Divider my="xs" />
+                                    <Text size="xs" c="dimmed">
+                                        This leave request has already ended and can no longer be
+                                        cancelled.
+                                    </Text>
+                                </>
+                            )}
                     </Stack>
                 </Paper>
             </Stack>

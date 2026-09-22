@@ -15,14 +15,9 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { Month } from "@mantine/dates";
+import { DatePicker, DatePickerProps } from "@mantine/dates";
 import { useForm } from "@mantine/form";
-import {
-  IconCalendar,
-  IconChevronLeft,
-  IconChevronRight,
-  IconX,
-} from "@tabler/icons-react";
+import { IconCalendar, IconX } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -54,12 +49,6 @@ export default function NewEmployeeLeaveRequestPage() {
   const dataLoading = loadingMyRequests || loadingNonWorking;
 
   const [opened, setOpened] = useState(false);
-  const [viewDate, setViewDate] = useState<Date>(new Date());
-  const [hovered, setHovered] = useState<string | null>(null);
-
-  const handleToday = () => {
-    setViewDate(new Date());
-  };
 
   const myApprovedDates = useMemo(() => {
     const dates = new Set<string>();
@@ -103,34 +92,20 @@ export default function NewEmployeeLeaveRequestPage() {
   const startDate = form.values.dateRange[0];
   const endDate = form.values.dateRange[1];
 
-  const startDateStr = startDate ? dayjs(startDate).format("YYYY-MM-DD") : null;
-  const endDateStr = endDate ? dayjs(endDate).format("YYYY-MM-DD") : null;
-
+  const startDateStr = form.values.dateRange[0]
+    ? dayjs(form.values.dateRange[0]).format("YYYY-MM-DD")
+    : null;
+  const endDateStr = form.values.dateRange[1]
+    ? dayjs(form.values.dateRange[1]).format("YYYY-MM-DD")
+    : null;
   const formattedRange =
-    startDateStr && endDateStr ? `${startDateStr} – ${endDateStr}` : "";
+    startDateStr && endDateStr
+      ? `${startDateStr} – ${endDateStr}`
+      : startDateStr
+        ? startDateStr
+        : "";
 
-  const handleClear = (event: React.MouseEvent) => {
-    event.stopPropagation();
-    form.setFieldValue("dateRange", [null, null]);
-  };
-
-  const handleDayClick = (key: string) => {
-    if (!startDateStr || endDateStr) {
-      form.setFieldValue("dateRange", [dayjs(key).toDate(), null]);
-      return;
-    }
-    const lo = startDateStr < key ? startDateStr : key;
-    const hi = startDateStr < key ? key : startDateStr;
-    form.setFieldValue("dateRange", [dayjs(lo).toDate(), dayjs(hi).toDate()]);
-    setOpened(false);
-  };
-
-  const goPrevMonth = () =>
-    setViewDate(dayjs(viewDate).subtract(1, "month").startOf("month").toDate());
-  const goNextMonth = () =>
-    setViewDate(dayjs(viewDate).add(1, "month").startOf("month").toDate());
-
-  const getDayCellProps = (date: Date | string) => {
+  const getDayCellProps: DatePickerProps<"range">["getDayProps"] = (date) => {
     const key = dayjs(date).format("YYYY-MM-DD");
     const isLeave = myApprovedDates.has(key);
     const isBankHoliday = bankHolidaysMap.has(key);
@@ -154,37 +129,10 @@ export default function NewEmployeeLeaveRequestPage() {
       style.borderRadius = "8px";
     }
 
-    if (!startDateStr) {
-      return {
-        style,
-        onClick: () => handleDayClick(key),
-        onMouseEnter: () => setHovered(key),
-      };
-    }
-
-    let lo: string;
-    let hi: string;
-    if (endDateStr) {
-      lo = startDateStr < endDateStr ? startDateStr : endDateStr;
-      hi = startDateStr < endDateStr ? endDateStr : startDateStr;
-    } else {
-      const other = hovered ?? startDateStr;
-      lo = startDateStr < other ? startDateStr : other;
-      hi = startDateStr < other ? other : startDateStr;
-    }
-
-    return {
-      style,
-      inRange: key >= lo && key <= hi,
-      firstInRange: key === lo,
-      lastInRange: key === hi,
-      selected: key === startDateStr || key === endDateStr,
-      onClick: () => handleDayClick(key),
-      onMouseEnter: () => setHovered(key),
-    };
+    return { style };
   };
 
-  const renderDay = (date: Date | string) => {
+  const renderDay: DatePickerProps<"range">["renderDay"] = (date) => {
     const dayObj = dayjs(date);
     const dayNum = dayObj.date();
     const key = dayObj.format("YYYY-MM-DD");
@@ -313,7 +261,10 @@ export default function NewEmployeeLeaveRequestPage() {
                         <ActionIcon
                           variant="subtle"
                           color="gray"
-                          onClick={handleClear}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            form.setFieldValue("dateRange", [null, null]);
+                          }}
                           aria-label="Clear dates"
                         >
                           <IconX size={16} />
@@ -324,52 +275,21 @@ export default function NewEmployeeLeaveRequestPage() {
                 </Popover.Target>
                 <Popover.Dropdown>
                   <Stack gap="xs">
-                    <Group justify="space-between" align="center" gap="xs">
-                      <Group gap={2}>
-                        <ActionIcon
-                          variant="subtle"
-                          color="gray"
-                          onClick={goPrevMonth}
-                          aria-label="Previous month"
-                        >
-                          <IconChevronLeft size={16} />
-                        </ActionIcon>
-                        <Button
-                          variant="subtle"
-                          size="compact-sm"
-                          fw={600}
-                          px="xs"
-                        >
-                          {dayjs(viewDate).format("MMMM YYYY")}
-                        </Button>
-                        <ActionIcon
-                          variant="subtle"
-                          color="gray"
-                          onClick={goNextMonth}
-                          aria-label="Next month"
-                        >
-                          <IconChevronRight size={16} />
-                        </ActionIcon>
-                      </Group>
-                      <Button
-                        variant="light"
-                        size="compact-sm"
-                        onClick={handleToday}
-                      >
-                        Today
-                      </Button>
-                    </Group>
-
-                    <Month
-                      month={dayjs(viewDate)
-                        .startOf("month")
-                        .format("YYYY-MM-DD")}
+                    <DatePicker
+                      type="range"
+                      value={form.values.dateRange}
+                      onChange={(val) => {
+                        form.setFieldValue("dateRange", val as [Date | null, Date | null]);
+                        if (val[0] && val[1]) {
+                          setOpened(false);
+                        }
+                      }}
                       excludeDate={isUnavailable}
                       getDayProps={getDayCellProps}
                       renderDay={renderDay}
+                      allowSingleDateInRange
                     />
                     <Divider />
-
                     <Group gap="sm" mt="xs" wrap="wrap">
                       <Group gap="xs" align="center">
                         <span
@@ -379,7 +299,7 @@ export default function NewEmployeeLeaveRequestPage() {
                           }}
                         />
                         <Text size="xs" c="dimmed">
-                          My taken leave
+                          Leave
                         </Text>
                       </Group>
                       <Group gap="xs" align="center">

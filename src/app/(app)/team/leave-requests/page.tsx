@@ -193,7 +193,7 @@ export default function TeamLeaveRequestsPage() {
                   { label: `Pending (${pendingCount})`, value: "Pending" },
                   { label: `Approved (${approvedCount})`, value: "Approved" },
                   { label: `Rejected (${rejectedCount})`, value: "Rejected" },
-                  { label: `All (${requests.length})`, value: "All" },
+                  { label: `All`, value: "All" },
                 ]}
                 radius="xl"
                 color="blue"
