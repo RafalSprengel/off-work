@@ -255,8 +255,8 @@ export default function EmployeeCalendarPage() {
                     {req.type} Leave
                   </Text>
                   <Text size="xs" c="dimmed">
-                    {dayjs(req.startDate).format("MMM D, YYYY")} -{" "}
-                    {dayjs(req.endDate).format("MMM D, YYYY")}
+                    {dayjs(req.startDate).format("DD-MM-YYYY")} →{" "}
+                    {dayjs(req.endDate).format("DD-MM-YYYY")}
                   </Text>
                 </Paper>
               ))}

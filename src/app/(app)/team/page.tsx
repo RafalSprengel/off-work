@@ -61,7 +61,7 @@ const typeLabels: Record<string, string> = {
 function formatDateRange(startDate: string, endDate: string): string {
     const start = dayjs(startDate, "YYYY-MM-DD")
     const end = dayjs(endDate, "YYYY-MM-DD")
-    return `${start.format("D MMM YYYY")} - ${end.format("D MMM YYYY")}`
+    return `${start.format("DD-MM-YYYY")} → ${end.format("DD-MM-YYYY")}`
 }
 
 export default function AdminDashboard() {
@@ -169,7 +169,7 @@ export default function AdminDashboard() {
         )
     }
 
-    const todayStr = dayjs().format("MMMM D, YYYY")
+    const todayStr = dayjs().format("DD-MM-YYYY")
     const todayAbsences = data.todayAbsences || []
     const pendingRequests = data.pendingRequests || []
 
@@ -532,7 +532,7 @@ export default function AdminDashboard() {
 
                                         <Group gap="md">
                                             <Text size="sm" fw={600} c="dimmed">
-                                                {dayjs(absence.startDate).format("YYYY-MM-DD")} - {dayjs(absence.endDate).format("YYYY-MM-DD")}
+                                                {dayjs(absence.startDate).format("DD-MM-YYYY")} → {dayjs(absence.endDate).format("DD-MM-YYYY")}
                                             </Text>
                                             <Badge
                                                 color="green"

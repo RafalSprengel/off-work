@@ -25,6 +25,8 @@ import {
   IconCheck,
   IconChevronRight,
   IconDotsVertical,
+  IconSortAscending,
+  IconSortDescending,
   IconX,
 } from "@tabler/icons-react";
 import dayjs from "dayjs";
@@ -51,7 +53,7 @@ const typeLabels: Record<string, string> = {
 function formatDateRange(startDate: string, endDate: string): string {
   const start = dayjs(startDate, "YYYY-MM-DD");
   const end = dayjs(endDate, "YYYY-MM-DD");
-  return `${start.format("D MMM YYYY")} - ${end.format("D MMM YYYY")}`;
+  return `${start.format("DD-MM-YYYY")} → ${end.format("DD-MM-YYYY")}`;
 }
 
 export default function TeamLeaveRequestsPage() {
@@ -60,14 +62,20 @@ export default function TeamLeaveRequestsPage() {
   const { requests, loading, refetch } = useTeamLeaveRequests();
 
   const [statusFilter, setStatusFilter] = useState<string>("Pending");
+  const [sortDirection, setSortDirection] = useState<"newest" | "oldest">("newest");
   const rejectReasonRef = useRef("");
 
   const filteredRequests = useMemo(() => {
-    return requests.filter((req) => {
+    const base = requests.filter((req) => {
       if (statusFilter === "All") return true;
       return req.status === statusFilter.toLowerCase();
     });
-  }, [requests, statusFilter]);
+    return [...base].sort((a, b) => {
+      const delta =
+        dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf();
+      return sortDirection === "newest" ? delta : -delta;
+    });
+  }, [requests, statusFilter, sortDirection]);
 
   const pendingCount = requests.filter((r) => r.status === "pending").length;
 
@@ -185,7 +193,7 @@ export default function TeamLeaveRequestsPage() {
               </Button>
             </Group>
 
-            <Group mb="lg">
+            <Group mb="lg" justify="space-between">
               <SegmentedControl
                 value={statusFilter}
                 onChange={setStatusFilter}
@@ -198,6 +206,30 @@ export default function TeamLeaveRequestsPage() {
                 radius="xl"
                 color="blue"
               />
+              <Tooltip
+                label={
+                  sortDirection === "newest"
+                    ? "Newest first — click for oldest first"
+                    : "Oldest first — click for newest first"
+                }
+              >
+                <ActionIcon
+                  variant={sortDirection === "newest" ? "light" : "subtle"}
+                  color="blue"
+                  radius="xl"
+                  onClick={() =>
+                    setSortDirection(
+                      sortDirection === "newest" ? "oldest" : "newest",
+                    )
+                  }
+                >
+                  {sortDirection === "newest" ? (
+                    <IconSortDescending size={16} />
+                  ) : (
+                    <IconSortAscending size={16} />
+                  )}
+                </ActionIcon>
+              </Tooltip>
             </Group>
 
             {loading ? (
@@ -209,6 +241,8 @@ export default function TeamLeaveRequestsPage() {
                 No leave requests found
               </Text>
             ) : (
+              <>
+              <Box visibleFrom="sm">
               <Table.ScrollContainer minWidth={600}>
                 <Table verticalSpacing="sm" highlightOnHover>
                   <Table.Thead>
@@ -344,6 +378,135 @@ export default function TeamLeaveRequestsPage() {
                   </Table.Tbody>
                 </Table>
               </Table.ScrollContainer>
+              </Box>
+
+              <Stack gap="md" hiddenFrom="sm">
+                {filteredRequests.map((req) => (
+                  <Paper
+                    key={req._id}
+                    p="sm"
+                    radius="md"
+                    withBorder
+                    onClick={() => router.push(`/team/leave-requests/${req._id}`)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <Group justify="space-between" align="center" gap="sm">
+                      <Group gap="sm" wrap="nowrap">
+                        <Avatar
+                          name={req.employeeName}
+                          radius="xl"
+                          size="sm"
+                          color="initials"
+                        />
+                        <Box>
+                          <Text size="sm" fw={500}>
+                            {req.employeeName}
+                          </Text>
+                          <Text size="xs" c="dimmed">
+                            {req.departmentName ?? "No Department"}
+                          </Text>
+                        </Box>
+                      </Group>
+                      <Badge
+                        variant="light"
+                        size="sm"
+                        color={
+                          req.status === "approved"
+                            ? "green"
+                            : req.status === "rejected"
+                              ? "red"
+                              : "yellow"
+                        }
+                      >
+                        {req.status.charAt(0).toUpperCase() +
+                          req.status.slice(1)}
+                      </Badge>
+                    </Group>
+
+                    <Group justify="space-between" gap="xs">
+                      <Text size="sm" c="dimmed">
+                        Type
+                      </Text>
+                      <Badge variant="light" color="blue" size="sm">
+                        {typeLabels[req.type] ?? req.type}
+                      </Badge>
+                    </Group>
+                    <Group justify="space-between" gap="xs">
+                      <Text size="sm" c="dimmed">
+                        Dates
+                      </Text>
+                      <Text size="sm">
+                        {formatDateRange(req.startDate, req.endDate)}
+                      </Text>
+                    </Group>
+                    <Group justify="space-between" gap="xs">
+                      <Text size="sm" c="dimmed">
+                        Days
+                      </Text>
+                      <Text size="sm">{req.daysRequested}d</Text>
+                    </Group>
+                    <Group justify="space-between" gap="xs">
+                      <Text size="sm" c="dimmed">
+                        Submitted
+                      </Text>
+                      <Text size="sm">{dayjs(req.createdAt).fromNow()}</Text>
+                    </Group>
+
+                    <Group gap="sm" align="center" mt="sm">
+                      {req.status === "pending" && (
+                        <>
+                          <Button
+                            size="xs"
+                            variant="light"
+                            color="green"
+                            leftSection={<IconCheck size={14} />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleApprove(req);
+                            }}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            size="xs"
+                            variant="light"
+                            color="red"
+                            leftSection={<IconX size={14} />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleReject(req);
+                            }}
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                      <Menu position="bottom-end" shadow="md">
+                        <Menu.Target>
+                          <ActionIcon
+                            variant="subtle"
+                            color="gray"
+                            radius="xl"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <IconDotsVertical size={16} />
+                          </ActionIcon>
+                        </Menu.Target>
+                        <Menu.Dropdown>
+                          <Menu.Item
+                            component={Link}
+                            href={`/team/leave-requests/${req._id}`}
+                          >
+                            View Details
+                          </Menu.Item>
+                          <Menu.Item color="blue">Adjust Balance</Menu.Item>
+                        </Menu.Dropdown>
+                      </Menu>
+                    </Group>
+                  </Paper>
+                ))}
+              </Stack>
+              </>
             )}
           </Paper>
         </Box>

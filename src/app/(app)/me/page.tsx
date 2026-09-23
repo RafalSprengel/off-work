@@ -61,7 +61,7 @@ export default function EmployeeDashboard() {
   const recentRequests = requests.map((req) => ({
     id: req._id,
     type: typeLabels[req.type] ?? req.type,
-    dates: `${dayjs(req.startDate).format("D MMM YYYY")} - ${dayjs(req.endDate).format("D MMM YYYY")}`,
+    dates: `${dayjs(req.startDate).format("DD-MM-YYYY")} → ${dayjs(req.endDate).format("DD-MM-YYYY")}`,
     days: req.daysRequested,
     status: req.status,
     submitted: dayjs(req.createdAt).fromNow(),
@@ -367,8 +367,8 @@ export default function EmployeeDashboard() {
                       </Text>
                     </Box>
                     <Badge variant="outline" color="gray" size="sm">
-                      {dayjs(req.startDate).format("MMM D")} -{" "}
-                      {dayjs(req.endDate).format("MMM D")}
+                      {dayjs(req.startDate).format("DD-MM-YYYY")} →{" "}
+                      {dayjs(req.endDate).format("DD-MM-YYYY")}
                     </Badge>
                   </Group>
                 </Paper>
