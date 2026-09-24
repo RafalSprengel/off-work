@@ -4,6 +4,7 @@ export interface TeamDashboardData {
     pendingApprovals: number;
     onLeaveThisWeek: number;
     todayAbsences: PendingRequestItem[];
+    upcomingAbsences: PendingRequestItem[];
     pendingRequests: PendingRequestItem[];
     departmentOverview: DepartmentOverviewItem[];
 }

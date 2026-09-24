@@ -34,6 +34,7 @@ import {
     IconChevronRight,
     IconAdjustments,
     IconCalendar,
+    IconCalendarPlus,
 } from "@tabler/icons-react"
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -171,11 +172,13 @@ export default function AdminDashboard() {
 
     const todayStr = dayjs().format("DD-MM-YYYY")
     const todayAbsences = data.todayAbsences || []
+    const upcomingAbsences = data.upcomingAbsences || []
     const pendingRequests = data.pendingRequests || []
 
     // Filter out requests that have no employeeName (e.g. orphaned records)
     const validPendingRequests = pendingRequests.filter((req) => req.employeeName)
     const validTodayAbsences = todayAbsences.filter((req) => req.employeeName)
+    const validUpcomingAbsences = upcomingAbsences.filter((req) => req.employeeName)
     return (
         <Stack gap="lg">
             <Paper p="lg" radius="md" withBorder style={{ background: "var(--mantine-color-dark-8)", color: "var(--mantine-color-white)" }}>
@@ -490,6 +493,88 @@ export default function AdminDashboard() {
                 ) : (
                     <Stack gap="sm">
                         {validTodayAbsences.map((absence) => {
+                            const fullName = absence.employeeName || "Employee has been deleted";
+                            const deptName = absence.departmentName || "No Department";
+
+                            return (
+                                <Paper
+                                    key={absence._id}
+                                    p="md"
+                                    radius="md"
+                                    onClick={() => router.push(`/team/leave-requests/${absence._id}`)}
+                                    onMouseEnter={() => setHoveredAbsenceId(absence._id)}
+                                    onMouseLeave={() => setHoveredAbsenceId(null)}
+                                    style={{
+                                        border: "1px solid var(--mantine-color-gray-3)",
+                                        backgroundColor:
+                                            hoveredAbsenceId === absence._id
+                                                ? "var(--mantine-color-gray-1)"
+                                                : "var(--mantine-color-gray-0)",
+                                        cursor: "pointer",
+                                        transition: "background-color 100ms ease",
+                                    }}
+                                >
+                                    <Group justify="space-between" align="center">
+                                        <Group gap="md">
+                                            <Avatar
+                                                name={fullName}
+                                                radius="xl"
+                                                size="md"
+                                                color="blue"
+                                                variant="light"
+                                            />
+                                            <Box>
+                                                <Text size="sm" fw={700}>
+                                                    {fullName}
+                                                </Text>
+                                                <Text size="xs" c="dimmed">
+                                                    {deptName} • {typeLabels[absence.type] ?? absence.type}
+                                                </Text>
+                                            </Box>
+                                        </Group>
+
+                                        <Group gap="md">
+                                            <Text size="sm" fw={600} c="dimmed">
+                                                {dayjs(absence.startDate).format("DD-MM-YYYY")} → {dayjs(absence.endDate).format("DD-MM-YYYY")}
+                                            </Text>
+                                            <Badge
+                                                color="green"
+                                                variant="outline"
+                                                size="lg"
+                                                radius="xl"
+                                                leftSection={<Box style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "var(--mantine-color-green-6)" }} />}
+                                            >
+                                                APPROVED
+                                            </Badge>
+                                        </Group>
+                                    </Group>
+                                </Paper>
+                            );
+                        })}
+                    </Stack>
+                )}
+            </Paper>
+
+            <Paper p="lg" radius="md" withBorder>
+                <Group justify="space-between" align="center" mb="md">
+                    <Group gap="xs" align="center">
+                        <IconCalendarPlus size={22} />
+                        <Title order={3} size="h4" fw={700}>
+                            Upcoming Absences
+                        </Title>
+                    </Group>
+                    <Badge variant="light" color="violet" size="lg" leftSection={<IconUsers size={14} />}>
+                        {validUpcomingAbsences.length} UPCOMING
+                    </Badge>
+                </Group>
+
+                {validUpcomingAbsences.length === 0 ? (
+                    <Text ta="center" py="xl" c="dimmed">
+                        No upcoming absences
+                    </Text>
+                ) : (
+                    <Stack gap="sm">
+                        {validUpcomingAbsences.map((absence) => {
                             const fullName = absence.employeeName || "Employee has been deleted";
                             const deptName = absence.departmentName || "No Department";
 

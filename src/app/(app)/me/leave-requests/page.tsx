@@ -5,6 +5,7 @@ import {
     Badge,
     Box,
     Button,
+    Divider,
     Group,
     Paper,
     Select,
@@ -63,6 +64,13 @@ export default function EmployeeLeaveRequestsPage() {
             dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf();
         return sortDirection === "newest" ? delta : -delta;
     });
+
+    const today = dayjs().startOf("day");
+    const isPast = (item: { endDate: string }) =>
+        dayjs(item.endDate).startOf("day").isBefore(today);
+
+    const currentRequests = displayRequests.filter((r) => !isPast(r));
+    const pastRequests = displayRequests.filter((r) => isPast(r));
 
     return (
         <Stack gap="lg">
@@ -129,7 +137,7 @@ export default function EmployeeLeaveRequestsPage() {
                             </Table.Tr>
                         </Table.Thead>
                         <Table.Tbody>
-                            {displayRequests.map((item) => (
+                            {currentRequests.map((item) => (
                                 <Table.Tr key={item._id} onClick={() => router.push(`/me/leave-requests/${item._id}`)}
                                     style={{ cursor: "pointer" }}>
                                     <Table.Td>{typeLabels[item.type] ?? item.type}</Table.Td>
@@ -145,7 +153,32 @@ export default function EmployeeLeaveRequestsPage() {
                                     </Table.Td>
                                 </Table.Tr>
                             ))}
-                            {filteredRequests.length === 0 && (
+                            {pastRequests.length > 0 && (
+                                <>
+                                    <Table.Tr>
+                                        <Table.Td colSpan={5}>
+                                            <Divider label="Past Leaves" labelPosition="center" my="xs" />
+                                        </Table.Td>
+                                    </Table.Tr>
+                                    {pastRequests.map((item) => (
+                                        <Table.Tr key={item._id} onClick={() => router.push(`/me/leave-requests/${item._id}`)}
+                                            style={{ cursor: "pointer" }}>
+                                            <Table.Td>{typeLabels[item.type] ?? item.type}</Table.Td>
+                                            <Table.Td>
+                                                {dayjs(item.startDate).format("DD-MM-YYYY")} → {dayjs(item.endDate).format("DD-MM-YYYY")}
+                                            </Table.Td>
+                                            <Table.Td>{item.daysRequested}</Table.Td>
+                                            <Table.Td>{getStatusBadge(item.status)}</Table.Td>
+                                            <Table.Td>
+                                                <Text size="sm" c="dimmed" lineClamp={1}>
+                                                    {item.comment || "—"}
+                                                </Text>
+                                            </Table.Td>
+                                        </Table.Tr>
+                                    ))}
+                                </>
+                            )}
+                            {displayRequests.length === 0 && (
                                 <Table.Tr>
                                     <Table.Td colSpan={5}>
                                         <Text size="sm" c="dimmed" ta="center">
@@ -159,12 +192,12 @@ export default function EmployeeLeaveRequestsPage() {
                 </Box>
 
                 <Stack gap="md" hiddenFrom="sm">
-                    {filteredRequests.length === 0 && (
+                    {currentRequests.length === 0 && pastRequests.length === 0 && (
                         <Text size="sm" c="dimmed" ta="center">
                             No leave requests found.
                         </Text>
                     )}
-                    {displayRequests.map((item) => (
+                    {currentRequests.map((item) => (
                         <Paper
                             key={item._id}
                             p="sm"
@@ -205,6 +238,52 @@ export default function EmployeeLeaveRequestsPage() {
                             )}
                         </Paper>
                     ))}
+                    {pastRequests.length > 0 && (
+                        <>
+                            <Divider label="Past Leaves" labelPosition="center" color="gray.3" />
+                            {pastRequests.map((item) => (
+                                <Paper
+                                    key={item._id}
+                                    p="sm"
+                                    radius="md"
+                                    withBorder
+                                    onClick={() => router.push(`/me/leave-requests/${item._id}`)}
+                                    style={{ cursor: "pointer" }}
+                                >
+                                    <Group justify="space-between" align="center" mb="xs">
+                                        <Text fw={600} size="md">
+                                            {typeLabels[item.type] ?? item.type}
+                                        </Text>
+                                        {getStatusBadge(item.status)}
+                                    </Group>
+                                    <Group justify="space-between" gap="xs">
+                                        <Text size="sm" c="dimmed" flex="0 0 auto">
+                                            Dates
+                                        </Text>
+                                        <Text size="sm">
+                                            {dayjs(item.startDate).format("DD-MM-YYYY")} → {dayjs(item.endDate).format("DD-MM-YYYY")}
+                                        </Text>
+                                    </Group>
+                                    <Group justify="space-between" gap="xs">
+                                        <Text size="sm" c="dimmed" flex="0 0 auto">
+                                            Days
+                                        </Text>
+                                        <Text size="sm">{item.daysRequested}</Text>
+                                    </Group>
+                                    {item.comment && (
+                                        <Group justify="space-between" gap="xs">
+                                            <Text size="sm" c="dimmed" flex="0 0 auto">
+                                                Comment
+                                            </Text>
+                                            <Text size="sm" lineClamp={2}>
+                                                {item.comment}
+                                            </Text>
+                                        </Group>
+                                    )}
+                                </Paper>
+                            ))}
+                        </>
+                    )}
                 </Stack>
             </Paper>
         </Stack>

@@ -3,6 +3,7 @@
 import {
   ActionIcon,
   Badge,
+  Divider,
   Group,
   Paper,
   Table,
@@ -55,6 +56,13 @@ export function LeaveRequestsTable({
     return sortDirection === "newest" ? delta : -delta;
   });
 
+  const today = dayjs().startOf("day");
+  const isPast = (item: { endDate: string }) =>
+    dayjs(item.endDate).startOf("day").isBefore(today);
+
+  const currentRequests = sortedRequests.filter((r) => !isPast(r));
+  const pastRequests = sortedRequests.filter((r) => isPast(r));
+
   return (
     <Paper withBorder radius="md">
       <Group justify="space-between" px="sm" py="xs">
@@ -96,7 +104,7 @@ export function LeaveRequestsTable({
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
-          {requests.length === 0 ? (
+          {currentRequests.length === 0 && pastRequests.length === 0 ? (
             <Table.Tr>
               <Table.Td colSpan={4}>
                 <Text size="sm" c="dimmed">
@@ -105,29 +113,63 @@ export function LeaveRequestsTable({
               </Table.Td>
             </Table.Tr>
           ) : (
-            sortedRequests.map((req) => (
-              <Table.Tr
-                key={req._id}
-                onClick={() => router.push(`/team/leave-requests/${req._id}`)}
-                style={{ cursor: "pointer" }}
-              >
-                <Table.Td>{typeLabels[req.type] ?? req.type}</Table.Td>
-                <Table.Td>
-                  <Text size="sm">
-                    {dayjs(req.startDate).format("DD-MM-YYYY")} → {dayjs(req.endDate).format("DD-MM-YYYY")}
-                  </Text>
-                </Table.Td>
-                <Table.Td>{req.daysRequested}</Table.Td>
-                <Table.Td>
-                  <Badge
-                    variant="light"
-                    color={statusColors[req.status] ?? "gray"}
-                  >
-                    {statusLabels[req.status] ?? req.status}
-                  </Badge>
-                </Table.Td>
-              </Table.Tr>
-            ))
+            <>
+              {currentRequests.map((req) => (
+                <Table.Tr
+                  key={req._id}
+                  onClick={() => router.push(`/team/leave-requests/${req._id}`)}
+                  style={{ cursor: "pointer" }}
+                >
+                  <Table.Td>{typeLabels[req.type] ?? req.type}</Table.Td>
+                  <Table.Td>
+                    <Text size="sm">
+                      {dayjs(req.startDate).format("DD-MM-YYYY")} → {dayjs(req.endDate).format("DD-MM-YYYY")}
+                    </Text>
+                  </Table.Td>
+                  <Table.Td>{req.daysRequested}</Table.Td>
+                  <Table.Td>
+                    <Badge
+                      variant="light"
+                      color={statusColors[req.status] ?? "gray"}
+                    >
+                      {statusLabels[req.status] ?? req.status}
+                    </Badge>
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+              {pastRequests.length > 0 && (
+                <>
+                  <Table.Tr>
+                    <Table.Td colSpan={4}>
+                      <Divider label="Past Leaves" labelPosition="left" my="xs" />
+                    </Table.Td>
+                  </Table.Tr>
+                  {pastRequests.map((req) => (
+                    <Table.Tr
+                      key={req._id}
+                      onClick={() => router.push(`/team/leave-requests/${req._id}`)}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <Table.Td>{typeLabels[req.type] ?? req.type}</Table.Td>
+                      <Table.Td>
+                        <Text size="sm">
+                          {dayjs(req.startDate).format("DD-MM-YYYY")} → {dayjs(req.endDate).format("DD-MM-YYYY")}
+                        </Text>
+                      </Table.Td>
+                      <Table.Td>{req.daysRequested}</Table.Td>
+                      <Table.Td>
+                        <Badge
+                          variant="light"
+                          color={statusColors[req.status] ?? "gray"}
+                        >
+                          {statusLabels[req.status] ?? req.status}
+                        </Badge>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </>
+              )}
+            </>
           )}
         </Table.Tbody>
       </Table>

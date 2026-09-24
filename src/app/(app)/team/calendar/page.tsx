@@ -16,8 +16,11 @@ import {
   Title,
 } from "@mantine/core";
 import {
+  DateStringValue,
+  getStartOfWeek,
   MobileMonthView,
   Schedule,
+  ScheduleHeader,
   type ScheduleEventData,
 } from "@mantine/schedule";
 import {
@@ -47,6 +50,9 @@ const closureDotStyle: React.CSSProperties = {
   background: "var(--mantine-color-gray-6)",
 };
 
+// Dostepne widoki harmonogramu — bez "day"
+type CalendarView = "week" | "month" | "year";
+
 // "John Kowalski" -> "J. Kowalski" (pierwsza litera imienia + kropka + nazwisko)
 const formatShortName = (name?: string): string => {
   if (!name) return "";
@@ -57,6 +63,96 @@ const formatShortName = (name?: string): string => {
   const lastName = parts.slice(1).join(" ");
   return `${firstName[0]}. ${lastName}`;
 };
+
+function getNavigationHandlers(date: DateStringValue, view: CalendarView) {
+  const d = dayjs(date);
+  switch (view) {
+    case "week":
+      return {
+        previous: d.subtract(1, "week"),
+        next: d.add(1, "week"),
+      };
+    case "month":
+      return {
+        previous: d.subtract(1, "month").startOf("month"),
+        next: d.add(1, "month").startOf("month"),
+      };
+    case "year":
+      return {
+        previous: d.subtract(1, "year").startOf("year"),
+        next: d.add(1, "year").startOf("year"),
+      };
+  }
+}
+
+function getHeaderLabel(date: DateStringValue, view: CalendarView) {
+  const d = dayjs(date);
+  switch (view) {
+    case "week": {
+      const start = dayjs(getStartOfWeek({ date, firstDayOfWeek: 1 }));
+      const end = start.add(6, "day");
+      if (start.month() === end.month()) {
+        return `${start.format("MMM D")} – ${end.format("D, YYYY")}`;
+      }
+      return `${start.format("MMM D")} – ${end.format("MMM D, YYYY")}`;
+    }
+    case "month":
+      return d.format("MMMM YYYY");
+    case "year":
+      return d.format("YYYY");
+  }
+}
+
+// Wspólny, własny nagłówek harmonogramu: nawigacja + SegmentedControl zamiast Select
+function CalendarHeader({
+  date,
+  view,
+  onDateChange,
+  onViewChange,
+}: {
+  date: DateStringValue;
+  view: CalendarView;
+  onDateChange: (date: DateStringValue) => void;
+  onViewChange: (view: CalendarView) => void;
+}) {
+  const nav = getNavigationHandlers(date, view);
+
+  return (
+    <Stack gap="xs" mb="sm">
+      <ScheduleHeader>
+        <ScheduleHeader.Previous
+          onClick={() =>
+            onDateChange(nav.previous.format("YYYY-MM-DD") as DateStringValue)
+          }
+        />
+        <ScheduleHeader.Control interactive={false}>
+          {getHeaderLabel(date, view)}
+        </ScheduleHeader.Control>
+        <ScheduleHeader.Next
+          onClick={() =>
+            onDateChange(nav.next.format("YYYY-MM-DD") as DateStringValue)
+          }
+        />
+        <ScheduleHeader.Today
+          onClick={() =>
+            onDateChange(dayjs().format("YYYY-MM-DD") as DateStringValue)
+          }
+        />
+      </ScheduleHeader>
+
+      <SegmentedControl
+        value={view}
+        onChange={(val) => onViewChange(val as CalendarView)}
+        data={[
+          { label: "Week", value: "week" },
+          { label: "Month", value: "month" },
+          { label: "Year", value: "year" },
+        ]}
+        fullWidth
+      />
+    </Stack>
+  );
+}
 
 export default function TeamCalendarPage() {
   const router = useRouter();
@@ -70,11 +166,14 @@ export default function TeamCalendarPage() {
     dayjs().format("YYYY-MM-DD"),
   );
 
+  // Stan widoku/daty harmonogramu (wspólny dla wersji mobilnej "calendar" i desktopowej)
+  const [scheduleView, setScheduleView] = useState<CalendarView>("month");
+  const [scheduleDate, setScheduleDate] = useState<DateStringValue>(
+    dayjs().format("YYYY-MM-DD") as DateStringValue,
+  );
+
   const { requests, loading } = useTeamLeaveRequests();
   const { closuresMap, loading: loadingClosures } = useNonWorkingDays();
-
-  // Dostepne widoki: bez "day"
-  const viewSelectProps = { views: ["week", "month", "year"] } as const;
 
   const departmentsList = useMemo(() => {
     const depts = new Set<string>();
@@ -140,6 +239,11 @@ export default function TeamCalendarPage() {
 
     return [...closureEvents, ...leaveEvents];
   }, [filteredRequests, closureEvents]);
+
+  const handleEventClick = (event: ScheduleEventData) => {
+    if (String(event.id).startsWith("closure-")) return;
+    router.push(`/team/leave-requests/${event.id}`);
+  };
 
   return (
     <Stack gap="lg">
@@ -211,30 +315,31 @@ export default function TeamCalendarPage() {
             hiddenFrom="md"
             display={mobileView === "calendar" ? "block" : "none"}
           >
+            <CalendarHeader
+              date={scheduleDate}
+              view={scheduleView}
+              onDateChange={setScheduleDate}
+              onViewChange={setScheduleView}
+            />
             <Schedule
               events={scheduleEvents}
-              defaultView="month"
-              onEventClick={(event) => {
-                if (String(event.id).startsWith("closure-")) return;
-                router.push(`/team/leave-requests/${event.id}`);
-              }}
+              view={scheduleView}
+              onViewChange={(v) => setScheduleView(v as CalendarView)}
+              date={scheduleDate}
+              onDateChange={(d) => setScheduleDate(d as DateStringValue)}
+              onEventClick={handleEventClick}
               monthViewProps={{
                 firstDayOfWeek: 1,
-                viewSelectProps,
+                withHeader: false,
               }}
               weekViewProps={{
                 firstDayOfWeek: 1,
                 startTime: "08:00:00",
                 endTime: "18:00:00",
-                viewSelectProps,
-              }}
-              dayViewProps={{
-                startTime: "08:00:00",
-                endTime: "18:00:00",
-                viewSelectProps,
+                withHeader: false,
               }}
               yearViewProps={{
-                viewSelectProps,
+                withHeader: false,
               }}
             />
           </Paper>
@@ -289,30 +394,31 @@ export default function TeamCalendarPage() {
             bg="var(--mantine-color-body)"
             visibleFrom="md"
           >
+            <CalendarHeader
+              date={scheduleDate}
+              view={scheduleView}
+              onDateChange={setScheduleDate}
+              onViewChange={setScheduleView}
+            />
             <Schedule
               events={scheduleEvents}
-              defaultView="month"
-              onEventClick={(event) => {
-                if (String(event.id).startsWith("closure-")) return;
-                router.push(`/team/leave-requests/${event.id}`);
-              }}
+              view={scheduleView}
+              onViewChange={(v) => setScheduleView(v as CalendarView)}
+              date={scheduleDate}
+              onDateChange={(d) => setScheduleDate(d as DateStringValue)}
+              onEventClick={handleEventClick}
               monthViewProps={{
                 firstDayOfWeek: 1,
-                viewSelectProps,
+                withHeader: false,
               }}
               weekViewProps={{
                 firstDayOfWeek: 1,
                 startTime: "08:00:00",
                 endTime: "18:00:00",
-                viewSelectProps,
-              }}
-              dayViewProps={{
-                startTime: "08:00:00",
-                endTime: "18:00:00",
-                viewSelectProps,
+                withHeader: false,
               }}
               yearViewProps={{
-                viewSelectProps,
+                withHeader: false,
               }}
             />
           </Paper>

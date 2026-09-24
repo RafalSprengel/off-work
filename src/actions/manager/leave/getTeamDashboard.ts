@@ -32,6 +32,7 @@ export async function getTeamDashboard() {
 
         const startOfWeekStr = startOfWeek.format("YYYY-MM-DD");
         const endOfWeekStr = endOfWeek.format("YYYY-MM-DD");
+        const tomorrowStr = today.add(1, "day").format("YYYY-MM-DD");
 
         const [
             totalEmployees,
@@ -39,6 +40,7 @@ export async function getTeamDashboard() {
             onLeaveThisWeek,
             activeOnLeave,
             todayAbsencesRaw,
+            upcomingAbsencesRaw,
             pendingRequestsRaw,
 
             deptEmployeeCounts,
@@ -76,6 +78,15 @@ export async function getTeamDashboard() {
                 endDate: { $gte: todayStr },
             })
                 .sort({ createdAt: -1 })
+                .lean(),
+
+            LeaveRequest.find({
+                organizationId: orgId,
+                status: "approved",
+                startDate: { $gte: tomorrowStr },
+            })
+                .sort({ startDate: 1 })
+                .limit(10)
                 .lean(),
 
             LeaveRequest.find({
@@ -151,6 +162,10 @@ export async function getTeamDashboard() {
             JSON.stringify(todayAbsencesRaw)
         ) as PendingRequestItem[];
 
+        const upcomingAbsences = JSON.parse(
+            JSON.stringify(upcomingAbsencesRaw)
+        ) as PendingRequestItem[];
+
         const pendingRequests = JSON.parse(
             JSON.stringify(pendingRequestsRaw)
         ) as PendingRequestItem[];
@@ -175,6 +190,7 @@ export async function getTeamDashboard() {
                 pendingApprovals,
                 onLeaveThisWeek,
                 todayAbsences,
+                upcomingAbsences,
                 pendingRequests,
                 departmentOverview,
             } as TeamDashboardData,

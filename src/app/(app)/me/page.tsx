@@ -1,24 +1,20 @@
 "use client";
 
 import {
-  ActionIcon,
   Badge,
   Box,
   Button,
-  Card,
   Flex,
   Grid,
   Group,
   Loader,
   Paper,
-  Progress,
   SimpleGrid,
   Stack,
   Table,
   Text,
   ThemeIcon,
   Title,
-  Tooltip,
 } from "@mantine/core";
 import {
   IconAlertCircle,
@@ -155,100 +151,82 @@ export default function EmployeeDashboard() {
         </Group>
       </Paper>
 
-      <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="md">
-        <Paper p="md" radius="md" withBorder>
-          <Group justify="space-between" mb="xs">
-            <Text size="sm" c="dimmed" fw={500}>
+      <SimpleGrid cols={{ base: 2, md: 4 }} spacing="xs">
+        <Paper p="sm" radius="md" withBorder>
+          <Group justify="space-between" align="center" wrap="nowrap" mb={4}>
+            <Text size="xs" c="dimmed" fw={600} style={{ textTransform: "uppercase" }}>
               Annual Leave
             </Text>
-            <ThemeIcon variant="light" color="blue">
-              <IconPlaneDeparture size={16} />
+            <ThemeIcon variant="light" color="blue" size="sm" style={{ flexShrink: 0 }}>
+              <IconPlaneDeparture size={14} />
             </ThemeIcon>
           </Group>
-          <Group align="flex-end" gap="xs">
-            <Text size="xl" fw={700}>
+          <Group align="baseline" gap="xs">
+            <Text size="lg" fw={700} lh={1}>
               {daysLeft}
             </Text>
-            <Text size="sm" c="dimmed" mb={2}>
+            <Text size="xs" c="dimmed">
               / {holidayAllowance} days left
             </Text>
           </Group>
-          <Progress
-            value={holidayAllowance ? (daysLeft / holidayAllowance) * 100 : 0}
-            mt="md"
-            size="sm"
-            color="blue"
-          />
         </Paper>
 
-        <Paper p="md" radius="md" withBorder>
-          <Group justify="space-between" mb="xs">
-            <Text size="sm" c="dimmed" fw={500}>
+        <Paper p="sm" radius="md" withBorder>
+          <Group justify="space-between" align="center" wrap="nowrap" mb={4}>
+            <Text size="xs" c="dimmed" fw={600} style={{ textTransform: "uppercase" }}>
               Sick Leave Used
             </Text>
-            <ThemeIcon variant="light" color="red">
-              <IconAlertCircle size={16} />
+            <ThemeIcon variant="light" color="red" size="sm" style={{ flexShrink: 0 }}>
+              <IconAlertCircle size={14} />
             </ThemeIcon>
           </Group>
-          <Group align="flex-end" gap="xs">
-            <Text size="xl" fw={700}>
+          <Group align="baseline" gap="xs">
+            <Text size="lg" fw={700} lh={1}>
               2
             </Text>
-            <Text size="sm" c="dimmed" mb={2}>
+            <Text size="xs" c="dimmed">
               days this year
             </Text>
           </Group>
-          <Progress value={(2 / 10) * 100} mt="md" size="sm" color="red" />
         </Paper>
 
-        <Paper p="md" radius="md" withBorder>
-          <Group justify="space-between" mb="xs">
-            <Text size="sm" c="dimmed" fw={500}>
+        <Paper p="sm" radius="md" withBorder>
+          <Group justify="space-between" align="center" wrap="nowrap" mb={4}>
+            <Text size="xs" c="dimmed" fw={600} style={{ textTransform: "uppercase" }}>
               Pending Approval
             </Text>
-            <ThemeIcon variant="light" color="orange">
-              <IconClock size={16} />
+            <ThemeIcon variant="light" color="orange" size="sm" style={{ flexShrink: 0 }}>
+              <IconClock size={14} />
             </ThemeIcon>
           </Group>
-          <Group align="flex-end" gap="xs">
-            <Text size="xl" fw={700}>
+          <Group align="baseline" gap="xs">
+            <Text size="lg" fw={700} lh={1}>
               {pendingCount}
             </Text>
-            <Text size="sm" c="dimmed" mb={2}>
+            <Text size="xs" c="dimmed">
               {pendingCount} {pendingCount === 1 ? "request" : "requests"} ·{" "}
               {pendingDays} {pendingDays === 1 ? "day" : "days"}
             </Text>
           </Group>
-          <Progress
-            value={
-              holidayAllowance
-                ? Math.min((pendingDays / holidayAllowance) * 100, 100)
-                : 0
-            }
-            mt="md"
-            size="sm"
-            color="orange"
-          />
         </Paper>
 
-        <Paper p="md" radius="md" withBorder>
-          <Group justify="space-between" mb="xs">
-            <Text size="sm" c="dimmed" fw={500}>
+        <Paper p="sm" radius="md" withBorder>
+          <Group justify="space-between" align="center" wrap="nowrap" mb={4}>
+            <Text size="xs" c="dimmed" fw={600} style={{ textTransform: "uppercase" }}>
               Remote Work Balance
             </Text>
-            <ThemeIcon variant="light" color="teal">
-              <IconCalendarStats size={16} />
+            <ThemeIcon variant="light" color="teal" size="sm" style={{ flexShrink: 0 }}>
+              <IconCalendarStats size={14} />
             </ThemeIcon>
           </Group>
-          <Group align="flex-end" gap="xs">
-            <Text size="xl" fw={700}>
+          <Group align="baseline" gap="xs">
+            <Text size="lg" fw={700} lh={1}>
               4
             </Text>
-            <Text size="sm" c="dimmed" mb={2}>
+            <Text size="xs" c="dimmed">
               / 6 days left this month
             </Text>
           </Group>
-          <Progress value={(4 / 6) * 100} mt="md" size="sm" color="teal" />
         </Paper>
       </SimpleGrid>
 
