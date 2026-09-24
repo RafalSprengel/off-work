@@ -115,8 +115,13 @@ export default function HolidaySchedule({
     dayjs().format("YYYY-MM-DD") as DateStringValue,
   );
 
+  const today = dayjs().startOf("day");
+
   const scheduleEvents: ScheduleEventData[] = [
-    ...events.map((event) => ({ ...event, color: "blue" })),
+    ...events.map((event) => {
+      const isPast = dayjs(event.end).endOf("day").isBefore(today);
+      return { ...event, color: isPast ? "gray.2" : "blue" };
+    }),
     ...closures.map((event) => ({ ...event, color: "gray" })),
   ];
 

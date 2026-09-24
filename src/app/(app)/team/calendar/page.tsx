@@ -217,6 +217,8 @@ export default function TeamCalendarPage() {
   }, [closuresMap]);
 
   const scheduleEvents: ScheduleEventData[] = useMemo(() => {
+    const today = dayjs().startOf("day");
+
     const leaveEvents: ScheduleEventData[] = filteredRequests.map((req) => {
       const shortName = formatShortName(req.employeeName);
       const name = shortName || "No name";
@@ -228,12 +230,15 @@ export default function TeamCalendarPage() {
       const startDateFormatted = dayjs(req.startDate).format("YYYY-MM-DD");
       const endDateFormatted = dayjs(req.endDate).format("YYYY-MM-DD");
 
+      // Past events (ended before today) get grayed out
+      const isPast = dayjs(endDateFormatted).endOf("day").isBefore(today);
+
       return {
         id: req._id,
         title,
         start: `${startDateFormatted} 00:00:00`,
         end: `${endDateFormatted} 23:59:59`,
-        color: typeColors[req.type] || "gray",
+        color: isPast ? "gray.2" : typeColors[req.type] || "gray",
       };
     });
 
