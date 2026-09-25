@@ -20,6 +20,7 @@ import {
   IconLayoutDashboard,
   IconLogout,
   IconMoon,
+  IconReportAnalytics,
   IconSettings,
   IconSun,
   IconUser,
@@ -263,6 +264,20 @@ export default function SidebarContent({
                 <Group gap="sm">
                   <IconCalendar size={18} />
                   <Text size="sm">Calendar</Text>
+                </Group>
+              </UnstyledButton>
+
+              <UnstyledButton
+                className={styles.menuItem}
+                data-active={isActive("/team/reports")}
+                component={Link}
+                href="/team/reports"
+                prefetch={false}
+                onClick={onClose}
+              >
+                <Group gap="sm">
+                  <IconReportAnalytics size={18} />
+                  <Text size="sm">Reports</Text>
                 </Group>
               </UnstyledButton>
 
