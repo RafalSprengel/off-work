@@ -1,0 +1,25 @@
+export interface IOrgSettings {
+    companyName: string;
+    timezone: string;
+    country: string;
+    address: string;
+    website: string;
+
+    /** Format: "MM-DD" */
+    holidayYearStart: string;
+    /** Format: "MM-DD" */
+    holidayYearEnd: string;
+
+    defaultAnnualLeaveDays: number;
+    allowCarryOver: boolean;
+    maxCarryOverDays: number;
+    autoApproveSickLeave: boolean;
+}
+
+export type GetOrgSettingsResult =
+    | { success: true; data: IOrgSettings; error: null }
+    | { success: false; data: null; error: string };
+
+export type UpdateOrgSettingsResult =
+    | { success: true; data: IOrgSettings; error: null }
+    | { success: false; data: null; error: string };

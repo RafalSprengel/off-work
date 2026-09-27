@@ -44,7 +44,7 @@ function createAuth(db: Db) {
 
         emailVerification: {
             sendOnSignUp: true,
-            sendOnSignIn: true,
+            sendOnSignIn: false,
             autoSignInAfterVerification: true,
             sendVerificationEmail: async ({ user, url }) => {
                 try {

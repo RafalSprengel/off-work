@@ -38,7 +38,6 @@ export default function SettingsLayout({
                         Manage company preferences, leave policies, and system integrations
                     </Text>
                 </div>
-
             </Group>
 
             <Paper
@@ -56,6 +55,7 @@ export default function SettingsLayout({
                         style={{
                             flexWrap: "nowrap",
                             overflowX: "auto",
+                            WebkitOverflowScrolling: "touch",
                             scrollbarWidth: "none",
                         }}
                     >

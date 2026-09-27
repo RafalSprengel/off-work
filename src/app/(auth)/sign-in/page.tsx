@@ -47,6 +47,8 @@ function SignInForm() {
         setSignInError(null);
         setIsSubmitting(true);
 
+        let navigating = false;
+
         try {
             const { data: signInData, error: signInError } =
                 await authClient.signIn.email({
@@ -55,7 +57,6 @@ function SignInForm() {
                 });
 
             if (signInError || !signInData) {
-                // Provide a helpful message when the email is not yet verified
                 if (signInError?.code === "EMAIL_NOT_VERIFIED") {
                     setSignInErrorCode("EMAIL_NOT_VERIFIED");
                     setSignInError(
@@ -69,65 +70,58 @@ function SignInForm() {
             }
 
             if (callbackURL) {
-                // e.g. returning to /accept-invitation/[id] - that page handles
-                // setting the active organization once the invite is accepted.
+                navigating = true;
                 router.push(callbackURL);
                 router.refresh();
                 return;
             }
 
-            // Every server action relies on an active organization being set on
-            // the session (see utils/getOrganizationId.ts) - make sure it is.
-            const session = await authClient.getSession();
+            const [session, { data: organizations }] = await Promise.all([
+                authClient.getSession(),
+                authClient.organization.list(),
+            ]);
+
             const hasActiveOrg = !!session.data?.session?.activeOrganizationId;
 
             if (!hasActiveOrg) {
-                const { data: organizations } = await authClient.organization.list();
-
                 if (organizations && organizations.length > 0) {
                     await authClient.organization.setActive({
                         organizationId: organizations[0].id,
                     });
                 } else {
-                    // User has a valid session but no organization yet
-                    // (e.g. just verified email). Redirect to onboarding.
+                    navigating = true;
                     window.location.href = "/onboarding";
                     return;
                 }
             }
 
-            // getCurrentEmployeeRole uses disableCookieCache internally to
-            // always fetch a fresh session, so the cookie cache is bypassed
-            // only for this one call – no need to pass userId from the client.
             const { success, role, error } = await getCurrentEmployeeRole({ freshSession: true });
 
             console.log("[sign-in] getCurrentEmployeeRole result:", { success, role, error });
 
             if (success && role === "Employee") {
+                navigating = true;
                 window.location.href = "/me";
                 return;
             }
 
             if (success && role === "Manager") {
+                navigating = true;
                 window.location.href = "/team";
                 return;
             }
 
-            // Account deactivated or no employee profile — sign out and inform the user
             if (error === "Account is deactivated") {
                 await authClient.signOut();
                 await authClient.clearCache();
-                setIsSubmitting(false);
                 setSignInError(
                     "Your account has been deactivated. Contact your administrator for more information."
                 );
                 return;
             }
 
-            // Fallback if getCurrentEmployeeRole fails - redirect to /team anyway.
-            // The dashboard layout will redirect back to /sign-in if the session
-            // is invalid.
             console.error("[sign-in] getCurrentEmployeeRole failed, falling back to /team:", error);
+            navigating = true;
             window.location.href = "/team";
         } catch (err) {
             notifications.show({
@@ -137,7 +131,9 @@ function SignInForm() {
                 icon: <IconX />,
             });
         } finally {
-            setIsSubmitting(false);
+            if (!navigating) {
+                setIsSubmitting(false);
+            }
         }
     }
 

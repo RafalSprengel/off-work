@@ -24,6 +24,7 @@ import {
   IconSettings,
   IconSun,
   IconUser,
+  IconUserOff,
   IconUsers,
   IconX,
 } from "@tabler/icons-react";
@@ -250,6 +251,20 @@ export default function SidebarContent({
                 <Group gap="sm">
                   <IconFileDescription size={18} />
                   <Text size="sm">Leave Requests</Text>
+                </Group>
+              </UnstyledButton>
+
+              <UnstyledButton
+                className={styles.menuItem}
+                data-active={isActive("/team/absences")}
+                component={Link}
+                href="/team/absences"
+                prefetch={false}
+                onClick={onClose}
+              >
+                <Group gap="sm">
+                  <IconUserOff size={18} />
+                  <Text size="sm">Absences</Text>
                 </Group>
               </UnstyledButton>
 
