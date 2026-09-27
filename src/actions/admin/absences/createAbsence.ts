@@ -4,8 +4,7 @@ import dbConnect from "@/db/connection";
 import Absence from "@/db/models/Absence";
 import Employee from "@/db/models/Employee";
 import { getOrganizationId } from "@/utils/getOrganizationId";
-import { getAuth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getCachedSession } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 import type { ICreateAbsenceInput, IAbsenceItem, CreateAbsenceResult } from "@/types/absence";
 import mongoose from "mongoose";
@@ -15,8 +14,7 @@ export async function createAbsence(data: ICreateAbsenceInput): Promise<CreateAb
         await dbConnect();
         const organizationId = await getOrganizationId();
 
-        const auth = await getAuth();
-        const session = await auth.api.getSession({ headers: await headers() });
+        const session = await getCachedSession();
         if (!session?.user) throw new Error("Unauthorized");
 
         const creator = await Employee.findOne({

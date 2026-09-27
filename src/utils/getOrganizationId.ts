@@ -1,12 +1,7 @@
-import { getAuth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getCachedSession } from "@/lib/session";
 
 export async function getOrganizationId(): Promise<string> {
-    const auth = await getAuth();
-
-    const session = await auth.api.getSession({
-        headers: await headers(),
-    });
+    const session = await getCachedSession();
 
     const organizationId = session?.session?.activeOrganizationId;
 

@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
-import { getAuth } from "@/lib/auth";
+import { getCachedSession } from "@/lib/session";
 import { getCurrentEmployeeRole } from "@/actions/shared/getCurrentEmployeeRole";
 import AppShellClient from "@/app/(app)/components/AppShellClient/AppShellClient";
 
@@ -9,25 +8,20 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const auth = await getAuth();
-
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const session = await getCachedSession();
 
   if (!session?.user) {
     redirect("/sign-in");
   }
 
-  // If the user has no active organization yet (e.g. just verified email
-  // and hasn't completed onboarding), render without the app shell.
   if (!session.session.activeOrganizationId) {
     return <>{children}</>;
   }
 
-  const { success, role } = await getCurrentEmployeeRole({ freshSession: true });
+  const { success, role } = await getCurrentEmployeeRole({
+    preloadedSession: session,
+  });
 
-  // No valid Employee profile or account is deactivated — block access
   if (!success) {
     redirect("/sign-in");
   }

@@ -2,8 +2,7 @@
 
 import dbConnect from "@/db/connection";
 import Employee from "@/db/models/Employee";
-import { getAuth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getCachedSession } from "@/lib/session";
 
 /**
  * Called AFTER the user has signed up and accepted the invitation on the client.
@@ -21,11 +20,7 @@ export async function activateEmployeeAfterInvite(params: {
     try {
         await dbConnect();
 
-        // Get the currently authenticated user ID from the session
-        const auth = await getAuth();
-        const session = await auth.api.getSession({
-            headers: await headers(),
-        });
+        const session = await getCachedSession();
 
         if (!session?.user?.id) {
             return { success: false, error: "No authenticated user found" };

@@ -1,25 +1,31 @@
 "use server";
 
-import { getAuth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getCachedFreshSession, getCachedSession } from "@/lib/session";
 import dbConnect from "@/db/connection";
 import Employee from "@/db/models/Employee";
 
+type SessionShape = {
+    user: { id: string };
+    session: { activeOrganizationId?: string | null };
+};
+
 export async function getCurrentEmployeeRole(options?: {
     freshSession?: boolean;
+    preloadedSession?: SessionShape | null;
 }): Promise<{
     success: boolean;
     role: "Manager" | "Employee" | null;
     error: string | null;
 }> {
     try {
-        const auth = await getAuth();
-        const reqHeaders = await headers();
+        let session: SessionShape | null | undefined = options?.preloadedSession;
 
-        const session = await auth.api.getSession({
-            headers: reqHeaders,
-            ...(options?.freshSession ? { query: { disableCookieCache: true } } : {}),
-        });
+        if (!session) {
+            const fetched = options?.freshSession
+                ? await getCachedFreshSession()
+                : await getCachedSession();
+            session = fetched as SessionShape | null;
+        }
 
         if (!session?.user) {
             return { success: false, role: null, error: "Unauthorized: No active session" };
@@ -44,30 +50,8 @@ export async function getCurrentEmployeeRole(options?: {
         // Check both the Employee's isOwner flag (faster) and Better Auth's
         // member collection (source of truth) as a fallback, so even if the
         // afterAddMember hook didn't set isOwner, the system still works.
-        if (employee.isOwner) {
+        if (employee.isOwner || employee.role === "Manager") {
             return { success: true, role: "Manager", error: null };
-        }
-
-        // Fallback: query Better Auth member collection directly.
-        // The member collection is the source of truth for org-level roles.
-        const activeOrgId = session.session?.activeOrganizationId;
-        if (activeOrgId) {
-            try {
-                const ctx = await auth.$context;
-                const member = await ctx.adapter.findOne({
-                    model: "member",
-                    where: [
-                        { field: "userId", value: resolvedUserId },
-                        { field: "organizationId", value: activeOrgId },
-                    ],
-                });
-                if (member && (member as any).role === "owner") {
-                    return { success: true, role: "Manager", error: null };
-                }
-            } catch (adapterError) {
-                console.warn("[getCurrentEmployeeRole] Failed to query Better Auth member:", adapterError);
-                // Fall through to regular role check
-            }
         }
 
         return { success: true, role: employee.role, error: null };

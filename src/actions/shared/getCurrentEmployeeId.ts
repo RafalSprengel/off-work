@@ -1,16 +1,11 @@
 "use server";
 
-import { getAuth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getCachedSession } from "@/lib/session";
 import dbConnect from "@/db/connection";
 import Employee from "@/db/models/Employee";
 
 export async function getCurrentEmployeeId(): Promise<string> {
-    const auth = await getAuth();
-
-    const session = await auth.api.getSession({
-        headers: await headers(),
-    });
+    const session = await getCachedSession();
 
     if (!session?.user) {
         throw new Error("Unauthorized: No active session");

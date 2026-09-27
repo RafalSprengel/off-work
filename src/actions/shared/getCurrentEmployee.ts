@@ -1,7 +1,6 @@
 "use server";
 
-import { getAuth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getCachedSession } from "@/lib/session";
 import dbConnect from "@/db/connection";
 import Employee from "@/db/models/Employee";
 import type { IEmployee } from "@/types/employees";
@@ -12,11 +11,7 @@ export async function getCurrentEmployee(): Promise<{
     error: string | null;
 }> {
     try {
-        const auth = await getAuth();
-
-        const session = await auth.api.getSession({
-            headers: await headers(),
-        });
+        const session = await getCachedSession();
 
         if (!session?.user) {
             return { success: false, data: null, error: "Unauthorized: No active session" };
