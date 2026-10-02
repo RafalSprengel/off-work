@@ -42,6 +42,7 @@ import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
 import Link from "next/link"
 import { useTeamDashboard } from "@/hooks/useTeamDashboard"
+import { formatRequestDays } from "@/utils/leaveBalance"
 import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 import {
@@ -376,7 +377,7 @@ export default function AdminDashboard() {
                                                     </Table.Td>
                                                     <Table.Td>
                                                         <Text size="sm" fw={500}>
-                                                            {req.daysRequested}d
+                                                            {formatRequestDays(req, "d")}
                                                         </Text>
                                                     </Table.Td>
                                                     <Table.Td>

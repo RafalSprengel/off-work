@@ -23,6 +23,7 @@ import {
 import Link from "next/link";
 import { useMyLeaveRequests } from "@/hooks/useMyLeaveRequests";
 import { useRouter } from "next/navigation";
+import { formatRequestDays } from "@/utils/leaveBalance";
 import dayjs from "dayjs";
 import { useState } from "react";
 
@@ -144,7 +145,7 @@ export default function EmployeeLeaveRequestsPage() {
                                     <Table.Td>
                                         {dayjs(item.startDate).format("DD-MM-YYYY")} → {dayjs(item.endDate).format("DD-MM-YYYY")}
                                     </Table.Td>
-                                    <Table.Td>{item.daysRequested}</Table.Td>
+                                    <Table.Td>{formatRequestDays(item)}</Table.Td>
                                     <Table.Td>{getStatusBadge(item.status)}</Table.Td>
                                     <Table.Td>
                                         <Text size="sm" c="dimmed" lineClamp={1}>
@@ -167,7 +168,7 @@ export default function EmployeeLeaveRequestsPage() {
                                             <Table.Td>
                                                 {dayjs(item.startDate).format("DD-MM-YYYY")} → {dayjs(item.endDate).format("DD-MM-YYYY")}
                                             </Table.Td>
-                                            <Table.Td>{item.daysRequested}</Table.Td>
+                                            <Table.Td>{formatRequestDays(item)}</Table.Td>
                                             <Table.Td>{getStatusBadge(item.status)}</Table.Td>
                                             <Table.Td>
                                                 <Text size="sm" c="dimmed" lineClamp={1}>
@@ -224,7 +225,7 @@ export default function EmployeeLeaveRequestsPage() {
                                 <Text size="sm" c="dimmed" flex="0 0 auto">
                                     Days
                                 </Text>
-                                <Text size="sm">{item.daysRequested}</Text>
+                                <Text size="sm">{formatRequestDays(item)}</Text>
                             </Group>
                             {item.comment && (
                                 <Group justify="space-between" gap="xs">
@@ -268,7 +269,7 @@ export default function EmployeeLeaveRequestsPage() {
                                         <Text size="sm" c="dimmed" flex="0 0 auto">
                                             Days
                                         </Text>
-                                        <Text size="sm">{item.daysRequested}</Text>
+                                        <Text size="sm">{formatRequestDays(item)}</Text>
                                     </Group>
                                     {item.comment && (
                                         <Group justify="space-between" gap="xs">

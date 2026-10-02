@@ -48,6 +48,10 @@ export async function createAbsence(data: ICreateAbsenceInput): Promise<CreateAb
         });
 
         revalidatePath("/team/absences");
+        revalidatePath("/me");
+        revalidatePath("/team/employees", "layout");
+        revalidatePath("/team/leave-requests", "layout");
+        revalidatePath("/team/calendar");
 
         const item: IAbsenceItem = {
             id: absence._id.toString(),

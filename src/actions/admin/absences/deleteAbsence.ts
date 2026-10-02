@@ -23,6 +23,10 @@ export async function deleteAbsence(
         }
 
         revalidatePath("/team/absences");
+        revalidatePath("/me");
+        revalidatePath("/team/employees", "layout");
+        revalidatePath("/team/leave-requests", "layout");
+        revalidatePath("/team/calendar");
         return { success: true };
     } catch (error) {
         console.error("Error deleting absence:", error);

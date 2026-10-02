@@ -36,6 +36,7 @@ import { useCurrentEmployee } from "@/hooks/useCurrentEmployee";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useMyLeaveRequests } from "@/hooks/useMyLeaveRequests";
 import { useTeamLeaveRequests } from "@/hooks/useTeamLeaveRequests";
+import { sumAnnualDaysUsed } from "@/utils/leaveBalance";
 
 dayjs.extend(relativeTime);
 
@@ -109,10 +110,9 @@ export default function EmployeeDashboard() {
 
   const holidayAllowance = employee?.holidayAllowance ?? 0;
 
-  // Only approved annual leave counts as used allowance.
-  const annualDaysUsed = requests
-    .filter((req) => req.status === "approved" && req.type === "annual")
-    .reduce((sum, req) => sum + req.daysRequested, 0);
+  // Only approved annual leave counts as used allowance; days covered by an
+  // absence (sick etc.) are not deducted.
+  const annualDaysUsed = sumAnnualDaysUsed(requests);
   const daysLeft = Math.max(holidayAllowance - annualDaysUsed, 0);
 
   // Stats for leave requests still awaiting approval.

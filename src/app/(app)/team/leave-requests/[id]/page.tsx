@@ -41,6 +41,7 @@ import {
   rejectLeaveRequestAsAdmin,
 } from "@/actions/admin/leave/reviewLeaveRequest";
 import { useLeaveRequestDetails } from "@/hooks/useLeaveRequestDetails";
+import { formatRequestDays } from "@/utils/leaveBalance";
 
 const typeLabels: Record<string, string> = {
   annual: "Annual Leave",
@@ -313,8 +314,10 @@ export default function LeaveRequestDetailsPage() {
               <InfoRow
                 icon={<IconCalendarEvent size={18} />}
                 label="Working Days"
-                value={`${request.daysRequested} ${request.daysRequested === 1 ? "day" : "days"
-                  }`}
+                value={formatRequestDays(
+                  request,
+                  request.daysRequested === 1 ? " day" : " days",
+                )}
               />
               <InfoRow
                 icon={<IconUserCheck size={18} />}

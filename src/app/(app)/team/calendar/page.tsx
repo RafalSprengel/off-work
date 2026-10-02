@@ -223,8 +223,11 @@ export default function TeamCalendarPage() {
       const shortName = formatShortName(req.employeeName);
       const name = shortName || "No name";
       const days = req.daysRequested;
+      const absenceNote = req.absenceDays
+        ? `, ${req.absenceDays} covered by absence`
+        : "";
       const title = days
-        ? `${name} (${days} ${days === 1 ? "day" : "days"})`
+        ? `${name} (${days} ${days === 1 ? "day" : "days"}${absenceNote})`
         : name;
 
       const startDateFormatted = dayjs(req.startDate).format("YYYY-MM-DD");

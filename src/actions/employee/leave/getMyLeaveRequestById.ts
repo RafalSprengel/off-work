@@ -5,6 +5,7 @@ import LeaveRequest from "@/db/models/LeaveRequest";
 import Employee from "@/db/models/Employee";
 import { getCurrentEmployeeId } from "@/actions/shared/getCurrentEmployeeId";
 import type { MyLeaveRequestDetail } from "@/types/leaveRequest";
+import { addChargedDays } from "@/utils/enrichLeaveRequests";
 import mongoose from "mongoose";
 
 export async function getMyLeaveRequestById(id: string) {
@@ -38,9 +39,11 @@ export async function getMyLeaveRequestById(id: string) {
             }
         }
 
+        const [enriched] = await addChargedDays([data], leaveRequest.organizationId);
+
         return {
             success: true,
-            data,
+            data: enriched,
         };
     } catch (error: unknown) {
         console.error("Error fetching leave request:", error);

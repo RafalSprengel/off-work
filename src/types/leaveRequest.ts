@@ -24,9 +24,14 @@ export interface CreateLeaveRequestParams {
 
 export interface MyLeaveRequestDetail {
   _id: string;
+  employee?: string;
   startDate: string;
   endDate: string;
   daysRequested: number;
+  /** Days actually deducted from allowance (daysRequested minus days covered by absences). */
+  chargedDays?: number;
+  /** Working days of this leave covered by an absence record. */
+  absenceDays?: number;
   status: "pending" | "approved" | "rejected" | "cancelled";
   type: "annual" | "sick" | "unpaid" | "other";
   comment?: string;
@@ -44,11 +49,14 @@ export interface MyLeaveRequestDetail {
 
 export interface LeaveRequestDetail {
   _id: string;
+  employee?: string;
   startDate: string;
   endDate: string;
   startHalfDay: boolean;
   endHalfDay: boolean;
   daysRequested: number;
+  chargedDays?: number;
+  absenceDays?: number;
   status: "pending" | "approved" | "rejected" | "cancelled";
   type: "annual" | "sick" | "unpaid" | "other";
   comment?: string;
@@ -72,6 +80,10 @@ export interface TeamLeaveRequestItem {
   startHalfDay: boolean;
   endHalfDay: boolean;
   daysRequested: number;
+  /** Days actually deducted from allowance (daysRequested minus days covered by absences). */
+  chargedDays?: number;
+  /** Working days of this leave covered by an absence record. */
+  absenceDays?: number;
   status: "pending" | "approved" | "rejected";
   type: "annual" | "sick" | "unpaid" | "other";
   comment?: string;

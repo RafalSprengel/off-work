@@ -15,6 +15,7 @@ import { notFound } from "next/navigation";
 
 import { getEmployeeById } from "@/actions/manager/employees/getEmployeeById";
 import { getEmployeeLeaveRequests } from "@/actions/manager/leave/getEmployeeLeaveRequests";
+import { sumAnnualDaysUsed } from "@/utils/leaveBalance";
 
 // Leave types displayed as rows. Only "Annual" has a configured allowance; the
 // remaining categories do not have allowance data in the system yet.
@@ -42,10 +43,9 @@ export default async function EmployeeAllowancesPage({
   const { success: leavesSuccess, data } = await getEmployeeLeaveRequests(id);
   const leaveRequests = leavesSuccess ? data : [];
 
-  // Only approved annual leave counts as used allowance so far.
-  const usedDays = leaveRequests
-    .filter((req) => req.status === "approved" && req.type === "annual")
-    .reduce((sum, req) => sum + req.daysRequested, 0);
+  // Only approved annual leave counts as used allowance; days covered by an
+  // absence (sick etc.) are not deducted.
+  const usedDays = sumAnnualDaysUsed(leaveRequests);
 
   const allowance = employee.holidayAllowance;
   const remaining = Math.max(allowance - usedDays, 0);

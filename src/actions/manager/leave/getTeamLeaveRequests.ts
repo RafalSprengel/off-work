@@ -4,6 +4,7 @@ import connectDB from "@/db/connection";
 import LeaveRequest from "@/db/models/LeaveRequest";
 import { getOrganizationId } from "@/utils/getOrganizationId";
 import type { TeamLeaveRequestItem } from "@/types/leaveRequest";
+import { addChargedDays } from "@/utils/enrichLeaveRequests";
 
 export async function getTeamLeaveRequests() {
     try {
@@ -18,9 +19,11 @@ export async function getTeamLeaveRequests() {
             .sort({ createdAt: -1 })
             .lean();
 
+        const parsed = JSON.parse(JSON.stringify(leaveRequests)) as TeamLeaveRequestItem[];
+
         return {
             success: true,
-            data: JSON.parse(JSON.stringify(leaveRequests)) as TeamLeaveRequestItem[],
+            data: await addChargedDays(parsed, orgId),
         };
     } catch (error: unknown) {
         console.error("Error fetching team leave requests:", error);

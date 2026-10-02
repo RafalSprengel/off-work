@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import dayjs from "dayjs";
 import type { TeamLeaveRequestItem } from "@/types/leaveRequest";
+import { formatRequestDays } from "@/utils/leaveBalance";
 
 const typeLabels: Record<string, string> = {
   annual: "Annual Leave",
@@ -126,7 +127,7 @@ export function LeaveRequestsTable({
                       {dayjs(req.startDate).format("DD-MM-YYYY")} → {dayjs(req.endDate).format("DD-MM-YYYY")}
                     </Text>
                   </Table.Td>
-                  <Table.Td>{req.daysRequested}</Table.Td>
+                  <Table.Td>{formatRequestDays(req)}</Table.Td>
                   <Table.Td>
                     <Badge
                       variant="light"
@@ -156,7 +157,7 @@ export function LeaveRequestsTable({
                           {dayjs(req.startDate).format("DD-MM-YYYY")} → {dayjs(req.endDate).format("DD-MM-YYYY")}
                         </Text>
                       </Table.Td>
-                      <Table.Td>{req.daysRequested}</Table.Td>
+                      <Table.Td>{formatRequestDays(req)}</Table.Td>
                       <Table.Td>
                         <Badge
                           variant="light"

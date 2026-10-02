@@ -35,6 +35,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import { useTeamLeaveRequests } from "@/hooks/useTeamLeaveRequests";
+import { formatRequestDays } from "@/utils/leaveBalance";
 import type { TeamLeaveRequestItem } from "@/types/leaveRequest";
 import {
   approveLeaveRequestAsAdmin,
@@ -297,7 +298,7 @@ export default function TeamLeaveRequestsPage() {
                         </Table.Td>
                         <Table.Td>
                           <Text size="sm" fw={500}>
-                            {req.daysRequested}d
+                            {formatRequestDays(req, "d")}
                           </Text>
                         </Table.Td>
                         <Table.Td>
@@ -443,7 +444,7 @@ export default function TeamLeaveRequestsPage() {
                       <Text size="sm" c="dimmed">
                         Days
                       </Text>
-                      <Text size="sm">{req.daysRequested}d</Text>
+                      <Text size="sm">{formatRequestDays(req, "d")}</Text>
                     </Group>
                     <Group justify="space-between" gap="xs">
                       <Text size="sm" c="dimmed">

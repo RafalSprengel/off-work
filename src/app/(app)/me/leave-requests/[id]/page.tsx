@@ -32,6 +32,7 @@ import {
 import dayjs from "dayjs";
 import { useParams, useRouter } from "next/navigation";
 import { useMyLeaveRequestDetails } from "@/hooks/useMyLeaveRequestDetails";
+import { formatRequestDays } from "@/utils/leaveBalance";
 import { cancelMyLeaveRequest } from "@/actions/employee/leave/cancelLeaveRequest";
 import { useState } from "react";
 
@@ -208,8 +209,10 @@ export default function MyLeaveRequestDetailsPage() {
                             <InfoRow
                                 icon={<IconCalendarEvent size={18} />}
                                 label="Working Days"
-                                value={`${request.daysRequested} ${request.daysRequested === 1 ? "day" : "days"
-                                    }`}
+                                value={formatRequestDays(
+                                    request,
+                                    request.daysRequested === 1 ? " day" : " days"
+                                )}
                             />
                             <InfoRow
                                 icon={<IconUserCheck size={18} />}
