@@ -146,34 +146,41 @@ export default function NewEmployeeLeaveRequestPage() {
         gap={2}
         align="center"
         justify="center"
-        style={{ height: "100%", width: "100%" }}
+        style={{ height: "100%", width: "100%", position: "relative" }}
       >
         <Text size="xs" lh={1} fw={isHighlighted ? 700 : 400}>
           {dayNum}
         </Text>
-        <Flex gap={3} align="center" style={{ height: 6 }}>
-          {isLeave && (
-            <span
-              style={{ ...dotStyle, background: "var(--mantine-color-blue-6)" }}
-            />
-          )}
-          {isBankHoliday && (
-            <span
-              style={{
-                ...dotStyle,
-                background: "var(--mantine-color-green-6)",
-              }}
-            />
-          )}
-          {isClosure && (
-            <span
-              style={{
-                ...dotStyle,
-                background: "var(--mantine-color-orange-6)",
-              }}
-            />
-          )}
-        </Flex>
+        {(isLeave || isBankHoliday || isClosure) && (
+          <Flex
+            gap={3}
+            align="center"
+            justify="center"
+            style={{ position: "absolute", bottom: 2, left: 0, right: 0 }}
+          >
+            {isLeave && (
+              <span
+                style={{ ...dotStyle, background: "var(--mantine-color-blue-6)" }}
+              />
+            )}
+            {isBankHoliday && (
+              <span
+                style={{
+                  ...dotStyle,
+                  background: "var(--mantine-color-green-6)",
+                }}
+              />
+            )}
+            {isClosure && (
+              <span
+                style={{
+                  ...dotStyle,
+                  background: "var(--mantine-color-orange-6)",
+                }}
+              />
+            )}
+          </Flex>
+        )}
       </Stack>
     );
   };

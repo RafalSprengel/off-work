@@ -343,9 +343,9 @@ export default function TeamCalendarPage() {
                 endTime: "18:00:00",
                 withHeader: false,
               }}
-              yearViewProps={{
-                withHeader: false,
-              }}
+              yearViewProps={
+                { withHeader: false, onEventClick: undefined } as never
+              }
             />
           </Paper>
 
@@ -422,9 +422,9 @@ export default function TeamCalendarPage() {
                 endTime: "18:00:00",
                 withHeader: false,
               }}
-              yearViewProps={{
-                withHeader: false,
-              }}
+              yearViewProps={
+                { withHeader: false, onEventClick: undefined } as never
+              }
             />
           </Paper>
 

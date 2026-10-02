@@ -79,10 +79,12 @@ export default function AbsencesPage() {
         [employees]
     );
 
+    const today = new Date();
+
     const form = useForm<FormValues>({
         initialValues: {
             employee: null,
-            dateRange: [null, null],
+            dateRange: [today, today],
             type: "sick",
             note: "",
         },
@@ -345,9 +347,9 @@ export default function AbsencesPage() {
 
                         <DatePickerInput
                             type="range"
+                            allowSingleDateInRange
                             label="Absence period"
                             placeholder="Pick date range"
-                            maxDate={new Date()}
                             {...form.getInputProps("dateRange")}
                         />
 

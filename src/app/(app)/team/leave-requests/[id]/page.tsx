@@ -148,7 +148,7 @@ export default function LeaveRequestDetailsPage() {
             color: "green",
             icon: <IconCheck size={16} />,
           });
-          router.refresh();
+          router.back();
         } else {
           notifications.show({
             title: "Error",
@@ -200,7 +200,7 @@ export default function LeaveRequestDetailsPage() {
             color: "red",
             icon: <IconX size={16} />,
           });
-          router.refresh();
+          router.back();
         } else {
           notifications.show({
             title: "Error",
@@ -313,9 +313,8 @@ export default function LeaveRequestDetailsPage() {
               <InfoRow
                 icon={<IconCalendarEvent size={18} />}
                 label="Working Days"
-                value={`${request.daysRequested} ${
-                  request.daysRequested === 1 ? "day" : "days"
-                }`}
+                value={`${request.daysRequested} ${request.daysRequested === 1 ? "day" : "days"
+                  }`}
               />
               <InfoRow
                 icon={<IconUserCheck size={18} />}
@@ -357,32 +356,32 @@ export default function LeaveRequestDetailsPage() {
               {/* === AUDIT: APPROVED BY === */}
               {(request.status === "approved" ||
                 request.status === "rejected") && (
-                <InfoRow
-                  icon={<IconCheck size={18} />}
-                  label={
-                    request.status === "approved"
-                      ? "Approved By"
-                      : "Reviewed By"
-                  }
-                  value={
-                    <Group gap="xs" wrap="nowrap">
-                      <Text fw={500}>
-                        {request.reviewedByName || "(Account has been deleted)"}
-                      </Text>
-                      {request.reviewedAt && (
-                        <Badge variant="light" color="gray" size="xs">
-                          <Group gap={4} wrap="nowrap">
-                            <IconClock size={12} />
-                            {dayjs(request.reviewedAt).format(
-                              "D MMM YYYY, HH:mm",
-                            )}
-                          </Group>
-                        </Badge>
-                      )}
-                    </Group>
-                  }
-                />
-              )}
+                  <InfoRow
+                    icon={<IconCheck size={18} />}
+                    label={
+                      request.status === "approved"
+                        ? "Approved By"
+                        : "Reviewed By"
+                    }
+                    value={
+                      <Group gap="xs" wrap="nowrap">
+                        <Text fw={500}>
+                          {request.reviewedByName || "(Account has been deleted)"}
+                        </Text>
+                        {request.reviewedAt && (
+                          <Badge variant="light" color="gray" size="xs">
+                            <Group gap={4} wrap="nowrap">
+                              <IconClock size={12} />
+                              {dayjs(request.reviewedAt).format(
+                                "D MMM YYYY, HH:mm",
+                              )}
+                            </Group>
+                          </Badge>
+                        )}
+                      </Group>
+                    }
+                  />
+                )}
 
               {/* === AUDIT: CANCELLED === */}
               {request.status === "cancelled" && request.cancelledAt && (

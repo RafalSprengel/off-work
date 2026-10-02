@@ -1,0 +1,17 @@
+/* Highlight today's date in @mantine/dates calendars (circle outline around the day) */
+.mantine-DatePicker-day:where([data-today]:not([data-selected])),
+.mantine-DatePickerInput-day:where([data-today]:not([data-selected])) {
+    position: relative;
+}
+
+.mantine-DatePicker-day:where([data-today]:not([data-selected]))::after,
+.mantine-DatePickerInput-day:where([data-today]:not([data-selected]))::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    /* Dba o idealne centrowanie i równy margines z każdej strony */
+    border-radius: 50%;
+    border: 1.5px solid var(--mantine-color-blue-5);
+    background: transparent;
+    pointer-events: none;
+}
