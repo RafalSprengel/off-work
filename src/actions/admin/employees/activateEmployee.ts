@@ -77,7 +77,6 @@ export async function activateEmployee(_id: string): Promise<{ success: boolean;
         }
 
         revalidatePath("/team/employees");
-        revalidatePath("/employees");
 
         return { success: true };
     } catch (error) {

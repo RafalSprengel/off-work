@@ -30,7 +30,7 @@ export async function updateDepartment(updatedDepartment: IUpdateDepartmentInput
             };
         }
 
-        revalidatePath("/departments", "page");
+        revalidatePath("/team/departments", "page");
 
         return { success: true };
     } catch (error: any) {

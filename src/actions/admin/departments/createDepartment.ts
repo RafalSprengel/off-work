@@ -22,7 +22,7 @@ export async function createDepartment(newDepartment: ICreateDepartmentInput) {
             managers: newDepartment.managerIds ?? [],
             organization: organizationId,
         });
-        revalidatePath("/departments");
+        revalidatePath("/team/departments");
 
         return { success: true };
     } catch (error: any) {

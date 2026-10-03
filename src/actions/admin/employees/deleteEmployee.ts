@@ -72,7 +72,6 @@ export async function deleteEmployee(_id: string): Promise<{ success: boolean; e
         await Employee.deleteOne({ _id, organizationId });
 
         revalidatePath("/team/employees");
-        revalidatePath("/employees");
 
         return { success: true };
     } catch (error) {

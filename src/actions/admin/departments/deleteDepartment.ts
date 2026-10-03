@@ -18,7 +18,7 @@ export async function deleteDepartment(_id: string) {
             };
         }
 
-        revalidatePath("/departments", "page");
+        revalidatePath("/team/departments", "page");
 
         return {
             success: true,

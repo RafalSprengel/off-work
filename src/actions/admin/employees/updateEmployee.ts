@@ -58,7 +58,7 @@ export async function updateEmployee(data: IUpdateEmployeeInput): Promise<{ succ
             }
         }
 
-        revalidatePath("/employees", "page");
+        revalidatePath("/team/employees", "page");
 
         return { success: true };
     } catch (error: any) {

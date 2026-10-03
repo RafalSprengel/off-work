@@ -51,7 +51,7 @@ export async function createEmployee(data: ICreateEmployeeInput): Promise<{ succ
             throw invitationError;
         }
 
-        revalidatePath("/employees");
+        revalidatePath("/team/employees");
         return { success: true };
     } catch (error: any) {
         console.error("Error creating employee:", error);

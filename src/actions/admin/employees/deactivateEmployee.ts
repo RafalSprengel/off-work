@@ -25,7 +25,6 @@ export async function deactivateEmployee(_id: string): Promise<{ success: boolea
         await Employee.updateOne({ _id, organizationId }, { $set: { status: "inactive" } });
 
         revalidatePath("/team/employees");
-        revalidatePath("/employees");
 
         return { success: true };
     } catch (error) {
