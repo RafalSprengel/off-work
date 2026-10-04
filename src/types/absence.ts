@@ -8,6 +8,10 @@ export interface IAbsenceItem {
     departmentName?: string;
     startDate: string;
     endDate: string;
+    /**
+     * Liczba dni pracujacych w okresie - wartosc pochodna, liczona przy odczycie
+     * z aktualnych dni nieroboczych (nie jest zapisywana w bazie).
+     */
     daysCount: number;
     type: AbsenceType;
     note?: string;
@@ -19,7 +23,6 @@ export type ICreateAbsenceInput = {
     employee: string;
     startDate: string;
     endDate: string;
-    daysCount: number;
     type: AbsenceType;
     note?: string;
 };

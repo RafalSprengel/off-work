@@ -6,7 +6,6 @@ export interface IAbsence extends Document {
     employee: mongoose.Types.ObjectId | string;
     startDate: string;
     endDate: string;
-    daysCount: number;
     type: AbsenceType;
     note?: string;
     organizationId: string;
@@ -38,11 +37,6 @@ const AbsenceSchema = new Schema<IAbsence>(
             type: String,
             required: true,
             match: [/^\d{4}-\d{2}-\d{2}$/, "Invalid date format, expected YYYY-MM-DD"],
-        },
-        daysCount: {
-            type: Number,
-            required: true,
-            min: 0.5,
         },
         type: {
             type: String,

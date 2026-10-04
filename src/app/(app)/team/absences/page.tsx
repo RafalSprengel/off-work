@@ -36,6 +36,8 @@ import { getAbsences } from "@/actions/admin/absences/getAbsences";
 import { createAbsence } from "@/actions/admin/absences/createAbsence";
 import { deleteAbsence } from "@/actions/admin/absences/deleteAbsence";
 import { useEmployees } from "@/hooks/useEmployees";
+import { useNonWorkingDays } from "@/hooks/useNonWorkingDays";
+import { countWorkingDays, isWeekend } from "@/utils/workingDays";
 import type { IAbsenceItem } from "@/types/absence";
 import type { AbsenceType } from "@/db/models/Absence";
 
@@ -67,6 +69,18 @@ export default function AbsencesPage() {
     const [typeFilter, setTypeFilter] = useState<string | null>(null);
 
     const { employees, loading: employeesLoading } = useEmployees();
+    const { bankHolidaysMap, closuresMap } = useNonWorkingDays();
+
+    const nonWorkingDates = useMemo(() => {
+        const set = new Set<string>();
+        bankHolidaysMap.forEach((_, date) => {
+            set.add(date);
+        });
+        closuresMap.forEach((_, date) => {
+            set.add(date);
+        });
+        return set;
+    }, [bankHolidaysMap, closuresMap]);
 
     const employeeOptions = useMemo(
         () =>
@@ -90,8 +104,13 @@ export default function AbsencesPage() {
         },
         validate: {
             employee: (v) => (!v ? "Please select an employee" : null),
-            dateRange: (v) =>
-                !v[0] || !v[1] ? "Please select a date range" : null,
+            dateRange: (v) => {
+                if (!v[0] || !v[1]) return "Please select a date range";
+                if (countWorkingDays(v[0], v[1], nonWorkingDates) <= 0) {
+                    return "Selected range contains only non-working days";
+                }
+                return null;
+            },
         },
     });
 
@@ -136,14 +155,12 @@ export default function AbsencesPage() {
 
         const startDate = dayjs(values.dateRange[0]).format("YYYY-MM-DD");
         const endDate = dayjs(values.dateRange[1]).format("YYYY-MM-DD");
-        const daysCount = dayjs(values.dateRange[1]).diff(dayjs(values.dateRange[0]), "day") + 1;
 
         startTransition(async () => {
             const res = await createAbsence({
                 employee: values.employee!,
                 startDate,
                 endDate,
-                daysCount,
                 type: values.type,
                 note: values.note,
             });
@@ -152,7 +169,7 @@ export default function AbsencesPage() {
                 notifications.show({
                     color: "green",
                     title: "Absence recorded",
-                    message: `${res.data.employeeName} — ${daysCount} day(s) added.`,
+                    message: `${res.data.employeeName} — ${res.data.daysCount} day(s) added.`,
                 });
                 setModalOpen(false);
                 form.reset();
@@ -350,6 +367,34 @@ export default function AbsencesPage() {
                             allowSingleDateInRange
                             label="Absence period"
                             placeholder="Pick date range"
+                            description="Weekends cannot be selected — only working days are counted."
+                            firstDayOfWeek={1}
+                            excludeDate={(date) => isWeekend(date)}
+                            getDayProps={(date) => {
+                                const key = dayjs(date).format("YYYY-MM-DD");
+                                const weekend = isWeekend(date);
+                                const nonWorking = nonWorkingDates.has(key);
+
+                                if (weekend) {
+                                    return {
+                                        style: {
+                                            color: "var(--mantine-color-gray-5)",
+                                            textDecoration: "line-through",
+                                        },
+                                    };
+                                }
+                                if (nonWorking) {
+                                    return {
+                                        style: {
+                                            backgroundColor: "var(--mantine-color-orange-1)",
+                                            color: "var(--mantine-color-orange-9)",
+                                            fontWeight: 700,
+                                            borderRadius: 8,
+                                        },
+                                    };
+                                }
+                                return {};
+                            }}
                             {...form.getInputProps("dateRange")}
                         />
 

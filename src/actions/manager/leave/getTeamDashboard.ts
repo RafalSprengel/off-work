@@ -4,6 +4,8 @@ import connectDB from "@/db/connection";
 import Employee from "@/db/models/Employee";
 import LeaveRequest from "@/db/models/LeaveRequest";
 import { getOrganizationId } from "@/utils/getOrganizationId";
+import { getNonWorkingDays } from "@/utils/nonWorkingDays";
+import { computeLeaveDaysRequested } from "@/utils/workingDays";
 import dayjs from "dayjs";
 import dayOfYear from "dayjs/plugin/dayOfYear";
 import mongoose from "mongoose";
@@ -158,17 +160,47 @@ export async function getTeamDashboard() {
             ]),
         ]);
 
-        const todayAbsences = JSON.parse(
-            JSON.stringify(todayAbsencesRaw)
-        ) as PendingRequestItem[];
+        // daysRequested jest wartoscia pochodna - liczymy dla wszystkich list
+        // z aktualnych dni nieroboczych (jeden zakres dla calosci).
+        const dashboardDocs = [
+            ...todayAbsencesRaw,
+            ...upcomingAbsencesRaw,
+            ...pendingRequestsRaw,
+        ];
 
-        const upcomingAbsences = JSON.parse(
-            JSON.stringify(upcomingAbsencesRaw)
-        ) as PendingRequestItem[];
+        let dashboardNonWorkingDates: Set<string> = new Set();
+        if (dashboardDocs.length > 0) {
+            const minStart = dashboardDocs.reduce(
+                (min, d) => (d.startDate < min ? d.startDate : min),
+                dashboardDocs[0].startDate
+            );
+            const maxEnd = dashboardDocs.reduce(
+                (max, d) => (d.endDate > max ? d.endDate : max),
+                dashboardDocs[0].endDate
+            );
+            dashboardNonWorkingDates = await getNonWorkingDays(orgId, minStart, maxEnd);
+        }
 
-        const pendingRequests = JSON.parse(
-            JSON.stringify(pendingRequestsRaw)
-        ) as PendingRequestItem[];
+        const toPendingItem = (doc: {
+            startDate: string;
+            endDate: string;
+            startHalfDay?: boolean;
+            endHalfDay?: boolean;
+        }): PendingRequestItem => {
+            const item = JSON.parse(JSON.stringify(doc)) as PendingRequestItem;
+            item.daysRequested = computeLeaveDaysRequested(
+                doc.startDate,
+                doc.endDate,
+                doc.startHalfDay ?? false,
+                doc.endHalfDay ?? false,
+                dashboardNonWorkingDates
+            );
+            return item;
+        };
+
+        const todayAbsences = todayAbsencesRaw.map(toPendingItem);
+        const upcomingAbsences = upcomingAbsencesRaw.map(toPendingItem);
+        const pendingRequests = pendingRequestsRaw.map(toPendingItem);
 
         const onLeaveMap = new Map<string, number>();
         for (const row of deptOnLeaveRaw) {

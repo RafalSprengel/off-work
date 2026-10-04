@@ -3,16 +3,13 @@
 import connectDB from "@/db/connection";
 import LeaveRequest from "@/db/models/LeaveRequest";
 import dayjs from "dayjs";
-import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import { getOrganizationId } from "@/utils/getOrganizationId";
-import { getNonWorkingDays } from "@/utils/nonWorkingDays";
+import { countWorkingDaysForOrg } from "@/utils/nonWorkingDays";
 import { CreateLeaveRequestInput } from "@/types/leaveRequest";
 import { getCurrentEmployeeId } from "@/actions/shared/getCurrentEmployeeId";
 import Employee from "@/db/models/Employee";
 import mongoose from "mongoose";
 import { revalidatePath } from "next/cache";
-
-dayjs.extend(isSameOrBefore);
 
 export async function createLeaveRequest(data: CreateLeaveRequestInput) {
     await connectDB();
@@ -27,25 +24,11 @@ export async function createLeaveRequest(data: CreateLeaveRequestInput) {
 
     const organizationId = await getOrganizationId();
 
-    const nonWorkingDays = await getNonWorkingDays(
+    const workingDays = await countWorkingDaysForOrg(
         organizationId,
         start.format("YYYY-MM-DD"),
         end.format("YYYY-MM-DD")
     );
-
-    let workingDays = 0;
-    let current = start;
-    while (current.isSameOrBefore(end, "day")) {
-        const dayOfWeek = current.day();
-        const formattedDate = current.format("YYYY-MM-DD");
-        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-        const isNonWorking = nonWorkingDays.has(formattedDate);
-
-        if (!isWeekend && !isNonWorking) {
-            workingDays++;
-        }
-        current = current.add(1, "day");
-    }
 
     if (workingDays === 0) {
         return { error: "Selected range contains no working days" };
@@ -87,7 +70,6 @@ export async function createLeaveRequest(data: CreateLeaveRequestInput) {
         endDate: end.format("YYYY-MM-DD"),
         startHalfDay: false,
         endHalfDay: false,
-        daysRequested: workingDays,
         status: "pending",
         createdBy: employee,
         comment: comment || "",

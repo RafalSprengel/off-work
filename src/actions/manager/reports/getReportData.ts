@@ -4,6 +4,8 @@ import connectDB from "@/db/connection";
 import LeaveRequest from "@/db/models/LeaveRequest";
 import Employee from "@/db/models/Employee";
 import { getOrganizationId } from "@/utils/getOrganizationId";
+import { getNonWorkingDays } from "@/utils/nonWorkingDays";
+import { computeLeaveDaysRequested } from "@/utils/workingDays";
 
 export interface ReportDataItem {
     _id: string;
@@ -11,7 +13,7 @@ export interface ReportDataItem {
     startDate: string;
     endDate: string;
     daysRequested: number;
-    status: "pending" | "approved" | "rejected";
+    status: "pending" | "approved" | "rejected" | "cancelled";
     type: "annual" | "sick" | "unpaid" | "other";
     employeeName?: string;
     employeeEmail?: string;
@@ -62,12 +64,34 @@ export async function getReportData(): Promise<{
             .sort({ firstName: 1 })
             .lean();
 
+        // daysRequested jest wartoscia pochodna - liczymy z aktualnych dni nieroboczych.
+        const nonWorkingDates =
+            leaveRequests.length > 0
+                ? await getNonWorkingDays(
+                      orgId,
+                      leaveRequests.reduce(
+                          (min, lr) => (lr.startDate < min ? lr.startDate : min),
+                          leaveRequests[0].startDate
+                      ),
+                      leaveRequests.reduce(
+                          (max, lr) => (lr.endDate > max ? lr.endDate : max),
+                          leaveRequests[0].endDate
+                      )
+                  )
+                : new Set<string>();
+
         const mappedRequests: ReportDataItem[] = leaveRequests.map((lr) => ({
             _id: String(lr._id),
             employee: lr.employee ? String(lr.employee) : undefined,
             startDate: lr.startDate,
             endDate: lr.endDate,
-            daysRequested: lr.daysRequested,
+            daysRequested: computeLeaveDaysRequested(
+                lr.startDate,
+                lr.endDate,
+                lr.startHalfDay,
+                lr.endHalfDay,
+                nonWorkingDates
+            ),
             status: lr.status,
             type: lr.type,
             employeeName: lr.employeeName,

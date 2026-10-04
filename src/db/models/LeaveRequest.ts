@@ -6,7 +6,6 @@ export interface ILeaveRequest extends Document {
   endDate: string;
   startHalfDay: boolean;
   endHalfDay: boolean;
-  daysRequested: number;
   status: "pending" | "approved" | "rejected" | "cancelled";
   type: "annual" | "sick" | "unpaid" | "other";
   comment?: string;
@@ -50,7 +49,6 @@ const LeaveRequestSchema = new Schema<ILeaveRequest>(
     },
     startHalfDay: { type: Boolean, default: false },
     endHalfDay: { type: Boolean, default: false },
-    daysRequested: { type: Number, required: true },
     status: {
       type: String,
       enum: ["pending", "approved", "rejected", "cancelled"],

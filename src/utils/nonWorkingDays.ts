@@ -1,5 +1,6 @@
 import dbConnect from "@/db/connection";
 import ClosureDay from "@/db/models/ClosureDay";
+import { countWorkingDays } from "@/utils/workingDays";
 
 /**
  * Pobiera wszystkie dni nierobocze (bank holidays + factory closures)
@@ -23,4 +24,18 @@ export async function getNonWorkingDays(
         .lean();
 
     return new Set(closureDays.map((day) => day.date));
+}
+
+/**
+ * Zwraca liczbe dni pracujacych w zakresie, odliczajac weekendy
+ * oraz dni nierobocze organizacji (bank holidays + factory closures).
+ * Jedno miejsce, w ktorym dane z bazy sa laczone z regula dnia pracujacego.
+ */
+export async function countWorkingDaysForOrg(
+    organizationId: string,
+    startDate: string, // YYYY-MM-DD
+    endDate: string // YYYY-MM-DD
+): Promise<number> {
+    const nonWorkingDays = await getNonWorkingDays(organizationId, startDate, endDate);
+    return countWorkingDays(startDate, endDate, nonWorkingDays);
 }

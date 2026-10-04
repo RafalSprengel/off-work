@@ -4,6 +4,7 @@ import dbConnect from "@/db/connection";
 import Absence from "@/db/models/Absence";
 import Employee from "@/db/models/Employee";
 import { getOrganizationId } from "@/utils/getOrganizationId";
+import { countWorkingDaysForOrg } from "@/utils/nonWorkingDays";
 import { getCachedSession } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 import type { ICreateAbsenceInput, IAbsenceItem, CreateAbsenceResult } from "@/types/absence";
@@ -33,12 +34,28 @@ export async function createAbsence(data: ICreateAbsenceInput): Promise<CreateAb
 
         const dept = targetEmployee.department as { name?: string } | null;
 
+        // Absencje wystawiamy tylko na dni pracujace - odrzucamy weekendy i dni nierobocze.
+        // daysCount liczymy po stronie serwera, zeby nie ufac wartosci z klienta.
+        const daysCount = await countWorkingDaysForOrg(
+            organizationId,
+            data.startDate,
+            data.endDate
+        );
+
+        if (daysCount <= 0) {
+            return {
+                success: false,
+                data: null,
+                error:
+                    "Selected range contains no working days. Weekends and non-working days cannot be recorded as absence.",
+            };
+        }
+
         const absence = await Absence.create({
             organizationId,
             employee: new mongoose.Types.ObjectId(data.employee),
             startDate: data.startDate,
             endDate: data.endDate,
-            daysCount: data.daysCount,
             type: data.type,
             note: data.note ?? "",
             createdBy: creator._id,
@@ -61,7 +78,7 @@ export async function createAbsence(data: ICreateAbsenceInput): Promise<CreateAb
             departmentName: dept?.name ?? "",
             startDate: absence.startDate,
             endDate: absence.endDate,
-            daysCount: absence.daysCount,
+            daysCount,
             type: absence.type,
             note: absence.note,
             createdBy: creator._id.toString(),

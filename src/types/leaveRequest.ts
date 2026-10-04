@@ -27,6 +27,7 @@ export interface MyLeaveRequestDetail {
   employee?: string;
   startDate: string;
   endDate: string;
+  /** Dni pracujace wniosku - wartosc pochodna, liczona przy odczycie (nie jest zapisywana w bazie). */
   daysRequested: number;
   /** Days actually deducted from allowance (daysRequested minus days covered by absences). */
   chargedDays?: number;
@@ -54,6 +55,7 @@ export interface LeaveRequestDetail {
   endDate: string;
   startHalfDay: boolean;
   endHalfDay: boolean;
+  /** Dni pracujace wniosku - wartosc pochodna, liczona przy odczycie (nie jest zapisywana w bazie). */
   daysRequested: number;
   chargedDays?: number;
   absenceDays?: number;
@@ -79,6 +81,7 @@ export interface TeamLeaveRequestItem {
   endDate: string;
   startHalfDay: boolean;
   endHalfDay: boolean;
+  /** Dni pracujace wniosku - wartosc pochodna, liczona przy odczycie (nie jest zapisywana w bazie). */
   daysRequested: number;
   /** Days actually deducted from allowance (daysRequested minus days covered by absences). */
   chargedDays?: number;

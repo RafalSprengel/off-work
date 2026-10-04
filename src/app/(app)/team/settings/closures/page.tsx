@@ -28,6 +28,7 @@ import type { ClosureDayItem } from "@/types/closureDay";
 import { createClosureDay } from "@/actions/admin/closureDays/createClosureDay";
 import { toggleClosureDay } from "@/actions/admin/closureDays/toggleClosureDay";
 import { deleteClosureDay } from "@/actions/admin/closureDays/deleteClosureDay";
+import { isWeekend } from "@/utils/workingDays";
 
 export default function FactoryClosuresPage() {
     const [closures, setClosures] = useState<ClosureDayItem[]>([]);
@@ -76,11 +77,6 @@ export default function FactoryClosuresPage() {
     }, [closures]);
 
     const parseDate = (date: Date | string) => dayjs(date);
-
-    const isWeekend = (date: Date | string) => {
-        const d = parseDate(date).day();
-        return d === 0 || d === 6;
-    };
 
     const isBankHoliday = (date: Date | string) =>
         bankHolidaysMap.has(parseDate(date).format("YYYY-MM-DD"));

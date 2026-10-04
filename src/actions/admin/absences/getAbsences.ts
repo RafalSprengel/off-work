@@ -3,6 +3,8 @@
 import dbConnect from "@/db/connection";
 import Absence from "@/db/models/Absence";
 import { getOrganizationId } from "@/utils/getOrganizationId";
+import { getNonWorkingDays } from "@/utils/nonWorkingDays";
+import { countWorkingDays } from "@/utils/workingDays";
 import type { IAbsenceItem, GetAbsencesResult } from "@/types/absence";
 
 export async function getAbsences(
@@ -29,6 +31,21 @@ export async function getAbsences(
 
         const absences = await Absence.find(filter).sort({ startDate: -1 }).lean();
 
+        // daysCount jest wartoscia pochodna - liczymy ja z aktualnych dni nieroboczych
+        // (jedno zapytanie dla calego zakresu, potem liczenie w pamieci).
+        let nonWorkingDates: Set<string> = new Set();
+        if (absences.length > 0) {
+            const minStart = absences.reduce(
+                (min, a) => (a.startDate < min ? a.startDate : min),
+                absences[0].startDate
+            );
+            const maxEnd = absences.reduce(
+                (max, a) => (a.endDate > max ? a.endDate : max),
+                absences[0].endDate
+            );
+            nonWorkingDates = await getNonWorkingDays(organizationId, minStart, maxEnd);
+        }
+
         const data: IAbsenceItem[] = absences.map((a) => ({
             id: a._id.toString(),
             employee: a.employee.toString(),
@@ -37,7 +54,7 @@ export async function getAbsences(
             departmentName: a.departmentName,
             startDate: a.startDate,
             endDate: a.endDate,
-            daysCount: a.daysCount,
+            daysCount: countWorkingDays(a.startDate, a.endDate, nonWorkingDates),
             type: a.type,
             note: a.note,
             createdBy: a.createdBy.toString(),

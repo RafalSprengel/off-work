@@ -3,16 +3,13 @@
 import connectDB from "@/db/connection";
 import LeaveRequest from "@/db/models/LeaveRequest";
 import dayjs from "dayjs";
-import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import { getOrganizationId } from "@/utils/getOrganizationId";
-import { getNonWorkingDays } from "@/utils/nonWorkingDays";
+import { countWorkingDaysForOrg } from "@/utils/nonWorkingDays";
 import { revalidatePath } from "next/cache";
 import { CreateLeaveRequestParams } from "@/types/leaveRequest";
 import { getCurrentEmployeeId } from "@/actions/shared/getCurrentEmployeeId";
 import Employee from "@/db/models/Employee";
 import mongoose from "mongoose";
-
-dayjs.extend(isSameOrBefore);
 
 export async function createLeaveRequest(data: CreateLeaveRequestParams) {
     try {
@@ -54,25 +51,11 @@ export async function createLeaveRequest(data: CreateLeaveRequestParams) {
             };
         }
 
-        const nonWorkingDays = await getNonWorkingDays(
+        const workingDays = await countWorkingDaysForOrg(
             orgId,
             start.format("YYYY-MM-DD"),
             end.format("YYYY-MM-DD")
         );
-
-        let workingDays = 0;
-        let current = start;
-        while (current.isSameOrBefore(end, "day")) {
-            const dayOfWeek = current.day();
-            const formattedDate = current.format("YYYY-MM-DD");
-            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-            const isNonWorking = nonWorkingDays.has(formattedDate);
-
-            if (!isWeekend && !isNonWorking) {
-                workingDays++;
-            }
-            current = current.add(1, "day");
-        }
 
         let daysRequested = workingDays;
         if (data.startHalfDay) daysRequested -= 0.5;
@@ -110,7 +93,6 @@ export async function createLeaveRequest(data: CreateLeaveRequestParams) {
             endDate: end.format("YYYY-MM-DD"),
             startHalfDay: data.startHalfDay || false,
             endHalfDay: data.endHalfDay || false,
-            daysRequested,
             status: "approved",
             createdBy: adminId,
             reviewedBy: adminId,

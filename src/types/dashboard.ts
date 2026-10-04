@@ -13,6 +13,7 @@ export interface PendingRequestItem {
     _id: string;
     startDate: string;
     endDate: string;
+    /** Dni pracujace wniosku - wartosc pochodna, liczona przy odczycie. */
     daysRequested: number;
     type: "annual" | "sick" | "unpaid" | "other";
     employeeName?: string;

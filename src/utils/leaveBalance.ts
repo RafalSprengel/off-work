@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import { isWorkingDay } from "@/utils/workingDays";
 
 /**
  * Czyste funkcje (bez dostepu do bazy) do liczenia salda urlopu z uwzglednieniem absencji.
@@ -35,11 +36,12 @@ export function countAbsenceOverlapDays(
     let overlap = 0;
 
     while (!current.isAfter(end, "day")) {
-        const dayOfWeek = current.day();
         const formatted = current.format("YYYY-MM-DD");
-        const isWorkingDay = dayOfWeek !== 0 && dayOfWeek !== 6 && !nonWorkingDays.has(formatted);
 
-        if (isWorkingDay && absences.some((a) => a.startDate <= formatted && a.endDate >= formatted)) {
+        if (
+            isWorkingDay(current, nonWorkingDays) &&
+            absences.some((a) => a.startDate <= formatted && a.endDate >= formatted)
+        ) {
             overlap++;
         }
         current = current.add(1, "day");

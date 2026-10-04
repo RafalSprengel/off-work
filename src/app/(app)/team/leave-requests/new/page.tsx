@@ -22,7 +22,8 @@ import { notifications } from "@mantine/notifications";
 import { IconCalendar, IconX } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { countWorkingDays } from "@/utils/workingDays";
 import "@mantine/dates/styles.css";
 
 export default function NewLeaveRequestAsAdminPage() {
@@ -52,29 +53,20 @@ export default function NewLeaveRequestAsAdminPage() {
 
   const [startDate, endDate] = form.values.dateRange;
 
-  // ✅ Liczenie dni roboczych z wykluczeniem bank holidays I closure days
-  const calculateWorkingDays = (start: Date, end: Date): number => {
-    let count = 0;
-    let current = dayjs(start);
-    const last = dayjs(end);
-
-    while (current.isBefore(last) || current.isSame(last, "day")) {
-      const dayOfWeek = current.day();
-      const formattedDate = current.format("YYYY-MM-DD");
-      const isNonWorking =
-        bankHolidaysMap.has(formattedDate) || closuresMap.has(formattedDate);
-
-      if (dayOfWeek !== 0 && dayOfWeek !== 6 && !isNonWorking) {
-        count++;
-      }
-      current = current.add(1, "day");
-    }
-
-    return count;
-  };
+  // Dni nierobocze (bank holidays + company closures) -> jeden Set dla wspolnego helpera
+  const nonWorkingDates = useMemo(() => {
+    const set = new Set<string>();
+    bankHolidaysMap.forEach((_, date) => {
+      set.add(date);
+    });
+    closuresMap.forEach((_, date) => {
+      set.add(date);
+    });
+    return set;
+  }, [bankHolidaysMap, closuresMap]);
 
   const daysRequested =
-    startDate && endDate ? calculateWorkingDays(startDate, endDate) : 0;
+    startDate && endDate ? countWorkingDays(startDate, endDate, nonWorkingDates) : 0;
 
   const handleSubmit = async (values: typeof form.values) => {
     const [start, end] = values.dateRange;
