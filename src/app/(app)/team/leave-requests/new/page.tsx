@@ -24,6 +24,11 @@ import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { countWorkingDays } from "@/utils/workingDays";
+import {
+  LEAVE_REQUEST_TYPES,
+  getLeaveTypeLabel,
+  type LeaveRequestType,
+} from "@/constants/leaveTypes";
 import "@mantine/dates/styles.css";
 
 export default function NewLeaveRequestAsAdminPage() {
@@ -36,6 +41,7 @@ export default function NewLeaveRequestAsAdminPage() {
     initialValues: {
       employee: "",
       dateRange: [null, null] as [Date | null, Date | null],
+      type: "annual" as LeaveRequestType,
       startHalfDay: false,
       endHalfDay: false,
       completedDate: new Date(),
@@ -78,6 +84,7 @@ export default function NewLeaveRequestAsAdminPage() {
       userId: values.employee,
       startDate: dayjs(start).format("YYYY-MM-DD"),
       endDate: dayjs(end).format("YYYY-MM-DD"),
+      type: values.type,
       startHalfDay: values.startHalfDay,
       endHalfDay: values.endHalfDay,
     });
@@ -149,6 +156,17 @@ export default function NewLeaveRequestAsAdminPage() {
                     </div>
                   );
                 }}
+              />
+
+              <Select
+                label="Leave Type"
+                data={LEAVE_REQUEST_TYPES.map((t) => ({
+                  value: t,
+                  label: getLeaveTypeLabel(t),
+                }))}
+                allowDeselect={false}
+                disabled={isDisabled}
+                {...form.getInputProps("type")}
               />
 
               <DatePickerInput

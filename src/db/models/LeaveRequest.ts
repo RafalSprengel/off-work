@@ -1,5 +1,10 @@
 import mongoose, { type Document, type Model, Schema } from "mongoose";
 
+import {
+  LEAVE_REQUEST_TYPES,
+  type LeaveRequestType,
+} from "@/constants/leaveTypes";
+
 export interface ILeaveRequest extends Document {
   employee: mongoose.Types.ObjectId | string;
   startDate: string;
@@ -7,7 +12,7 @@ export interface ILeaveRequest extends Document {
   startHalfDay: boolean;
   endHalfDay: boolean;
   status: "pending" | "approved" | "rejected" | "cancelled";
-  type: "annual" | "sick" | "unpaid" | "other";
+  type: LeaveRequestType;
   comment?: string;
   rejectionReason?: string | null;
   coveringEmployee?: mongoose.Types.ObjectId | null;
@@ -56,7 +61,7 @@ const LeaveRequestSchema = new Schema<ILeaveRequest>(
     },
     type: {
       type: String,
-      enum: ["annual", "sick", "unpaid", "other"],
+      enum: [...LEAVE_REQUEST_TYPES],
       default: "annual",
     },
     comment: { type: String, trim: true, default: "" },

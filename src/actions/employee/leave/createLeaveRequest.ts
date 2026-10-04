@@ -13,7 +13,7 @@ import { revalidatePath } from "next/cache";
 
 export async function createLeaveRequest(data: CreateLeaveRequestInput) {
     await connectDB();
-    const { startDate, endDate, comment } = data;
+    const { startDate, endDate, type, comment } = data;
 
     const start = dayjs(startDate, "YYYY-MM-DD");
     const end = dayjs(endDate, "YYYY-MM-DD");
@@ -70,6 +70,7 @@ export async function createLeaveRequest(data: CreateLeaveRequestInput) {
         endDate: end.format("YYYY-MM-DD"),
         startHalfDay: false,
         endHalfDay: false,
+        type: type ?? "annual",
         status: "pending",
         createdBy: employee,
         comment: comment || "",

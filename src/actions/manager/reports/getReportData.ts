@@ -6,6 +6,7 @@ import Employee from "@/db/models/Employee";
 import { getOrganizationId } from "@/utils/getOrganizationId";
 import { getNonWorkingDays } from "@/utils/nonWorkingDays";
 import { computeLeaveDaysRequested } from "@/utils/workingDays";
+import type { LeaveRequestType } from "@/constants/leaveTypes";
 
 export interface ReportDataItem {
     _id: string;
@@ -14,7 +15,7 @@ export interface ReportDataItem {
     endDate: string;
     daysRequested: number;
     status: "pending" | "approved" | "rejected" | "cancelled";
-    type: "annual" | "sick" | "unpaid" | "other";
+    type: LeaveRequestType;
     employeeName?: string;
     employeeEmail?: string;
     departmentName?: string;

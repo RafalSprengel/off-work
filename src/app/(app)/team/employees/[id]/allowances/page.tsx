@@ -1,31 +1,23 @@
-import {
-  Group,
-  Paper,
-  Progress,
-  Stack,
-  Table,
-  TableTbody,
-  TableTd,
-  TableTh,
-  TableThead,
-  TableTr,
-  Text,
-} from "@mantine/core";
 import { notFound } from "next/navigation";
 
 import { getEmployeeById } from "@/actions/manager/employees/getEmployeeById";
 import { getEmployeeLeaveRequests } from "@/actions/manager/leave/getEmployeeLeaveRequests";
+import { getLeaveAllowances } from "@/actions/admin/leaveAllowances/getLeaveAllowances";
 import { sumAnnualDaysUsed } from "@/utils/leaveBalance";
+import type { LeaveAllowanceType } from "@/db/models/LeaveAllowance";
+import EmployeeAllowancesTable, {
+  type AllowanceRow,
+} from "./_components/EmployeeAllowancesTable";
 
-// Leave types displayed as rows. Only "Annual" has a configured allowance; the
-// remaining categories do not have allowance data in the system yet.
-const leaveTypeRows = [
-  { label: "Annual allowance" },
-  { label: "Unpaid leave" },
-  { label: "Sick" },
-  { label: "Maternity" },
-  { label: "Paternity" },
-  { label: "BEREAVEMENT" },
+// Leave types displayed as rows. Each row has a "Set" button that stores the
+// allowance in the LeaveAllowance collection (one document per employee + type).
+const LEAVE_TYPE_ROWS: { type: LeaveAllowanceType; label: string }[] = [
+  { type: "annual", label: "Annual allowance" },
+  { type: "unpaid", label: "Unpaid leave" },
+  { type: "sick", label: "Sick" },
+  { type: "maternity", label: "Maternity" },
+  { type: "paternity", label: "Paternity" },
+  { type: "bereavement", label: "BEREAVEMENT" },
 ];
 
 export default async function EmployeeAllowancesPage({
@@ -47,56 +39,21 @@ export default async function EmployeeAllowancesPage({
   // absence (sick etc.) are not deducted.
   const usedDays = sumAnnualDaysUsed(leaveRequests);
 
-  const allowance = employee.holidayAllowance;
-  const remaining = Math.max(allowance - usedDays, 0);
-  const progressValue = allowance > 0 ? (usedDays / allowance) * 100 : 0;
+  const { success: allowancesSuccess, data: allowances } =
+    await getLeaveAllowances(id);
+  const allowanceByType = new Map(
+    (allowancesSuccess ? allowances : []).map((a) => [a.type, a.days]),
+  );
+
+  const rows: AllowanceRow[] = LEAVE_TYPE_ROWS.map((row) => ({
+    ...row,
+    // Annual falls back to the legacy employee.holidayAllowance when unset.
+    days:
+      allowanceByType.get(row.type) ??
+      (row.type === "annual" ? employee.holidayAllowance : 0),
+  }));
 
   return (
-    <Stack gap="md">
-      <Paper withBorder radius="md">
-        <Table>
-          <TableThead>
-            <TableTr>
-              <TableTh>Leave type</TableTh>
-              <TableTh>Annual allowance</TableTh>
-              <TableTh>Days used</TableTh>
-              <TableTh>Days remaining</TableTh>
-            </TableTr>
-          </TableThead>
-          <TableTbody>
-            <TableTr>
-              <TableTd>{leaveTypeRows[0].label}</TableTd>
-              <TableTd>{allowance} days</TableTd>
-              <TableTd>{usedDays} days</TableTd>
-              <TableTd>{remaining} days</TableTd>
-            </TableTr>
-            {leaveTypeRows.slice(1).map((row) => (
-              <TableTr key={row.label}>
-                <TableTd>{row.label}</TableTd>
-                <TableTd>—</TableTd>
-                <TableTd>—</TableTd>
-                <TableTd>—</TableTd>
-              </TableTr>
-            ))}
-          </TableTbody>
-        </Table>
-      </Paper>
-
-      <Paper withBorder radius="md" p="md">
-        <Group justify="space-between" mb="xs">
-          <Text fw={600} size="sm">
-            Holiday allowance usage
-          </Text>
-          <Text size="xs" c="dimmed">
-            {usedDays} / {allowance} days used
-          </Text>
-        </Group>
-        <Progress
-          value={Math.min(progressValue, 100)}
-          size="lg"
-          color={progressValue >= 100 ? "red" : "blue"}
-        />
-      </Paper>
-    </Stack>
+    <EmployeeAllowancesTable employeeId={id} rows={rows} usedDays={usedDays} />
   );
 }

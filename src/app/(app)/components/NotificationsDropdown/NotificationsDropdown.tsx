@@ -27,15 +27,12 @@ import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { getTeamLeaveRequests } from "@/actions/manager/leave/getTeamLeaveRequests";
+import {
+    getLeaveTypeLabel,
+    type LeaveRequestType,
+} from "@/constants/leaveTypes";
 
 dayjs.extend(relativeTime);
-
-const typeLabels: Record<string, string> = {
-    annual: "Annual Leave",
-    sick: "Sick Leave",
-    unpaid: "Unpaid Leave",
-    other: "Other",
-};
 
 interface SafeRequestItem {
     _id: string;
@@ -45,7 +42,7 @@ interface SafeRequestItem {
     endDate: string;
     daysRequested: number;
     status: "pending" | "approved" | "rejected" | "cancelled";
-    type: "annual" | "sick" | "unpaid" | "other";
+    type: LeaveRequestType;
     createdAt: string;
 }
 
@@ -198,7 +195,7 @@ export function NotificationsDropdown() {
                                                         </Text>
                                                         {" submitted a request for "}
                                                         <Text component="span" c="blue">
-                                                            {typeLabels[req.type] || req.type}
+                                                            {getLeaveTypeLabel(req.type)}
                                                         </Text>
                                                     </>
                                                 ) : (

@@ -17,6 +17,8 @@ export interface IEmployee {
 
 export type ICreateEmployeeInput = Omit<IEmployee, "_id" | "status" | "organizationId" | "department" | "isOwner"> & {
     department: string;
+    /** Per-type allowance days applied on creation (keyed by LeaveAllowanceType). */
+    allowances?: Record<string, number>;
 };
 
 export type IUpdateEmployeeInput = Omit<IEmployee, "status" | "organizationId" | "department" | "isOwner"> & {

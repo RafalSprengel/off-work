@@ -17,6 +17,7 @@ const DEFAULTS: IOrgSettings = {
     allowCarryOver: true,
     maxCarryOverDays: 5,
     autoApproveSickLeave: false,
+    defaultAllowances: {},
 };
 
 function toPlain(doc: InstanceType<typeof OrganizationSettings>): IOrgSettings {
@@ -32,6 +33,7 @@ function toPlain(doc: InstanceType<typeof OrganizationSettings>): IOrgSettings {
         allowCarryOver: doc.allowCarryOver,
         maxCarryOverDays: doc.maxCarryOverDays,
         autoApproveSickLeave: doc.autoApproveSickLeave,
+        defaultAllowances: Object.fromEntries(doc.defaultAllowances ?? []),
     };
 }
 

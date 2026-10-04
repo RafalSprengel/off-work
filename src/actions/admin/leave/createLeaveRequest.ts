@@ -93,6 +93,7 @@ export async function createLeaveRequest(data: CreateLeaveRequestParams) {
             endDate: end.format("YYYY-MM-DD"),
             startHalfDay: data.startHalfDay || false,
             endHalfDay: data.endHalfDay || false,
+            type: data.type ?? "annual",
             status: "approved",
             createdBy: adminId,
             reviewedBy: adminId,

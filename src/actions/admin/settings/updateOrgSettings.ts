@@ -35,6 +35,7 @@ export async function updateOrgSettings(
                 allowCarryOver: doc.allowCarryOver,
                 maxCarryOverDays: doc.maxCarryOverDays,
                 autoApproveSickLeave: doc.autoApproveSickLeave,
+                defaultAllowances: Object.fromEntries(doc.defaultAllowances ?? []),
             },
             error: null,
         };

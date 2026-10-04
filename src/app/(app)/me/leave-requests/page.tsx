@@ -24,15 +24,13 @@ import Link from "next/link";
 import { useMyLeaveRequests } from "@/hooks/useMyLeaveRequests";
 import { useRouter } from "next/navigation";
 import { formatRequestDays } from "@/utils/leaveBalance";
+import { LEAVE_REQUEST_TYPES, getLeaveTypeLabel } from "@/constants/leaveTypes";
 import dayjs from "dayjs";
 import { useState } from "react";
 
-const typeLabels: Record<string, string> = {
-    annual: "Annual Leave",
-    sick: "Sick Leave",
-    unpaid: "Unpaid Leave",
-    other: "Other",
-};
+const typeLabels: Record<string, string> = Object.fromEntries(
+    LEAVE_REQUEST_TYPES.map((t) => [t, getLeaveTypeLabel(t)]),
+);
 
 export default function EmployeeLeaveRequestsPage() {
     const router = useRouter();

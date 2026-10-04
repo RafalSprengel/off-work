@@ -8,10 +8,12 @@ import { getNonWorkingDays } from "@/utils/nonWorkingDays";
 import { computeLeaveDaysRequested } from "@/utils/workingDays";
 import dayjs from "dayjs";
 import dayOfYear from "dayjs/plugin/dayOfYear";
+import isoWeek from "dayjs/plugin/isoWeek";
 import mongoose from "mongoose";
 import type { TeamDashboardData, PendingRequestItem, DepartmentOverviewItem } from "@/types/dashboard";
 
 dayjs.extend(dayOfYear);
+dayjs.extend(isoWeek);
 
 export async function getTeamDashboard() {
     try {
@@ -29,8 +31,8 @@ export async function getTeamDashboard() {
 
         const today = dayjs();
         const todayStr = today.format("YYYY-MM-DD");
-        const startOfWeek = today.startOf("week").add(1, "day");
-        const endOfWeek = today.endOf("week").add(1, "day");
+        const startOfWeek = today.startOf("isoWeek");
+        const endOfWeek = today.endOf("isoWeek");
 
         const startOfWeekStr = startOfWeek.format("YYYY-MM-DD");
         const endOfWeekStr = endOfWeek.format("YYYY-MM-DD");

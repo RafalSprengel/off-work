@@ -14,6 +14,9 @@ export interface IOrgSettings {
     allowCarryOver: boolean;
     maxCarryOverDays: number;
     autoApproveSickLeave: boolean;
+
+    /** Default per-type allowances (in days) applied to new employees. Keyed by LeaveAllowanceType. */
+    defaultAllowances: Record<string, number>;
 }
 
 export type GetOrgSettingsResult =

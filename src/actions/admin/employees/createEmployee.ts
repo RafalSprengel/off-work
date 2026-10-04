@@ -2,10 +2,15 @@
 
 import dbConnect from "@/db/connection";
 import Employee from "@/db/models/Employee";
+import LeaveAllowance from "@/db/models/LeaveAllowance";
 import mongoose from "mongoose";
 import type { ICreateEmployeeInput, IEmployee } from "@/types/employees";
 import { getOrganizationId } from "@/utils/getOrganizationId";
 import { getAuth } from "@/lib/auth";
+import {
+    LEAVE_ALLOWANCE_TYPES,
+    type LeaveAllowanceType,
+} from "@/constants/leaveAllowanceTypes";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 
@@ -49,6 +54,28 @@ export async function createEmployee(data: ICreateEmployeeInput): Promise<{ succ
             // "invited" placeholder that can never actually be invited.
             await employee.deleteOne();
             throw invitationError;
+        }
+
+        // Persist per-type allowances (annual comes from holidayAllowance).
+        const allowanceEntries: [string, number][] = [
+            ["annual", data.holidayAllowance],
+            ...Object.entries(data.allowances ?? {}),
+        ];
+        const validAllowances = allowanceEntries.filter(
+            ([type, days]) =>
+                (LEAVE_ALLOWANCE_TYPES as readonly string[]).includes(type) &&
+                Number.isFinite(days)
+        );
+        if (validAllowances.length > 0) {
+            await LeaveAllowance.insertMany(
+                validAllowances.map(([type, days]) => ({
+                    organizationId,
+                    employee: employee._id,
+                    type: type as LeaveAllowanceType,
+                    days,
+                })),
+                { ordered: false }
+            );
         }
 
         revalidatePath("/team/employees");

@@ -9,6 +9,7 @@ import {
   Group,
   Paper,
   Popover,
+  Select,
   Stack,
   Text,
   Textarea,
@@ -26,6 +27,11 @@ import { useCurrentEmployee } from "@/hooks/useCurrentEmployee";
 import { useMyLeaveRequests } from "@/hooks/useMyLeaveRequests";
 import { useNonWorkingDays } from "@/hooks/useNonWorkingDays";
 import { countWorkingDays } from "@/utils/workingDays";
+import {
+  LEAVE_REQUEST_TYPES,
+  getLeaveTypeLabel,
+  type LeaveRequestType,
+} from "@/constants/leaveTypes";
 import "@mantine/dates/styles.css";
 
 const dotStyle: React.CSSProperties = {
@@ -78,6 +84,7 @@ export default function NewEmployeeLeaveRequestPage() {
   const form = useForm({
     initialValues: {
       dateRange: [null, null] as [Date | null, Date | null],
+      type: "annual" as LeaveRequestType,
       comment: "",
     },
     validate: {
@@ -206,6 +213,7 @@ export default function NewEmployeeLeaveRequestPage() {
     const result = await createLeaveRequest({
       startDate: dayjs(startDate).format("YYYY-MM-DD"),
       endDate: dayjs(endDate).format("YYYY-MM-DD"),
+      type: form.values.type,
       comment: form.values.comment ?? "",
     });
 
@@ -327,6 +335,16 @@ export default function NewEmployeeLeaveRequestPage() {
                   </Stack>
                 </Popover.Dropdown>
               </Popover>
+
+              <Select
+                label="Leave Type"
+                data={LEAVE_REQUEST_TYPES.map((t) => ({
+                  value: t,
+                  label: getLeaveTypeLabel(t),
+                }))}
+                allowDeselect={false}
+                {...form.getInputProps("type")}
+              />
 
               {daysRequested > 0 && (
                 <Paper

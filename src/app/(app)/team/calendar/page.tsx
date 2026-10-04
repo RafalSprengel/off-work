@@ -35,13 +35,11 @@ import { useMemo, useState } from "react";
 import { useTeamLeaveRequests } from "@/hooks/useTeamLeaveRequests";
 import { useNonWorkingDays } from "@/hooks/useNonWorkingDays";
 import { getWorkingDaySegments } from "@/utils/workingDays";
+import { LEAVE_REQUEST_TYPES, getLeaveTypeColor } from "@/constants/leaveTypes";
 
-const typeColors: Record<string, string> = {
-  annual: "blue",
-  sick: "red",
-  unpaid: "orange",
-  other: "gray",
-};
+const typeColors: Record<string, string> = Object.fromEntries(
+  LEAVE_REQUEST_TYPES.map((t) => [t, getLeaveTypeColor(t)]),
+);
 
 const closureDotStyle: React.CSSProperties = {
   width: 6,

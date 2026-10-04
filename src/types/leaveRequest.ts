@@ -1,3 +1,5 @@
+import type { LeaveRequestType } from "@/constants/leaveTypes";
+
 export interface LeaveRequest {
   id: string;
   type: string;
@@ -11,6 +13,7 @@ export interface LeaveRequest {
 export interface CreateLeaveRequestInput {
   startDate: string;
   endDate: string;
+  type?: LeaveRequestType;
   comment?: string;
 }
 
@@ -18,6 +21,7 @@ export interface CreateLeaveRequestParams {
   userId: string;
   startDate: string;
   endDate: string;
+  type?: LeaveRequestType;
   startHalfDay?: boolean;
   endHalfDay?: boolean;
 }
@@ -34,7 +38,7 @@ export interface MyLeaveRequestDetail {
   /** Working days of this leave covered by an absence record. */
   absenceDays?: number;
   status: "pending" | "approved" | "rejected" | "cancelled";
-  type: "annual" | "sick" | "unpaid" | "other";
+  type: LeaveRequestType;
   comment?: string;
   rejectionReason?: string | null;
   reviewedAt?: string | null;
@@ -60,7 +64,7 @@ export interface LeaveRequestDetail {
   chargedDays?: number;
   absenceDays?: number;
   status: "pending" | "approved" | "rejected" | "cancelled";
-  type: "annual" | "sick" | "unpaid" | "other";
+  type: LeaveRequestType;
   comment?: string;
   rejectionReason?: string | null;
   reviewedAt?: string | null;
@@ -88,7 +92,7 @@ export interface TeamLeaveRequestItem {
   /** Working days of this leave covered by an absence record. */
   absenceDays?: number;
   status: "pending" | "approved" | "rejected";
-  type: "annual" | "sick" | "unpaid" | "other";
+  type: LeaveRequestType;
   comment?: string;
   rejectionReason?: string | null;
   employeeName?: string;

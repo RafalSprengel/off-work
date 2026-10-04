@@ -43,6 +43,7 @@ import relativeTime from "dayjs/plugin/relativeTime"
 import Link from "next/link"
 import { useTeamDashboard } from "@/hooks/useTeamDashboard"
 import { formatRequestDays } from "@/utils/leaveBalance"
+import { LEAVE_REQUEST_TYPES, getLeaveTypeLabel } from "@/constants/leaveTypes"
 import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
 import {
@@ -53,12 +54,9 @@ import type { PendingRequestItem } from "@/types/dashboard";
 
 dayjs.extend(relativeTime)
 
-const typeLabels: Record<string, string> = {
-    annual: "Annual Leave",
-    sick: "Sick Leave",
-    unpaid: "Unpaid Leave",
-    other: "Other",
-}
+const typeLabels: Record<string, string> = Object.fromEntries(
+    LEAVE_REQUEST_TYPES.map((t) => [t, getLeaveTypeLabel(t)]),
+)
 
 function formatDateRange(startDate: string, endDate: string): string {
     const start = dayjs(startDate, "YYYY-MM-DD")
@@ -298,8 +296,15 @@ export default function AdminDashboard() {
 
             <Grid gap="md">
                 <Grid.Col span={{ base: 12, lg: 8 }}>
-                    <Paper p="lg" radius="md" withBorder>
-                        <Group justify="space-between" mb="md">
+                    <Paper
+                        p={validPendingRequests.length === 0 ? "sm" : "lg"}
+                        radius="md"
+                        withBorder
+                    >
+                        <Group
+                            justify="space-between"
+                            mb={validPendingRequests.length === 0 ? 0 : "md"}
+                        >
                             <Box>
                                 <Title order={3} size="h4">
                                     Latest Pending Leave Requests
@@ -308,19 +313,21 @@ export default function AdminDashboard() {
                                     Review and override company-wide time off requests
                                 </Text>
                             </Box>
-                            <Button
-                                component={Link}
-                                href="/team/leave-requests"
-                                variant="subtle"
-                                size="xs"
-                                rightSection={<IconChevronRight size={14} />}
-                            >
-                                View All ({data.pendingApprovals})
-                            </Button>
+                            {validPendingRequests.length > 0 && (
+                                <Button
+                                    component={Link}
+                                    href="/team/leave-requests"
+                                    variant="subtle"
+                                    size="xs"
+                                    rightSection={<IconChevronRight size={14} />}
+                                >
+                                    View All ({data.pendingApprovals})
+                                </Button>
+                            )}
                         </Group>
 
                         {validPendingRequests.length === 0 ? (
-                            <Text ta="center" py="xl" c="dimmed">
+                            <Text ta="center" py="md" c="dimmed">
                                 No pending leave requests
                             </Text>
                         ) : (

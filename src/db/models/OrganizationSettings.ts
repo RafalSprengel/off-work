@@ -19,6 +19,9 @@ export interface IOrganizationSettings extends Document {
     maxCarryOverDays: number;
     autoApproveSickLeave: boolean;
 
+    /** Default per-type allowances (in days) applied to new employees. Keyed by LeaveAllowanceType. */
+    defaultAllowances: Map<string, number>;
+
     createdAt: Date;
     updatedAt: Date;
 }
@@ -52,6 +55,12 @@ const OrganizationSettingsSchema = new Schema<IOrganizationSettings>(
         allowCarryOver: { type: Boolean, default: true },
         maxCarryOverDays: { type: Number, default: 5, min: 0, max: 365 },
         autoApproveSickLeave: { type: Boolean, default: false },
+
+        defaultAllowances: {
+            type: Map,
+            of: Number,
+            default: {},
+        },
     },
     { timestamps: true }
 );

@@ -4,22 +4,29 @@ import { useEffect, useState, useTransition } from "react";
 import {
     Alert,
     Button,
+    Card,
     Divider,
     Group,
     Loader,
+    NumberInput,
     Select,
+    SimpleGrid,
     Stack,
     Text,
     TextInput,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
-import { IconBuilding, IconCalendar, IconInfoCircle } from "@tabler/icons-react";
+import { IconBuilding, IconCalendar, IconCoins, IconInfoCircle } from "@tabler/icons-react";
 import dayjs from "dayjs";
 
 import { getOrgSettings } from "@/actions/admin/settings/getOrgSettings";
 import { updateOrgSettings } from "@/actions/admin/settings/updateOrgSettings";
 import type { IOrgSettings } from "@/types/orgSettings";
+import {
+    LEAVE_ALLOWANCE_TYPES,
+    getLeaveAllowanceLabel,
+} from "@/constants/leaveAllowanceTypes";
 
 const MONTH_OPTIONS = [
     { value: "1", label: "January" },
@@ -68,6 +75,7 @@ type FormValues = {
     startDay: string;
     endMonth: string;
     endDay: string;
+    defaultAllowances: Record<string, number>;
 };
 
 function settingsToForm(s: IOrgSettings): FormValues {
@@ -83,6 +91,9 @@ function settingsToForm(s: IOrgSettings): FormValues {
         startDay: String(Number(startD)),
         endMonth: String(Number(endM)),
         endDay: String(Number(endD)),
+        defaultAllowances: Object.fromEntries(
+            LEAVE_ALLOWANCE_TYPES.map((t) => [t, s.defaultAllowances?.[t] ?? 0]),
+        ),
     };
 }
 
@@ -101,6 +112,9 @@ export default function GeneralSettingsPage() {
             startDay: "1",
             endMonth: "12",
             endDay: "31",
+            defaultAllowances: Object.fromEntries(
+                LEAVE_ALLOWANCE_TYPES.map((t) => [t, 0]),
+            ),
         },
         validate: {
             companyName: (v) => (!v.trim() ? "Company name is required" : null),
@@ -143,6 +157,7 @@ export default function GeneralSettingsPage() {
                 website: values.website,
                 holidayYearStart: `${String(Number(values.startMonth)).padStart(2, "0")}-${String(Number(values.startDay)).padStart(2, "0")}`,
                 holidayYearEnd: `${String(Number(values.endMonth)).padStart(2, "0")}-${String(Number(values.endDay)).padStart(2, "0")}`,
+                defaultAllowances: values.defaultAllowances,
             });
 
             if (res.success) {
@@ -297,6 +312,41 @@ export default function GeneralSettingsPage() {
                                 .
                             </Alert>
                         </Stack>
+                    </div>
+
+                    <Divider />
+
+                    <div>
+                        <Group gap="xs" mb={4}>
+                            <IconCoins size={16} />
+                            <Text fw={600} size="sm">
+                                Default Allowances
+                            </Text>
+                        </Group>
+                        <Text size="xs" c="dimmed" mb="md">
+                            Default days per leave type, pre-filled when adding a new
+                            employee.
+                        </Text>
+                        <SimpleGrid
+                            cols={{ base: 1, sm: 2, md: 3 }}
+                            spacing="md"
+                        >
+                            {LEAVE_ALLOWANCE_TYPES.map((type) => (
+                                <Card key={type} withBorder radius="md" padding="sm">
+                                    <Text size="sm" fw={600} mb="xs">
+                                        {getLeaveAllowanceLabel(type)}
+                                    </Text>
+                                    <NumberInput
+                                        placeholder="0"
+                                        min={0}
+                                        decimalScale={2}
+                                        {...form.getInputProps(
+                                            `defaultAllowances.${type}`,
+                                        )}
+                                    />
+                                </Card>
+                            ))}
+                        </SimpleGrid>
                     </div>
 
                     <Group justify="flex-end">

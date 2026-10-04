@@ -9,6 +9,7 @@ import {
   Group,
   Loader,
   Paper,
+  Progress,
   SimpleGrid,
   Stack,
   Table,
@@ -19,7 +20,6 @@ import {
 import {
   IconAlertCircle,
   IconCalendarPlus,
-  IconCalendarStats,
   IconCheck,
   IconChevronRight,
   IconClock,
@@ -31,12 +31,14 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useCurrentEmployee } from "@/hooks/useCurrentEmployee";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useMyLeaveRequests } from "@/hooks/useMyLeaveRequests";
 import { useTeamLeaveRequests } from "@/hooks/useTeamLeaveRequests";
 import { sumAnnualDaysUsed } from "@/utils/leaveBalance";
+import { LEAVE_REQUEST_TYPES, getLeaveTypeLabel } from "@/constants/leaveTypes";
+import { getMySickDaysThisYear } from "@/actions/employee/absences/getMySickDaysThisYear";
 
 dayjs.extend(relativeTime);
 
@@ -48,14 +50,22 @@ export default function EmployeeDashboard() {
   const { requests: teamRequests, loading: loadingTeamRequests } =
     useTeamLeaveRequests();
 
-  const typeLabels: Record<string, string> = {
-    annual: "Annual Leave",
-    sick: "Sick Leave",
-    unpaid: "Unpaid Leave",
-    other: "Other",
-  };
+  const [sickDaysThisYear, setSickDaysThisYear] = useState(0);
 
-  const recentRequests = requests.map((req) => ({
+  useEffect(() => {
+    (async () => {
+      const res = await getMySickDaysThisYear();
+      if (res.success) {
+        setSickDaysThisYear(res.days);
+      }
+    })();
+  }, []);
+
+  const typeLabels: Record<string, string> = Object.fromEntries(
+    LEAVE_REQUEST_TYPES.map((t) => [t, getLeaveTypeLabel(t)]),
+  );
+
+  const recentRequests = requests.slice(0, 2).map((req) => ({
     id: req._id,
     type: typeLabels[req.type] ?? req.type,
     dates: `${dayjs(req.startDate).format("DD-MM-YYYY")} → ${dayjs(req.endDate).format("DD-MM-YYYY")}`,
@@ -113,7 +123,12 @@ export default function EmployeeDashboard() {
   // Only approved annual leave counts as used allowance; days covered by an
   // absence (sick etc.) are not deducted.
   const annualDaysUsed = sumAnnualDaysUsed(requests);
-  const daysLeft = Math.max(holidayAllowance - annualDaysUsed, 0);
+  // Can go negative when the employee takes more days than their allowance.
+  const daysLeft = holidayAllowance - annualDaysUsed;
+  const usagePercent =
+    holidayAllowance > 0
+      ? Math.min((annualDaysUsed / holidayAllowance) * 100, 100)
+      : 0;
 
   // Stats for leave requests still awaiting approval.
   const pendingRequests = requests.filter((req) => req.status === "pending");
@@ -151,7 +166,7 @@ export default function EmployeeDashboard() {
         </Group>
       </Paper>
 
-      <SimpleGrid cols={{ base: 2, md: 4 }} spacing="xs">
+      <SimpleGrid cols={{ base: 2, md: 3 }} spacing="xs">
         <Paper p="sm" radius="md" withBorder>
           <Group justify="space-between" align="center" wrap="nowrap" mb={4}>
             <Text size="xs" c="dimmed" fw={600} style={{ textTransform: "uppercase" }}>
@@ -162,13 +177,38 @@ export default function EmployeeDashboard() {
             </ThemeIcon>
           </Group>
           <Group align="baseline" gap="xs">
-            <Text size="lg" fw={700} lh={1}>
+            <Text size="xl" fw={700} lh={1}>
               {daysLeft}
             </Text>
-            <Text size="xs" c="dimmed">
-              / {holidayAllowance} days left
+            <Text size="sm" c="dimmed">
+              days left
             </Text>
           </Group>
+          <Text size="xs" c="dimmed" mt={4}>
+            {annualDaysUsed} used of {holidayAllowance} days
+          </Text>
+          <Box pos="relative" mt="xs">
+            <Progress.Root size="xl" radius="xl">
+              <Progress.Section value={usagePercent} color="orange" animated />
+              <Progress.Section
+                value={Math.max(100 - usagePercent, 0)}
+                color="gray"
+              />
+            </Progress.Root>
+            <Text
+              size="xs"
+              fw={600}
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                pointerEvents: "none",
+              }}
+            >
+              {Math.round(usagePercent)}%
+            </Text>
+          </Box>
         </Paper>
 
         <Paper p="sm" radius="md" withBorder>
@@ -182,7 +222,7 @@ export default function EmployeeDashboard() {
           </Group>
           <Group align="baseline" gap="xs">
             <Text size="lg" fw={700} lh={1}>
-              2
+              {sickDaysThisYear}
             </Text>
             <Text size="xs" c="dimmed">
               days this year
@@ -206,25 +246,6 @@ export default function EmployeeDashboard() {
             <Text size="xs" c="dimmed">
               {pendingCount} {pendingCount === 1 ? "request" : "requests"} ·{" "}
               {pendingDays} {pendingDays === 1 ? "day" : "days"}
-            </Text>
-          </Group>
-        </Paper>
-
-        <Paper p="sm" radius="md" withBorder>
-          <Group justify="space-between" align="center" wrap="nowrap" mb={4}>
-            <Text size="xs" c="dimmed" fw={600} style={{ textTransform: "uppercase" }}>
-              Remote Work Balance
-            </Text>
-            <ThemeIcon variant="light" color="teal" size="sm" style={{ flexShrink: 0 }}>
-              <IconCalendarStats size={14} />
-            </ThemeIcon>
-          </Group>
-          <Group align="baseline" gap="xs">
-            <Text size="lg" fw={700} lh={1}>
-              4
-            </Text>
-            <Text size="xs" c="dimmed">
-              / 6 days left this month
             </Text>
           </Group>
         </Paper>
@@ -253,53 +274,114 @@ export default function EmployeeDashboard() {
               </Button>
             </Group>
 
-            <Table.ScrollContainer minWidth={500}>
-              <Table verticalSpacing="sm" highlightOnHover>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>Type</Table.Th>
-                    <Table.Th>Dates</Table.Th>
-                    <Table.Th>Days</Table.Th>
-                    <Table.Th>Status</Table.Th>
-                    <Table.Th>Submitted</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {recentRequests.map((req) => (
-                    <Table.Tr
-                      key={req.id}
-                      onClick={() =>
-                        router.push(`/me/leave-requests/${req.id}`)
-                      }
-                      style={{ cursor: "pointer" }}
-                    >
-                      <Table.Td>
-                        <Text size="sm" fw={500}>
-                          {req.type}
-                        </Text>
-                        <Text size="xs" c="dimmed">
-                          {req.id}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm">{req.dates}</Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="sm">{req.days}d</Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <StatusBadge status={req.status} />
-                      </Table.Td>
-                      <Table.Td>
-                        <Text size="xs" c="dimmed">
-                          {req.submitted}
-                        </Text>
-                      </Table.Td>
+            <Box visibleFrom="sm">
+              <Table.ScrollContainer minWidth={500}>
+                <Table verticalSpacing="sm" highlightOnHover>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Type</Table.Th>
+                      <Table.Th>Dates</Table.Th>
+                      <Table.Th>Days</Table.Th>
+                      <Table.Th>Status</Table.Th>
+                      <Table.Th>Submitted</Table.Th>
                     </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </Table.ScrollContainer>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {recentRequests.map((req) => (
+                      <Table.Tr
+                        key={req.id}
+                        onClick={() =>
+                          router.push(`/me/leave-requests/${req.id}`)
+                        }
+                        style={{ cursor: "pointer" }}
+                      >
+                        <Table.Td>
+                          <Text size="sm" fw={500}>
+                            {req.type}
+                          </Text>
+                          <Text size="xs" c="dimmed">
+                            {req.id}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="sm">{req.dates}</Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="sm">{req.days}d</Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <StatusBadge status={req.status} />
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="xs" c="dimmed">
+                            {req.submitted}
+                          </Text>
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Table.ScrollContainer>
+            </Box>
+
+            <Stack gap="md" hiddenFrom="sm">
+              {recentRequests.length === 0 && (
+                <Text size="sm" c="dimmed" ta="center">
+                  No leave requests found.
+                </Text>
+              )}
+              {recentRequests.map((req) => (
+                <Paper
+                  key={req.id}
+                  p="sm"
+                  radius="md"
+                  withBorder
+                  onClick={() => router.push(`/me/leave-requests/${req.id}`)}
+                  style={{ cursor: "pointer" }}
+                >
+                  <Group justify="space-between" align="center" mb="xs">
+                    <Text fw={600} size="md">
+                      {req.type}
+                    </Text>
+                    <StatusBadge status={req.status} />
+                  </Group>
+                  <Group justify="space-between" gap="xs">
+                    <Text size="sm" c="dimmed" flex="0 0 auto">
+                      Dates
+                    </Text>
+                    <Text size="sm">{req.dates}</Text>
+                  </Group>
+                  <Group justify="space-between" gap="xs">
+                    <Text size="sm" c="dimmed" flex="0 0 auto">
+                      Days
+                    </Text>
+                    <Text size="sm">{req.days}d</Text>
+                  </Group>
+                  <Group justify="space-between" gap="xs">
+                    <Text size="sm" c="dimmed" flex="0 0 auto">
+                      Submitted
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      {req.submitted}
+                    </Text>
+                  </Group>
+                </Paper>
+              ))}
+            </Stack>
+
+            {recentRequests.length > 0 && (
+              <Group justify="center" mt="md">
+                <Button
+                  component={Link}
+                  href="/me/leave-requests"
+                  variant="subtle"
+                  size="xs"
+                  rightSection={<IconChevronRight size={14} />}
+                >
+                  More...
+                </Button>
+              </Group>
+            )}
           </Paper>
         </Grid.Col>
 

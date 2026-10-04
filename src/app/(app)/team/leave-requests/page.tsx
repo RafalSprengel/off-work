@@ -36,6 +36,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import { useTeamLeaveRequests } from "@/hooks/useTeamLeaveRequests";
 import { formatRequestDays } from "@/utils/leaveBalance";
+import { LEAVE_REQUEST_TYPES, getLeaveTypeLabel } from "@/constants/leaveTypes";
 import type { TeamLeaveRequestItem } from "@/types/leaveRequest";
 import {
   approveLeaveRequestAsAdmin,
@@ -44,12 +45,9 @@ import {
 
 dayjs.extend(relativeTime);
 
-const typeLabels: Record<string, string> = {
-  annual: "Annual Leave",
-  sick: "Sick Leave",
-  unpaid: "Unpaid Leave",
-  other: "Other",
-};
+const typeLabels: Record<string, string> = Object.fromEntries(
+  LEAVE_REQUEST_TYPES.map((t) => [t, getLeaveTypeLabel(t)]),
+);
 
 function formatDateRange(startDate: string, endDate: string): string {
   const start = dayjs(startDate, "YYYY-MM-DD");

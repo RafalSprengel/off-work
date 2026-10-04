@@ -19,13 +19,11 @@ import { useState } from "react";
 import dayjs from "dayjs";
 import type { TeamLeaveRequestItem } from "@/types/leaveRequest";
 import { formatRequestDays } from "@/utils/leaveBalance";
+import { LEAVE_REQUEST_TYPES, getLeaveTypeLabel } from "@/constants/leaveTypes";
 
-const typeLabels: Record<string, string> = {
-  annual: "Annual Leave",
-  sick: "Sick Leave",
-  unpaid: "Unpaid Leave",
-  other: "Other",
-};
+const typeLabels: Record<string, string> = Object.fromEntries(
+  LEAVE_REQUEST_TYPES.map((t) => [t, getLeaveTypeLabel(t)]),
+);
 
 const statusLabels: Record<string, string> = {
   approved: "Approved",

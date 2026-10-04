@@ -3,6 +3,7 @@ import Absence from "@/db/models/Absence";
 import { getNonWorkingDays } from "@/utils/nonWorkingDays";
 import { countAbsenceOverlapDays, type DateRange } from "@/utils/leaveBalance";
 import { computeLeaveDaysRequested } from "@/utils/workingDays";
+import { consumesAllowance } from "@/constants/leaveTypes";
 
 interface EnrichableRequest {
     employee?: string;
@@ -47,7 +48,7 @@ export async function addChargedDays<T extends EnrichableRequest>(
         requests[0].endDate
     );
 
-    const annual = requests.filter((r) => r.type === "annual" && r.employee);
+    const annual = requests.filter((r) => consumesAllowance(r.type) && r.employee);
     const employeeIds = Array.from(new Set(annual.map((r) => String(r.employee))));
 
     const [absenceDocs, nonWorkingDays] = await Promise.all([
@@ -81,7 +82,7 @@ export async function addChargedDays<T extends EnrichableRequest>(
             nonWorkingDays
         );
 
-        if (r.type !== "annual" || !r.employee) {
+        if (!consumesAllowance(r.type) || !r.employee) {
             return { ...r, daysRequested, chargedDays: daysRequested, absenceDays: 0 };
         }
 
