@@ -81,3 +81,33 @@ export function computeLeaveDaysRequested(
     if (endHalfDay) days -= 0.5;
     return Math.max(days, 0);
 }
+
+export interface WorkingDaySegment {
+    start: string; // YYYY-MM-DD
+    end: string; // YYYY-MM-DD
+}
+
+/**
+ * Dzieli zakres na ciagle bloki dni pracujacych (pomija weekendy i dni nierobocze).
+ * Np. czwartek-poniedzialek zwroci dwa segmenty: [czw..pt] oraz [pon].
+ * Uzyteczne do wyswietlania na kalendarzu bez "biegniecia" przez weekend.
+ */
+export function getWorkingDaySegments(
+    start: DateLike,
+    end: DateLike,
+    nonWorkingDates: ReadonlySet<string> = new Set()
+): WorkingDaySegment[] {
+    const days = getWorkingDays(start, end, nonWorkingDates);
+    const segments: WorkingDaySegment[] = [];
+
+    for (const day of days) {
+        const last = segments[segments.length - 1];
+        if (last && dayjs(day).diff(dayjs(last.end), "day") === 1) {
+            last.end = day;
+        } else {
+            segments.push({ start: day, end: day });
+        }
+    }
+
+    return segments;
+}

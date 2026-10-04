@@ -34,6 +34,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useTeamLeaveRequests } from "@/hooks/useTeamLeaveRequests";
 import { useNonWorkingDays } from "@/hooks/useNonWorkingDays";
+import { getWorkingDaySegments } from "@/utils/workingDays";
 
 const typeColors: Record<string, string> = {
   annual: "blue",
@@ -173,7 +174,20 @@ export default function TeamCalendarPage() {
   );
 
   const { requests, loading } = useTeamLeaveRequests();
-  const { closuresMap, loading: loadingClosures } = useNonWorkingDays();
+  const { bankHolidaysMap, closuresMap, loading: loadingClosures } =
+    useNonWorkingDays();
+
+  // Dni nierobocze (bank holidays + closures) -> wspolny Set dla helpera dni pracujacych
+  const nonWorkingDates = useMemo(() => {
+    const set = new Set<string>();
+    bankHolidaysMap.forEach((_, date) => {
+      set.add(date);
+    });
+    closuresMap.forEach((_, date) => {
+      set.add(date);
+    });
+    return set;
+  }, [bankHolidaysMap, closuresMap]);
 
   const departmentsList = useMemo(() => {
     const depts = new Set<string>();
@@ -219,7 +233,7 @@ export default function TeamCalendarPage() {
   const scheduleEvents: ScheduleEventData[] = useMemo(() => {
     const today = dayjs().startOf("day");
 
-    const leaveEvents: ScheduleEventData[] = filteredRequests.map((req) => {
+    const leaveEvents: ScheduleEventData[] = filteredRequests.flatMap((req) => {
       const shortName = formatShortName(req.employeeName);
       const name = shortName || "No name";
       const days = req.daysRequested;
@@ -230,27 +244,33 @@ export default function TeamCalendarPage() {
         ? `${name} (${days} ${days === 1 ? "day" : "days"}${absenceNote})`
         : name;
 
-      const startDateFormatted = dayjs(req.startDate).format("YYYY-MM-DD");
-      const endDateFormatted = dayjs(req.endDate).format("YYYY-MM-DD");
-
       // Past events (ended before today) get grayed out
-      const isPast = dayjs(endDateFormatted).endOf("day").isBefore(today);
+      const isPast = dayjs(req.endDate).endOf("day").isBefore(today);
+      const color = isPast ? "gray.2" : typeColors[req.type] || "gray";
 
-      return {
-        id: req._id,
+      // Rozbijamy urlop na ciagle bloki dni roboczych (bez weekendow i dni nieroboczych)
+      return getWorkingDaySegments(
+        req.startDate,
+        req.endDate,
+        nonWorkingDates,
+      ).map((segment, index) => ({
+        id: `${req._id}#${index}`,
         title,
-        start: `${startDateFormatted} 00:00:00`,
-        end: `${endDateFormatted} 23:59:59`,
-        color: isPast ? "gray.2" : typeColors[req.type] || "gray",
-      };
+        start: `${segment.start} 00:00:00`,
+        end: `${segment.end} 23:59:59`,
+        color,
+      }));
     });
 
     return [...closureEvents, ...leaveEvents];
-  }, [filteredRequests, closureEvents]);
+  }, [filteredRequests, closureEvents, nonWorkingDates]);
 
   const handleEventClick = (event: ScheduleEventData) => {
-    if (String(event.id).startsWith("closure-")) return;
-    router.push(`/team/leave-requests/${event.id}`);
+    const rawId = String(event.id);
+    if (rawId.startsWith("closure-")) return;
+    // id ma format `${requestId}#${segmentIndex}` - bierzemy sam identyfikator wniosku
+    const leaveRequestId = rawId.split("#")[0];
+    router.push(`/team/leave-requests/${leaveRequestId}`);
   };
 
   return (

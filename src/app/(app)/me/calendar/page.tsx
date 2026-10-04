@@ -20,6 +20,7 @@ import { useEmployees } from "@/hooks/useEmployees";
 import { useMyLeaveRequests } from "@/hooks/useMyLeaveRequests";
 import { useTeamLeaveRequests } from "@/hooks/useTeamLeaveRequests";
 import { useNonWorkingDays } from "@/hooks/useNonWorkingDays";
+import { getWorkingDays } from "@/utils/workingDays";
 
 const dotStyle: React.CSSProperties = {
   width: 6,
@@ -38,7 +39,20 @@ export default function EmployeeCalendarPage() {
     useMyLeaveRequests();
   const { requests: teamRequests, loading: loadingTeamRequests } =
     useTeamLeaveRequests();
-  const { closuresMap, loading: loadingClosures } = useNonWorkingDays();
+  const { bankHolidaysMap, closuresMap, loading: loadingClosures } =
+    useNonWorkingDays();
+
+  // Dni nierobocze (bank holidays + closures) -> wspolny Set dla helpera dni pracujacych
+  const nonWorkingDates = useMemo(() => {
+    const set = new Set<string>();
+    bankHolidaysMap.forEach((_, date) => {
+      set.add(date);
+    });
+    closuresMap.forEach((_, date) => {
+      set.add(date);
+    });
+    return set;
+  }, [bankHolidaysMap, closuresMap]);
 
   const loading =
     loadingEmployee ||
@@ -53,15 +67,14 @@ export default function EmployeeCalendarPage() {
     myRequests
       .filter((req) => req.status === "approved")
       .forEach((req) => {
-        let cur = dayjs(req.startDate);
-        const last = dayjs(req.endDate);
-        while (cur.isBefore(last) || cur.isSame(last, "day")) {
-          dates.add(cur.format("YYYY-MM-DD"));
-          cur = cur.add(1, "day");
-        }
+        getWorkingDays(req.startDate, req.endDate, nonWorkingDates).forEach(
+          (day) => {
+            dates.add(day);
+          },
+        );
       });
     return dates;
-  }, [myRequests]);
+  }, [myRequests, nonWorkingDates]);
 
   // Pracownicy z mojego dzialu, bez mnie
   const colleagueIds = useMemo(() => {
@@ -100,16 +113,15 @@ export default function EmployeeCalendarPage() {
           colleagueIds.has(req.employee),
       )
       .forEach((req) => {
-        let cur = dayjs(req.startDate);
-        const last = dayjs(req.endDate);
-        while (cur.isBefore(last) || cur.isSame(last, "day")) {
-          dates.add(cur.format("YYYY-MM-DD"));
-          cur = cur.add(1, "day");
-        }
+        getWorkingDays(req.startDate, req.endDate, nonWorkingDates).forEach(
+          (day) => {
+            dates.add(day);
+          },
+        );
       });
 
     return dates;
-  }, [teamRequests, colleagueIds]);
+  }, [teamRequests, colleagueIds, nonWorkingDates]);
 
   // Zatwierdzone urlopy kolegow z dzialu (do listy w panelu)
   const colleaguesApprovedRequests = useMemo(() => {
