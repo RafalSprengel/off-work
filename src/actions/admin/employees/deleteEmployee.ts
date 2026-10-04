@@ -46,19 +46,19 @@ export async function deleteEmployee(_id: string): Promise<{ success: boolean; e
         // 2. Cancel any pending invitation for this email in this organization
         const ctx = await auth.$context;
         try {
-            const invitation = await ctx.adapter.findOne({
+            const invitation = (await ctx.adapter.findOne({
                 model: "invitation",
                 where: [
                     { field: "organizationId", value: organizationId },
                     { field: "email", value: employee.email },
                     { field: "status", value: "pending" },
                 ],
-            });
+            })) as { id: string } | null;
 
             if (invitation) {
                 await auth.api.cancelInvitation({
                     body: {
-                        invitationId: invitation.id as string,
+                        invitationId: invitation.id,
                     },
                     headers: await headers(),
                 });

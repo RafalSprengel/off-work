@@ -14,7 +14,7 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
-import { IconAlertCircle, IconMail } from "@tabler/icons-react";
+import { IconAlertCircle, IconMail, IconX } from "@tabler/icons-react";
 import { authClient } from "@/lib/auth-client";
 import { getCurrentEmployeeRole } from "@/actions/shared/getCurrentEmployeeRole";
 import AuthCard from "../_components/AuthCard/AuthCard";
@@ -113,7 +113,6 @@ function SignInForm() {
 
             if (error === "Account is deactivated") {
                 await authClient.signOut();
-                await authClient.clearCache();
                 setSignInError(
                     "Your account has been deactivated. Contact your administrator for more information."
                 );

@@ -192,8 +192,8 @@ export default function TeamCalendarPage() {
   const departmentsList = useMemo(() => {
     const depts = new Set<string>();
     requests.forEach((req) => {
-      if (req.employee?.department?.name) {
-        depts.add(req.employee.department.name);
+      if (req.departmentName) {
+        depts.add(req.departmentName);
       }
     });
     return ["All", ...Array.from(depts)];
@@ -207,7 +207,7 @@ export default function TeamCalendarPage() {
       if (
         selectedDepartment &&
         selectedDepartment !== "All" &&
-        req.employee?.department?.name !== selectedDepartment
+        req.departmentName !== selectedDepartment
       ) {
         return false;
       }

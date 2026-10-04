@@ -27,7 +27,6 @@ import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { getTeamLeaveRequests } from "@/actions/manager/leave/getTeamLeaveRequests";
-import type { TeamLeaveRequestItem } from "@/types/leaveRequest";
 
 dayjs.extend(relativeTime);
 
@@ -40,16 +39,8 @@ const typeLabels: Record<string, string> = {
 
 interface SafeRequestItem {
     _id: string;
-    employee: {
-        _id: string;
-        firstName: string;
-        lastName: string;
-        email: string;
-        department?: {
-            _id: string;
-            name: string;
-        } | null;
-    } | null;
+    employee?: string;
+    employeeName?: string;
     startDate: string;
     endDate: string;
     daysRequested: number;
@@ -73,13 +64,9 @@ export function NotificationsDropdown() {
         try {
             const res = await getTeamLeaveRequests();
             if (res.success && res.data) {
-                const pending = res.data
-                    .filter((req) => req.status === "pending")
-                    .filter((req) => req.employee !== null && req.employee !== undefined)
-                    .map((req) => ({
-                        ...req,
-                        employee: req.employee!,
-                    }));
+                const pending = res.data.filter(
+                    (req) => req.status === "pending",
+                );
                 setPendingRequests(pending);
             }
         } catch (error) {
@@ -175,10 +162,7 @@ export function NotificationsDropdown() {
                 <ScrollArea.Autosize mah={isMobile ? "calc(100vh - 120px)" : 400} type="scroll">
                     <Stack gap={0}>
                         {pendingRequests.map((req) => {
-                            if (!req.employee) return null;
-
-                            const fullName = `${req.employee.firstName || ""} ${req.employee.lastName || ""
-                                }`.trim();
+                            const fullName = (req.employeeName || "").trim();
 
                             return (
                                 <Box
@@ -334,7 +318,6 @@ export function NotificationsDropdown() {
                     onClose={() => setOpened(false)}
                     position="bottom"
                     size="85%"
-                    radius={{ top: "md" }}
                     withCloseButton={false}
                     styles={{
                         content: {

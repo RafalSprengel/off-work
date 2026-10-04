@@ -23,12 +23,17 @@ export async function getInvitationData(invitationId: string): Promise<{
 
         // Look up the invitation directly from the Better Auth database adapter.
         // We need the email and organizationId so we can find the matching Employee record.
-        const invitation = await ctx.adapter.findOne({
+        const invitation = (await ctx.adapter.findOne({
             model: "invitation",
             where: [
                 { field: "id", value: invitationId },
             ],
-        });
+        })) as {
+            status: string;
+            expiresAt: string | Date;
+            email: string;
+            organizationId: string;
+        } | null;
 
         if (!invitation) {
             return { success: false, error: "Invitation not found or has expired." };
@@ -38,15 +43,15 @@ export async function getInvitationData(invitationId: string): Promise<{
             return { success: false, error: "This invitation is no longer valid. It may have expired or already been used." };
         }
 
-        const email = invitation.email as string;
-        const organizationId = invitation.organizationId as string;
+        const email = invitation.email;
+        const organizationId = invitation.organizationId;
 
         // Look up the organization name from Better Auth
-        const organization = await ctx.adapter.findOne({
+        const organization = (await ctx.adapter.findOne({
             model: "organization",
             where: [{ field: "id", value: organizationId }],
-        });
-        const organizationName = organization?.name as string || "Off-Work";
+        })) as { name?: string } | null;
+        const organizationName = organization?.name || "Off-Work";
 
         // Find the Employee record in our MongoDB by email and organizationId
         const Employee = (await import("@/db/models/Employee")).default;

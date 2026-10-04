@@ -22,32 +22,36 @@ export async function verifyInvitedUserEmail(params: {
         const ctx = await auth.$context;
 
         // 1. Confirm the invitation is real, pending, and belongs to this email
-        const invitation = await ctx.adapter.findOne({
+        const invitation = (await ctx.adapter.findOne({
             model: "invitation",
             where: [{ field: "id", value: params.invitationId }],
-        });
+        })) as {
+            email: string;
+            status: string;
+            expiresAt: string | Date;
+        } | null;
 
         if (!invitation) {
             return { success: false, error: "Invitation not found." };
         }
 
-        const invitationEmail = (invitation.email as string) ?? "";
+        const invitationEmail = invitation.email ?? "";
         if (invitationEmail.toLowerCase() !== params.email.toLowerCase()) {
             return { success: false, error: "Email does not match invitation." };
         }
 
         if (
             invitation.status !== "pending" ||
-            new Date(invitation.expiresAt as string) < new Date()
+            new Date(invitation.expiresAt) < new Date()
         ) {
             return { success: false, error: "Invitation is no longer valid." };
         }
 
         // 2. Find the newly created user
-        const user = await ctx.adapter.findOne({
+        const user = (await ctx.adapter.findOne({
             model: "user",
             where: [{ field: "email", value: params.email.toLowerCase() }],
-        });
+        })) as { id: string; emailVerified: boolean } | null;
 
         if (!user) {
             return { success: false, error: "User not found." };
@@ -61,7 +65,7 @@ export async function verifyInvitedUserEmail(params: {
         // 3. Mark email as verified
         await ctx.adapter.update({
             model: "user",
-            where: [{ field: "id", value: user.id as string }],
+            where: [{ field: "id", value: user.id }],
             update: { emailVerified: true },
         });
 

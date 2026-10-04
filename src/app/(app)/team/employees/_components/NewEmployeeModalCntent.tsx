@@ -50,7 +50,7 @@ export default function NewEmployeeModalContent() {
                 firstName: form.values.firstName,
                 lastName: form.values.lastName,
                 email: form.values.email,
-                role: form.values.role,
+                role: form.values.role as "Employee" | "Manager",
                 department: form.values.department,
                 managerId: form.values.managerId || undefined,
                 holidayAllowance: form.values.holidayAllowance,

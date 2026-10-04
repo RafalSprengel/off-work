@@ -264,7 +264,7 @@ export default function ReportsPage() {
                                 {topSickEmployees.map((emp, i) => (
                                     <Table.Tr key={i}>
                                         <Table.Td>{emp.name}</Table.Td>
-                                        <Table.Td>{emp.dept || "-"}</Table.Td>
+                                        <Table.Td>{emp.department || "-"}</Table.Td>
                                         <Table.Td ta="right">{emp.days}</Table.Td>
                                     </Table.Tr>
                                 ))}
@@ -294,7 +294,7 @@ export default function ReportsPage() {
                                 {topAnnualEmployees.map((emp, i) => (
                                     <Table.Tr key={i}>
                                         <Table.Td>{emp.name}</Table.Td>
-                                        <Table.Td>{emp.dept || "-"}</Table.Td>
+                                        <Table.Td>{emp.department || "-"}</Table.Td>
                                         <Table.Td ta="right">{emp.days}</Table.Td>
                                     </Table.Tr>
                                 ))}

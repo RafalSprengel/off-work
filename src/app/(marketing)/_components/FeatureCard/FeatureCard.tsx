@@ -1,10 +1,10 @@
 import { Box, Card, Text } from "@mantine/core";
-import type { Icon, IconProps } from "@tabler/icons-react";
+import type { IconProps } from "@tabler/icons-react";
 import type { ForwardRefExoticComponent, RefAttributes } from "react";
 import styles from "./FeatureCard.module.css";
 
 interface FeatureCardProps {
-  icon: ForwardRefExoticComponent<IconProps & RefAttributes<Icon>>;
+  icon: ForwardRefExoticComponent<IconProps & RefAttributes<SVGSVGElement>>;
   title: string;
   description: string;
 }
