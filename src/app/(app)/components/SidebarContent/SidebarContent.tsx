@@ -31,6 +31,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { useCurrentEmployee } from "@/hooks/useCurrentEmployee";
 import styles from "./SidebarContent.module.css";
 
 interface SidebarContentProps {
@@ -48,6 +49,10 @@ export default function SidebarContent({
   const router = useRouter();
   const { colorScheme, setColorScheme } = useMantineColorScheme();
   const [mounted, setMounted] = useState(false);
+
+  const { employee, loading } = useCurrentEmployee();
+  const fullName = `${employee?.firstName || ""} ${employee?.lastName || ""}`.trim();
+  const initials = `${employee?.firstName?.[0] || ""}${employee?.lastName?.[0] || ""}`.toUpperCase();
 
   const [viewMode, setViewMode] = useState<string>(() =>
     role === "Employee" ? "me" : pathname.startsWith("/team") ? "team" : "me"
@@ -351,14 +356,14 @@ export default function SidebarContent({
         <Group justify="space-between" px="md" wrap="nowrap">
           <Group gap="xs" wrap="nowrap">
             <Avatar color="gray" radius="xl">
-              RS
+              {initials || "?"}
             </Avatar>
             <div style={{ overflow: "hidden" }}>
               <Text size="sm" fw={600} truncate>
-                Rafał Sprengel
+                {loading ? "..." : fullName || "User"}
               </Text>
               <Text size="xs" c="dimmed" truncate>
-                rafal.sprengel@gmail.com
+                {employee?.email || ""}
               </Text>
             </div>
           </Group>

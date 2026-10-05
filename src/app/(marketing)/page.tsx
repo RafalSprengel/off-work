@@ -6,8 +6,8 @@ import {
   IconCalendarEvent,
   IconCalendarStats,
   IconChartInfographic,
+  IconLayoutDashboard,
   IconReportAnalytics,
-  IconRoute,
   IconShieldLock,
   IconUserCircle,
   IconUsersGroup,
@@ -26,10 +26,10 @@ const features = [
       "Employees submit holiday and absence requests in a couple of clicks, from any device — no spreadsheets or paper forms.",
   },
   {
-    icon: IconRoute,
-    title: "Multi-Level Approval Workflows",
+    icon: IconLayoutDashboard,
+    title: "Dedicated Manager & Employee Panels",
     description:
-      "Requests are routed automatically to the right team lead, manager, or HR person based on your company's hierarchy.",
+      "Two separate panels, one per role — managers review, approve, and reject requests from a team overview, while employees manage their own requests and keep an eye on their balance.",
   },
   {
     icon: IconChartInfographic,
@@ -53,7 +53,7 @@ const features = [
     icon: IconReportAnalytics,
     title: "Reporting & Analytics",
     description:
-      "Export audit-ready CSV and PDF reports on absence trends and holiday usage whenever HR or finance need them.",
+      "Understand absence trends and holiday usage across your teams, so HR and managers can spot patterns early and plan ahead — no spreadsheets required.",
   },
   {
     icon: IconUserCircle,
@@ -63,9 +63,9 @@ const features = [
   },
   {
     icon: IconShieldLock,
-    title: "Role-Based Access",
+    title: "Secure, Isolated Workspace",
     description:
-      "Separate views and permissions for employees, managers, and HR, so everyone sees exactly what they need to.",
+      "Every company runs in its own fully isolated workspace, with permissions that control exactly who can view and manage its employee data.",
   },
   {
     icon: IconCalendarStats,
@@ -133,7 +133,7 @@ export default function Home() {
               Why Off-Work
             </Text>
             <Title order={2} ta="center" fz={{ base: "1.75rem", sm: "2.25rem" }}>
-              Everything HR needs, in one place
+              All-in-one Leave &amp; Absence Management for your team
             </Title>
           </Stack>
 

@@ -2,6 +2,8 @@
 
 import {
   ActionIcon,
+  Alert,
+  Badge,
   Button,
   Container,
   Divider,
@@ -18,18 +20,19 @@ import {
 } from "@mantine/core";
 import { DatePicker, DatePickerProps } from "@mantine/dates";
 import { useForm } from "@mantine/form";
-import { IconCalendar, IconX } from "@tabler/icons-react";
+import { IconAlertTriangle, IconCalendar, IconX } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createLeaveRequest } from "@/actions/employee/leave/createLeaveRequest";
+import { getMyLeaveBalance, type LeaveBalanceItem } from "@/actions/employee/leave/getMyLeaveBalance";
 import { useCurrentEmployee } from "@/hooks/useCurrentEmployee";
 import { useMyLeaveRequests } from "@/hooks/useMyLeaveRequests";
 import { useNonWorkingDays } from "@/hooks/useNonWorkingDays";
 import { countWorkingDays } from "@/utils/workingDays";
 import {
   LEAVE_REQUEST_TYPES,
-  getLeaveTypeLabel,
+  LEAVE_TYPE_META,
   type LeaveRequestType,
 } from "@/constants/leaveTypes";
 import "@mantine/dates/styles.css";
@@ -44,6 +47,8 @@ const dotStyle: React.CSSProperties = {
 export default function NewEmployeeLeaveRequestPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [balanceError, setBalanceError] = useState<string | null>(null);
+  const [balance, setBalance] = useState<LeaveBalanceItem[]>([]);
   const { employee, loading: employeeLoading } = useCurrentEmployee();
   const { requests: myRequests, loading: loadingMyRequests } =
     useMyLeaveRequests();
@@ -56,6 +61,14 @@ export default function NewEmployeeLeaveRequestPage() {
   const dataLoading = loadingMyRequests || loadingNonWorking;
 
   const [opened, setOpened] = useState(false);
+
+  useEffect(() => {
+    getMyLeaveBalance().then((result) => {
+      if (result.success) {
+        setBalance(result.data);
+      }
+    });
+  }, []);
 
   const myApprovedDates = useMemo(() => {
     const dates = new Set<string>();
@@ -207,7 +220,20 @@ export default function NewEmployeeLeaveRequestPage() {
   const daysRequested =
     startDate && endDate ? countWorkingDays(startDate, endDate, nonWorkingDates) : 0;
 
+  const selectedTypeBalance = balance.find((b) => b.type === form.values.type);
+
   const handleSubmit = async () => {
+    setBalanceError(null);
+
+    if (selectedTypeBalance && daysRequested > selectedTypeBalance.remaining) {
+      setBalanceError(
+        `You don't have enough ${LEAVE_TYPE_META[form.values.type].label} days to submit this request. ` +
+        `Requested: ${daysRequested} day${daysRequested !== 1 ? "s" : ""}, ` +
+        `remaining: ${selectedTypeBalance.remaining} day${selectedTypeBalance.remaining !== 1 ? "s" : ""}.`
+      );
+      return;
+    }
+
     setLoading(true);
 
     const result = await createLeaveRequest({
@@ -340,11 +366,39 @@ export default function NewEmployeeLeaveRequestPage() {
                 label="Leave Type"
                 data={LEAVE_REQUEST_TYPES.map((t) => ({
                   value: t,
-                  label: getLeaveTypeLabel(t),
+                  label: LEAVE_TYPE_META[t].label,
                 }))}
                 allowDeselect={false}
                 {...form.getInputProps("type")}
+                onChange={(value) => {
+                  form.setFieldValue("type", value as LeaveRequestType);
+                  setBalanceError(null);
+                }}
               />
+
+              {selectedTypeBalance && (
+                <Paper p="sm" radius="sm" withBorder bg="var(--mantine-color-gray-0)">
+                  <Group justify="space-between" wrap="nowrap">
+                    <Text size="sm" fw={500}>
+                      {LEAVE_TYPE_META[form.values.type].label} balance:
+                    </Text>
+                    <Group gap="xs">
+                      <Badge color="gray" variant="light">
+                        Allowance: {selectedTypeBalance.allowance}d
+                      </Badge>
+                      <Badge color="red" variant="light">
+                        Used: {selectedTypeBalance.used}d
+                      </Badge>
+                      <Badge
+                        color={selectedTypeBalance.remaining > 0 ? "green" : "red"}
+                        variant="filled"
+                      >
+                        Remaining: {selectedTypeBalance.remaining}d
+                      </Badge>
+                    </Group>
+                  </Group>
+                </Paper>
+              )}
 
               {daysRequested > 0 && (
                 <Paper
@@ -362,6 +416,17 @@ export default function NewEmployeeLeaveRequestPage() {
                     </Text>
                   </Flex>
                 </Paper>
+              )}
+
+              {balanceError && (
+                <Alert
+                  icon={<IconAlertTriangle size={16} />}
+                  color="red"
+                  title="Insufficient leave balance"
+                  variant="light"
+                >
+                  {balanceError}
+                </Alert>
               )}
 
               <Divider my="xs" />

@@ -7,8 +7,6 @@ export const LEAVE_ALLOWANCE_TYPES = [
     "annual",
     "unpaid",
     "sick",
-    "maternity",
-    "paternity",
     "bereavement",
 ] as const;
 
@@ -18,8 +16,6 @@ export const LEAVE_ALLOWANCE_LABELS: Record<LeaveAllowanceType, string> = {
     annual: "Annual allowance",
     unpaid: "Unpaid leave",
     sick: "Sick",
-    maternity: "Maternity",
-    paternity: "Paternity",
     bereavement: "Bereavement",
 };
 

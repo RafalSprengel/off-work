@@ -69,15 +69,15 @@ export default function ReportsPage() {
         );
     }
     // ---- 1. Monthly chart data ----
-    const monthlyMap = new Map<string, { sick: number; annual: number; unpaid: number; other: number }>();
+    const monthlyMap = new Map<string, { sick: number; annual: number; unpaid: number; bereavement: number }>();
     for (const r of requests) {
         const mk = monthKey(r.startDate);
-        if (!monthlyMap.has(mk)) monthlyMap.set(mk, { sick: 0, annual: 0, unpaid: 0, other: 0 });
+        if (!monthlyMap.has(mk)) monthlyMap.set(mk, { sick: 0, annual: 0, unpaid: 0, bereavement: 0 });
         const m = monthlyMap.get(mk)!;
         if (r.type === "sick") m.sick += r.daysRequested;
         else if (r.type === "annual") m.annual += r.daysRequested;
         else if (r.type === "unpaid") m.unpaid += r.daysRequested;
-        else m.other += r.daysRequested;
+        else if (r.type === "bereavement") m.bereavement += r.daysRequested;
     }
     const sortedMonths = Array.from(monthlyMap.keys()).sort();
     const monthlyChartData = sortedMonths.map((mk) => ({
@@ -85,7 +85,7 @@ export default function ReportsPage() {
         "Sick Leave": monthlyMap.get(mk)!.sick,
         "Annual Leave": monthlyMap.get(mk)!.annual,
         Unpaid: monthlyMap.get(mk)!.unpaid,
-        Other: monthlyMap.get(mk)!.other,
+        Bereavement: monthlyMap.get(mk)!.bereavement,
     }));
 
     // ---- 2. Weekly sick ----

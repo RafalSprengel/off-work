@@ -15,9 +15,7 @@ const LEAVE_TYPE_ROWS: { type: LeaveAllowanceType; label: string }[] = [
   { type: "annual", label: "Annual allowance" },
   { type: "unpaid", label: "Unpaid leave" },
   { type: "sick", label: "Sick" },
-  { type: "maternity", label: "Maternity" },
-  { type: "paternity", label: "Paternity" },
-  { type: "bereavement", label: "BEREAVEMENT" },
+  { type: "bereavement", label: "Bereavement" },
 ];
 
 export default async function EmployeeAllowancesPage({

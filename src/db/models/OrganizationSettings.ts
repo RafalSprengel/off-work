@@ -59,7 +59,12 @@ const OrganizationSettingsSchema = new Schema<IOrganizationSettings>(
         defaultAllowances: {
             type: Map,
             of: Number,
-            default: {},
+            default: () => new Map([
+                ["annual", 26],
+                ["sick", 10],
+                ["unpaid", 0],
+                ["bereavement", 5],
+            ]),
         },
     },
     { timestamps: true }

@@ -1,6 +1,5 @@
 import dayjs from "dayjs";
 import { isWorkingDay } from "@/utils/workingDays";
-import { consumesAllowance } from "@/constants/leaveTypes";
 
 /**
  * Czyste funkcje (bez dostepu do bazy) do liczenia salda urlopu z uwzglednieniem absencji.
@@ -73,6 +72,6 @@ export function formatRequestDays(
 /** Suma zuzytych dni urlopu rocznego: zatwierdzone wnioski "annual" pomniejszone o absencje. */
 export function sumAnnualDaysUsed(requests: ChargeableRequest[]): number {
     return requests
-        .filter((req) => req.status === "approved" && consumesAllowance(req.type))
+        .filter((req) => req.status === "approved" && req.type === "annual")
         .reduce((sum, req) => sum + getChargedDays(req), 0);
 }

@@ -7,7 +7,7 @@ export const LEAVE_REQUEST_TYPES = [
     "annual",
     "sick",
     "unpaid",
-    "other",
+    "bereavement",
 ] as const;
 
 export type LeaveRequestType = (typeof LEAVE_REQUEST_TYPES)[number];
@@ -19,28 +19,34 @@ export interface LeaveTypeMeta {
     color: string;
     /** Whether this type is deducted from the employee's allowance pool. */
     consumesAllowance: boolean;
+    /** When true, there is no day limit (unlimited). */
+    unlimited: boolean;
 }
 
 export const LEAVE_TYPE_META: Record<LeaveRequestType, LeaveTypeMeta> = {
     annual: {
-        label: "Annual Leave",
+        label: "Annual allowance",
         color: "blue",
         consumesAllowance: true,
+        unlimited: false,
     },
     sick: {
-        label: "Sick Leave",
+        label: "Sick",
         color: "red",
-        consumesAllowance: false,
+        consumesAllowance: true,
+        unlimited: false,
     },
     unpaid: {
-        label: "Unpaid Leave",
+        label: "Unpaid leave",
         color: "orange",
-        consumesAllowance: false,
+        consumesAllowance: true,
+        unlimited: false,
     },
-    other: {
-        label: "Other",
-        color: "gray",
-        consumesAllowance: false,
+    bereavement: {
+        label: "Bereavement",
+        color: "violet",
+        consumesAllowance: true,
+        unlimited: false,
     },
 };
 
