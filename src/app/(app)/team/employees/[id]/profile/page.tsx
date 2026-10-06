@@ -2,6 +2,7 @@ import { Badge, Card, Group, SimpleGrid, Stack, Text } from "@mantine/core";
 import { notFound } from "next/navigation";
 
 import { getEmployeeById } from "@/actions/manager/employees/getEmployeeById";
+import EmployeeProfileEditButton from "./_components/EmployeeProfileEditButton";
 
 const statusLabels: Record<string, string> = {
   active: "Active",
@@ -66,12 +67,15 @@ export default async function EmployeeProfilePage({
             <Text fw={600} size="lg">
               {employee.firstName} {employee.lastName}
             </Text>
-            <Badge
-              variant="light"
-              color={statusColors[employee.status] ?? "gray"}
-            >
-              {statusLabels[employee.status] ?? employee.status}
-            </Badge>
+            <Group gap="xs" align="center">
+              <Badge
+                variant="light"
+                color={statusColors[employee.status] ?? "gray"}
+              >
+                {statusLabels[employee.status] ?? employee.status}
+              </Badge>
+              <EmployeeProfileEditButton employee={employee} />
+            </Group>
           </Group>
 
           <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
