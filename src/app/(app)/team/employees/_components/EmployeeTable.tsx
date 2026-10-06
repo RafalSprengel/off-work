@@ -7,6 +7,8 @@ import { Stack, Group, Title, Badge, Button, Paper, Table, ActionIcon, Card, Tex
 import { notifications } from "@mantine/notifications";
 import { modals } from "@mantine/modals";
 import { IconEdit, IconPlus, IconKey, IconSend, IconDotsVertical, IconCheck, IconClock, IconX, IconUserOff, IconUserCheck } from "@tabler/icons-react";
+import SortableHeader from "@/app/(app)/components/SortableHeader/SortableHeader";
+import { sortItems, type SortDirection } from "@/utils/sort";
 import NewEmployeeModalContent from "./NewEmployeeModalCntent";
 import EditEmployeeModal from "./EditEmployeeModal";
 import ActivateEmployeeModal from "./ActivateEmployeeModal";
@@ -36,6 +38,33 @@ function InvitationStatusBadge({ status }: { status: IEmployee["status"] }) {
         <Badge variant="light" color="gray" size="sm">
             Inactive
         </Badge>
+    );
+}
+
+type SortColumn = "name" | "email" | "department" | "role" | "status";
+
+function SortableTh({
+    column,
+    label,
+    sortColumn,
+    sortDirection,
+    onSort,
+}: {
+    column: SortColumn;
+    label: string;
+    sortColumn: SortColumn | null;
+    sortDirection: SortDirection;
+    onSort: (column: SortColumn) => void;
+}) {
+    return (
+        <Table.Th>
+            <SortableHeader
+                label={label}
+                active={sortColumn === column}
+                direction={sortDirection}
+                onSort={() => onSort(column)}
+            />
+        </Table.Th>
     );
 }
 
@@ -226,6 +255,8 @@ export default function EmployeeTable({ employees }: { employees: IEmployee[] })
     });
 
     const [filter, setFilter] = useState<"active" | "inactive">("active");
+    const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
+    const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
     const filteredEmployees = employees.filter((empl) => {
         if (filter === "active") {
@@ -234,6 +265,42 @@ export default function EmployeeTable({ employees }: { employees: IEmployee[] })
             return empl.status === "inactive";
         }
     });
+
+    function getDepartmentName(empl: IEmployee): string {
+        return typeof empl.department === "object"
+            ? empl.department?.name ?? ""
+            : empl.department ?? "";
+    }
+
+    function handleSort(column: SortColumn) {
+        if (sortColumn === column) {
+            setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+        } else {
+            setSortColumn(column);
+            setSortDirection("asc");
+        }
+    }
+
+    const sortedEmployees = sortColumn
+        ? sortItems(
+              filteredEmployees,
+              (empl) => {
+                  switch (sortColumn) {
+                      case "name":
+                          return `${empl.firstName} ${empl.lastName}`;
+                      case "email":
+                          return empl.email;
+                      case "department":
+                          return getDepartmentName(empl);
+                      case "role":
+                          return empl.role;
+                      case "status":
+                          return empl.status;
+                  }
+              },
+              sortDirection,
+          )
+        : filteredEmployees;
 
     function openNewEmployeeModal() {
         modals.open({
@@ -308,7 +375,7 @@ export default function EmployeeTable({ employees }: { employees: IEmployee[] })
         });
     }
 
-    const rows = filteredEmployees.map((empl) => (
+    const rows = sortedEmployees.map((empl) => (
         <Table.Tr
             key={empl.email}
             onClick={() => router.push(`/team/employees/${empl._id}/profile`)}
@@ -329,7 +396,7 @@ export default function EmployeeTable({ employees }: { employees: IEmployee[] })
         </Table.Tr>
     ))
 
-    const mobileCards = filteredEmployees.map((empl) => (
+    const mobileCards = sortedEmployees.map((empl) => (
         <Card
             key={empl.email}
             withBorder
@@ -416,11 +483,11 @@ export default function EmployeeTable({ employees }: { employees: IEmployee[] })
                     <Table>
                         <Table.Thead>
                             <Table.Tr>
-                                <Table.Th>Name</Table.Th>
-                                <Table.Th>Email</Table.Th>
-                                <Table.Th>Department</Table.Th>
-                                <Table.Th>Role</Table.Th>
-                                <Table.Th>Invitation</Table.Th>
+                                <SortableTh column="name" label="Name" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} />
+                                <SortableTh column="email" label="Email" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} />
+                                <SortableTh column="department" label="Department" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} />
+                                <SortableTh column="role" label="Role" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} />
+                                <SortableTh column="status" label="Invitation" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort} />
                                 <Table.Th style={{ textAlign: "right" }}>Actions</Table.Th>
                             </Table.Tr>
                         </Table.Thead>

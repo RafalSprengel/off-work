@@ -39,8 +39,12 @@ import { useTeamLeaveRequests } from "@/hooks/useTeamLeaveRequests";
 import { sumAnnualDaysUsed } from "@/utils/leaveBalance";
 import { LEAVE_REQUEST_TYPES, getLeaveTypeLabel } from "@/constants/leaveTypes";
 import { getMySickDaysThisYear } from "@/actions/employee/absences/getMySickDaysThisYear";
+import SortableHeader from "@/app/(app)/components/SortableHeader/SortableHeader";
+import { sortItems, type SortDirection } from "@/utils/sort";
 
 dayjs.extend(relativeTime);
+
+type SortColumn = "type" | "dates" | "days" | "status" | "submitted";
 
 export default function EmployeeDashboard() {
   const router = useRouter();
@@ -68,11 +72,46 @@ export default function EmployeeDashboard() {
   const recentRequests = requests.slice(0, 2).map((req) => ({
     id: req._id,
     type: typeLabels[req.type] ?? req.type,
+    startDate: req.startDate,
     dates: `${dayjs(req.startDate).format("DD-MM-YYYY")} → ${dayjs(req.endDate).format("DD-MM-YYYY")}`,
     days: req.daysRequested,
     status: req.status,
+    createdAt: req.createdAt,
     submitted: dayjs(req.createdAt).fromNow(),
   }));
+
+  const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+
+  function handleSort(column: SortColumn) {
+    if (sortColumn === column) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  }
+
+  const sortedRecentRequests = sortColumn
+    ? sortItems(
+        recentRequests,
+        (req) => {
+          switch (sortColumn) {
+            case "type":
+              return req.type;
+            case "dates":
+              return dayjs(req.startDate).valueOf();
+            case "days":
+              return req.days;
+            case "status":
+              return req.status;
+            case "submitted":
+              return dayjs(req.createdAt).valueOf();
+          }
+        },
+        sortDirection,
+      )
+    : recentRequests;
 
   // Pracownicy z mojego dzialu (bez mnie) z zatwierdzonym urlopem
   const colleaguesOnLeave = useMemo(() => {
@@ -279,15 +318,25 @@ export default function EmployeeDashboard() {
                 <Table verticalSpacing="sm" highlightOnHover>
                   <Table.Thead>
                     <Table.Tr>
-                      <Table.Th>Type</Table.Th>
-                      <Table.Th>Dates</Table.Th>
-                      <Table.Th>Days</Table.Th>
-                      <Table.Th>Status</Table.Th>
-                      <Table.Th>Submitted</Table.Th>
+                      <Table.Th>
+                        <SortableHeader label="Type" active={sortColumn === "type"} direction={sortDirection} onSort={() => handleSort("type")} />
+                      </Table.Th>
+                      <Table.Th>
+                        <SortableHeader label="Dates" active={sortColumn === "dates"} direction={sortDirection} onSort={() => handleSort("dates")} />
+                      </Table.Th>
+                      <Table.Th>
+                        <SortableHeader label="Days" active={sortColumn === "days"} direction={sortDirection} onSort={() => handleSort("days")} />
+                      </Table.Th>
+                      <Table.Th>
+                        <SortableHeader label="Status" active={sortColumn === "status"} direction={sortDirection} onSort={() => handleSort("status")} />
+                      </Table.Th>
+                      <Table.Th>
+                        <SortableHeader label="Submitted" active={sortColumn === "submitted"} direction={sortDirection} onSort={() => handleSort("submitted")} />
+                      </Table.Th>
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>
-                    {recentRequests.map((req) => (
+                    {sortedRecentRequests.map((req) => (
                       <Table.Tr
                         key={req.id}
                         onClick={() =>
@@ -330,7 +379,7 @@ export default function EmployeeDashboard() {
                   No leave requests found.
                 </Text>
               )}
-              {recentRequests.map((req) => (
+              {sortedRecentRequests.map((req) => (
                 <Paper
                   key={req.id}
                   p="sm"

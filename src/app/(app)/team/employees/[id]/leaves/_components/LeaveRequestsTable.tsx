@@ -20,6 +20,10 @@ import dayjs from "dayjs";
 import type { TeamLeaveRequestItem } from "@/types/leaveRequest";
 import { formatRequestDays } from "@/utils/leaveBalance";
 import { LEAVE_REQUEST_TYPES, getLeaveTypeLabel } from "@/constants/leaveTypes";
+import SortableHeader from "@/app/(app)/components/SortableHeader/SortableHeader";
+import { sortItems, type SortDirection } from "@/utils/sort";
+
+type SortColumn = "type" | "dates" | "days" | "status";
 
 const typeLabels: Record<string, string> = Object.fromEntries(
   LEAVE_REQUEST_TYPES.map((t) => [t, getLeaveTypeLabel(t)]),
@@ -48,12 +52,40 @@ export function LeaveRequestsTable({
   const [sortDirection, setSortDirection] = useState<"newest" | "oldest">(
     "newest",
   );
+  const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
+  const [columnDirection, setColumnDirection] = useState<SortDirection>("asc");
 
-  const sortedRequests = [...requests].sort((a, b) => {
-    const delta =
-      dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf();
-    return sortDirection === "newest" ? delta : -delta;
-  });
+  function handleSort(column: SortColumn) {
+    if (sortColumn === column) {
+      setColumnDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortColumn(column);
+      setColumnDirection("asc");
+    }
+  }
+
+  const sortedRequests = sortColumn
+    ? sortItems(
+        requests,
+        (req) => {
+          switch (sortColumn) {
+            case "type":
+              return typeLabels[req.type] ?? req.type;
+            case "dates":
+              return dayjs(req.startDate).valueOf();
+            case "days":
+              return req.daysRequested;
+            case "status":
+              return req.status;
+          }
+        },
+        columnDirection,
+      )
+    : [...requests].sort((a, b) => {
+        const delta =
+          dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf();
+        return sortDirection === "newest" ? delta : -delta;
+      });
 
   const today = dayjs().startOf("day");
   const isPast = (item: { endDate: string }) =>
@@ -79,11 +111,12 @@ export function LeaveRequestsTable({
             variant={sortDirection === "newest" ? "light" : "subtle"}
             color="blue"
             radius="xl"
-            onClick={() =>
+            onClick={() => {
+              setSortColumn(null);
               setSortDirection(
                 sortDirection === "newest" ? "oldest" : "newest",
-              )
-            }
+              );
+            }}
           >
             {sortDirection === "newest" ? (
               <IconSortDescending size={16} />
@@ -96,10 +129,18 @@ export function LeaveRequestsTable({
       <Table>
         <Table.Thead>
           <Table.Tr>
-            <Table.Th>Type</Table.Th>
-            <Table.Th>Dates</Table.Th>
-            <Table.Th>Days</Table.Th>
-            <Table.Th>Status</Table.Th>
+            <Table.Th>
+              <SortableHeader label="Type" active={sortColumn === "type"} direction={columnDirection} onSort={() => handleSort("type")} />
+            </Table.Th>
+            <Table.Th>
+              <SortableHeader label="Dates" active={sortColumn === "dates"} direction={columnDirection} onSort={() => handleSort("dates")} />
+            </Table.Th>
+            <Table.Th>
+              <SortableHeader label="Days" active={sortColumn === "days"} direction={columnDirection} onSort={() => handleSort("days")} />
+            </Table.Th>
+            <Table.Th>
+              <SortableHeader label="Status" active={sortColumn === "status"} direction={columnDirection} onSort={() => handleSort("status")} />
+            </Table.Th>
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>

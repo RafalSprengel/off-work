@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import dayjs from "dayjs";
 import isoWeek from "dayjs/plugin/isoWeek";
 import "@mantine/charts/styles.css";
@@ -26,6 +26,8 @@ import {
 } from "@tabler/icons-react";
 import { getReportData } from "@/actions/manager/reports/getReportData";
 import type { ReportDataItem, EmployeeReportItem } from "@/actions/manager/reports/getReportData";
+import SortableHeader from "@/app/(app)/components/SortableHeader/SortableHeader";
+import { sortItems, type SortDirection } from "@/utils/sort";
 
 dayjs.extend(isoWeek);
 
@@ -44,6 +46,74 @@ interface TopEmployee { name: string; days: number; department?: string; }
 interface DepartmentSick { department: string; days: number; }
 interface EmployeeTenure { _id: string; name: string; departmentName?: string; employmentDate: string; tenureDays: number; }
 interface DepartmentTurnover { department: string; active: number; inactive: number; total: number; turnoverRate: number; }
+
+interface ReportColumn<T> {
+    key: string;
+    label: string;
+    align?: "left" | "right";
+    getValue: (row: T) => unknown;
+    render: (row: T) => ReactNode;
+}
+
+function SortableReportTable<T>({
+    columns,
+    rows,
+}: {
+    columns: ReportColumn<T>[];
+    rows: T[];
+}) {
+    const [sortColumn, setSortColumn] = useState<string | null>(null);
+    const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+
+    const handleSort = (key: string) => {
+        if (sortColumn === key) {
+            setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+        } else {
+            setSortColumn(key);
+            setSortDirection("asc");
+        }
+    };
+
+    const sortedRows = sortColumn
+        ? sortItems(
+              rows,
+              (row) => columns.find((c) => c.key === sortColumn)?.getValue(row),
+              sortDirection,
+          )
+        : rows;
+
+    return (
+        <Table striped highlightOnHover>
+            <Table.Thead>
+                <Table.Tr>
+                    {columns.map((col) => (
+                        <Table.Th key={col.key} ta={col.align === "right" ? "right" : undefined}>
+                            <SortableHeader
+                                label={col.label}
+                                active={sortColumn === col.key}
+                                direction={sortDirection}
+                                onSort={() => handleSort(col.key)}
+                                align={col.align}
+                            />
+                        </Table.Th>
+                    ))}
+                </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+                {sortedRows.map((row, i) => (
+                    <Table.Tr key={i}>
+                        {columns.map((col) => (
+                            <Table.Td key={col.key} ta={col.align === "right" ? "right" : undefined}>
+                                {col.render(row)}
+                            </Table.Td>
+                        ))}
+                    </Table.Tr>
+                ))}
+            </Table.Tbody>
+        </Table>
+    );
+}
+
 export default function ReportsPage() {
     const [loading, setLoading] = useState(true);
     const [requests, setRequests] = useState<ReportDataItem[]>([]);
@@ -252,24 +322,14 @@ export default function ReportsPage() {
                     {topSickEmployees.length === 0 ? (
                         <Text size="sm" c="dimmed">No data.</Text>
                     ) : (
-                        <Table striped highlightOnHover>
-                            <Table.Thead>
-                                <Table.Tr>
-                                    <Table.Th>Employee</Table.Th>
-                                    <Table.Th>Department</Table.Th>
-                                    <Table.Th ta="right">Days</Table.Th>
-                                </Table.Tr>
-                            </Table.Thead>
-                            <Table.Tbody>
-                                {topSickEmployees.map((emp, i) => (
-                                    <Table.Tr key={i}>
-                                        <Table.Td>{emp.name}</Table.Td>
-                                        <Table.Td>{emp.department || "-"}</Table.Td>
-                                        <Table.Td ta="right">{emp.days}</Table.Td>
-                                    </Table.Tr>
-                                ))}
-                            </Table.Tbody>
-                        </Table>
+                        <SortableReportTable
+                            rows={topSickEmployees}
+                            columns={[
+                                { key: "name", label: "Employee", getValue: (e) => e.name, render: (e) => e.name },
+                                { key: "department", label: "Department", getValue: (e) => e.department ?? "", render: (e) => e.department || "-" },
+                                { key: "days", label: "Days", align: "right", getValue: (e) => e.days, render: (e) => e.days },
+                            ]}
+                        />
                     )}
                 </Paper>
 
@@ -282,24 +342,14 @@ export default function ReportsPage() {
                     {topAnnualEmployees.length === 0 ? (
                         <Text size="sm" c="dimmed">No data.</Text>
                     ) : (
-                        <Table striped highlightOnHover>
-                            <Table.Thead>
-                                <Table.Tr>
-                                    <Table.Th>Employee</Table.Th>
-                                    <Table.Th>Department</Table.Th>
-                                    <Table.Th ta="right">Days</Table.Th>
-                                </Table.Tr>
-                            </Table.Thead>
-                            <Table.Tbody>
-                                {topAnnualEmployees.map((emp, i) => (
-                                    <Table.Tr key={i}>
-                                        <Table.Td>{emp.name}</Table.Td>
-                                        <Table.Td>{emp.department || "-"}</Table.Td>
-                                        <Table.Td ta="right">{emp.days}</Table.Td>
-                                    </Table.Tr>
-                                ))}
-                            </Table.Tbody>
-                        </Table>
+                        <SortableReportTable
+                            rows={topAnnualEmployees}
+                            columns={[
+                                { key: "name", label: "Employee", getValue: (e) => e.name, render: (e) => e.name },
+                                { key: "department", label: "Department", getValue: (e) => e.department ?? "", render: (e) => e.department || "-" },
+                                { key: "days", label: "Days", align: "right", getValue: (e) => e.days, render: (e) => e.days },
+                            ]}
+                        />
                     )}
                 </Paper>
             </SimpleGrid>
@@ -313,26 +363,14 @@ export default function ReportsPage() {
                     {longestTenure.length === 0 ? (
                         <Text size="sm" c="dimmed">No data.</Text>
                     ) : (
-                        <Table striped highlightOnHover>
-                            <Table.Thead>
-                                <Table.Tr>
-                                    <Table.Th>Employee</Table.Th>
-                                    <Table.Th>Department</Table.Th>
-                                    <Table.Th ta="right">Tenure</Table.Th>
-                                </Table.Tr>
-                            </Table.Thead>
-                            <Table.Tbody>
-                                {longestTenure.map((emp) => (
-                                    <Table.Tr key={emp._id}>
-                                        <Table.Td>{emp.name}</Table.Td>
-                                        <Table.Td>{emp.departmentName || "-"}</Table.Td>
-                                        <Table.Td ta="right">
-                                            {formatTenure(emp.tenureDays)}
-                                        </Table.Td>
-                                    </Table.Tr>
-                                ))}
-                            </Table.Tbody>
-                        </Table>
+                        <SortableReportTable
+                            rows={longestTenure}
+                            columns={[
+                                { key: "name", label: "Employee", getValue: (e) => e.name, render: (e) => e.name },
+                                { key: "department", label: "Department", getValue: (e) => e.departmentName ?? "", render: (e) => e.departmentName || "-" },
+                                { key: "tenure", label: "Tenure", align: "right", getValue: (e) => e.tenureDays, render: (e) => formatTenure(e.tenureDays) },
+                            ]}
+                        />
                     )}
                 </Paper>
 
@@ -345,26 +383,14 @@ export default function ReportsPage() {
                     {shortestTenure.length === 0 ? (
                         <Text size="sm" c="dimmed">No data.</Text>
                     ) : (
-                        <Table striped highlightOnHover>
-                            <Table.Thead>
-                                <Table.Tr>
-                                    <Table.Th>Employee</Table.Th>
-                                    <Table.Th>Department</Table.Th>
-                                    <Table.Th ta="right">Tenure</Table.Th>
-                                </Table.Tr>
-                            </Table.Thead>
-                            <Table.Tbody>
-                                {shortestTenure.map((emp) => (
-                                    <Table.Tr key={emp._id}>
-                                        <Table.Td>{emp.name}</Table.Td>
-                                        <Table.Td>{emp.departmentName || "-"}</Table.Td>
-                                        <Table.Td ta="right">
-                                            {formatTenure(emp.tenureDays)}
-                                        </Table.Td>
-                                    </Table.Tr>
-                                ))}
-                            </Table.Tbody>
-                        </Table>
+                        <SortableReportTable
+                            rows={shortestTenure}
+                            columns={[
+                                { key: "name", label: "Employee", getValue: (e) => e.name, render: (e) => e.name },
+                                { key: "department", label: "Department", getValue: (e) => e.departmentName ?? "", render: (e) => e.departmentName || "-" },
+                                { key: "tenure", label: "Tenure", align: "right", getValue: (e) => e.tenureDays, render: (e) => formatTenure(e.tenureDays) },
+                            ]}
+                        />
                     )}
                 </Paper>
             </SimpleGrid>
@@ -377,28 +403,16 @@ export default function ReportsPage() {
                 {turnoverData.length === 0 ? (
                     <Text size="sm" c="dimmed">No data.</Text>
                 ) : (
-                    <Table striped highlightOnHover>
-                        <Table.Thead>
-                            <Table.Tr>
-                                <Table.Th>Department</Table.Th>
-                                <Table.Th ta="right">Active</Table.Th>
-                                <Table.Th ta="right">Inactive</Table.Th>
-                                <Table.Th ta="right">Total</Table.Th>
-                                <Table.Th ta="right">Turnover Rate</Table.Th>
-                            </Table.Tr>
-                        </Table.Thead>
-                        <Table.Tbody>
-                            {turnoverData.map((d) => (
-                                <Table.Tr key={d.department}>
-                                    <Table.Td>{d.department}</Table.Td>
-                                    <Table.Td ta="right">{d.active}</Table.Td>
-                                    <Table.Td ta="right">{d.inactive}</Table.Td>
-                                    <Table.Td ta="right">{d.total}</Table.Td>
-                                    <Table.Td ta="right">{d.turnoverRate}%</Table.Td>
-                                </Table.Tr>
-                            ))}
-                        </Table.Tbody>
-                    </Table>
+                    <SortableReportTable
+                        rows={turnoverData}
+                        columns={[
+                            { key: "department", label: "Department", getValue: (d) => d.department, render: (d) => d.department },
+                            { key: "active", label: "Active", align: "right", getValue: (d) => d.active, render: (d) => d.active },
+                            { key: "inactive", label: "Inactive", align: "right", getValue: (d) => d.inactive, render: (d) => d.inactive },
+                            { key: "total", label: "Total", align: "right", getValue: (d) => d.total, render: (d) => d.total },
+                            { key: "turnoverRate", label: "Turnover Rate", align: "right", getValue: (d) => d.turnoverRate, render: (d) => `${d.turnoverRate}%` },
+                        ]}
+                    />
                 )}
             </Paper>
         </Stack>

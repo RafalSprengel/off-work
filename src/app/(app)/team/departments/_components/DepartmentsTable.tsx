@@ -21,10 +21,15 @@ import {
 } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import { IconEdit, IconPlus, IconTrash } from "@tabler/icons-react";
+import { useState } from "react";
 import type { IDepartment } from "@/types/department";
+import SortableHeader from "@/app/(app)/components/SortableHeader/SortableHeader";
+import { sortItems, type SortDirection } from "@/utils/sort";
 import NewDepartmentModal from "./NewDepartmentModal";
 import EditDepartmentModal from "./EditDepartmentModal";
 import DeleteDepartmentModal from "./DeleteDepartmentModal";
+
+type SortColumn = "name" | "manager" | "employees";
 
 export default function DepartmentsTable({
     departments,
@@ -35,6 +40,41 @@ export default function DepartmentsTable({
         base: true,
         sm: false,
     });
+
+    const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
+    const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+
+    function handleSort(column: SortColumn) {
+        if (sortColumn === column) {
+            setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+        } else {
+            setSortColumn(column);
+            setSortDirection("asc");
+        }
+    }
+
+    function getManagerNames(dept: IDepartment): string {
+        return dept.managers && dept.managers.length > 0
+            ? dept.managers.map((m) => `${m.firstName} ${m.lastName}`).join(", ")
+            : "";
+    }
+
+    const sortedDepartments = sortColumn
+        ? sortItems(
+              departments,
+              (dept) => {
+                  switch (sortColumn) {
+                      case "name":
+                          return dept.name;
+                      case "manager":
+                          return getManagerNames(dept);
+                      case "employees":
+                          return dept.employeeCount ?? 0;
+                  }
+              },
+              sortDirection,
+          )
+        : departments;
 
     function openNewDeptModal() {
         modals.open({
@@ -78,7 +118,7 @@ export default function DepartmentsTable({
             ),
         });
     }
-    const rows = departments.map((dept) => (
+    const rows = sortedDepartments.map((dept) => (
         <TableTr key={dept._id}>
             <TableTd>
                 <Text fw={500} size="sm">
@@ -120,7 +160,7 @@ export default function DepartmentsTable({
         </TableTr>
     ));
 
-    const mobileCards = departments.map((dept) => (
+    const mobileCards = sortedDepartments.map((dept) => (
         <Card key={dept._id} withBorder shadow="xs" radius="md" padding="md">
             <Group justify="space-between" align="flex-start" mb="xs">
                 <div>
@@ -202,9 +242,15 @@ export default function DepartmentsTable({
                     <Table verticalSpacing="sm" horizontalSpacing="md">
                         <TableThead>
                             <TableTr>
-                                <TableTh>Name</TableTh>
-                                <TableTh>Manager</TableTh>
-                                <TableTh>Employees</TableTh>
+                                <TableTh>
+                                    <SortableHeader label="Name" active={sortColumn === "name"} direction={sortDirection} onSort={() => handleSort("name")} />
+                                </TableTh>
+                                <TableTh>
+                                    <SortableHeader label="Manager" active={sortColumn === "manager"} direction={sortDirection} onSort={() => handleSort("manager")} />
+                                </TableTh>
+                                <TableTh>
+                                    <SortableHeader label="Employees" active={sortColumn === "employees"} direction={sortDirection} onSort={() => handleSort("employees")} />
+                                </TableTh>
                                 <TableTh style={{ textAlign: "right" }}>Actions</TableTh>
                             </TableTr>
                         </TableThead>

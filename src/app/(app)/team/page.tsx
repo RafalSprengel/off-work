@@ -51,8 +51,12 @@ import {
     rejectLeaveRequestAsAdmin,
 } from "@/actions/admin/leave/reviewLeaveRequest";
 import type { PendingRequestItem } from "@/types/dashboard";
+import SortableHeader from "@/app/(app)/components/SortableHeader/SortableHeader";
+import { sortItems, type SortDirection } from "@/utils/sort";
 
 dayjs.extend(relativeTime)
+
+type DepartmentSortColumn = "name" | "count" | "onLeave";
 
 const typeLabels: Record<string, string> = Object.fromEntries(
     LEAVE_REQUEST_TYPES.map((t) => [t, getLeaveTypeLabel(t)]),
@@ -69,6 +73,17 @@ export default function AdminDashboard() {
     const { data, loading, refetch } = useTeamDashboard()
     const [hoveredAbsenceId, setHoveredAbsenceId] = useState<string | null>(null);
     const rejectReasonRef = useRef("");
+    const [deptSortColumn, setDeptSortColumn] = useState<DepartmentSortColumn | null>(null);
+    const [deptSortDirection, setDeptSortDirection] = useState<SortDirection>("asc");
+
+    const handleDeptSort = (column: DepartmentSortColumn) => {
+        if (deptSortColumn === column) {
+            setDeptSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+        } else {
+            setDeptSortColumn(column);
+            setDeptSortDirection("asc");
+        }
+    };
 
     const handleApprove = (req: PendingRequestItem) => {
         modals.openConfirmModal({
@@ -178,6 +193,23 @@ export default function AdminDashboard() {
     const validPendingRequests = pendingRequests.filter((req) => req.employeeName)
     const validTodayAbsences = todayAbsences.filter((req) => req.employeeName)
     const validUpcomingAbsences = upcomingAbsences.filter((req) => req.employeeName)
+
+    const sortedDepartmentOverview = deptSortColumn
+        ? sortItems(
+              data.departmentOverview,
+              (dept) => {
+                  switch (deptSortColumn) {
+                      case "name":
+                          return dept.name;
+                      case "count":
+                          return dept.count;
+                      case "onLeave":
+                          return dept.onLeave;
+                  }
+              },
+              deptSortDirection,
+          )
+        : data.departmentOverview
     return (
         <Stack gap="lg">
             <Paper p="lg" radius="md" withBorder style={{ background: "var(--mantine-color-dark-8)", color: "var(--mantine-color-white)" }}>
@@ -458,7 +490,32 @@ export default function AdminDashboard() {
                             </Text>
                         ) : (
                             <Stack gap="md">
-                                {data.departmentOverview.map((dept, index) => (
+                                <Group justify="space-between" align="center" wrap="nowrap" mb="xs">
+                                    <Group gap="lg" wrap="nowrap">
+                                        <SortableHeader
+                                            label="Department"
+                                            active={deptSortColumn === "name"}
+                                            direction={deptSortDirection}
+                                            onSort={() => handleDeptSort("name")}
+                                            fullWidth={false}
+                                        />
+                                        <SortableHeader
+                                            label="Members"
+                                            active={deptSortColumn === "count"}
+                                            direction={deptSortDirection}
+                                            onSort={() => handleDeptSort("count")}
+                                            fullWidth={false}
+                                        />
+                                    </Group>
+                                    <SortableHeader
+                                        label="On Leave"
+                                        active={deptSortColumn === "onLeave"}
+                                        direction={deptSortDirection}
+                                        onSort={() => handleDeptSort("onLeave")}
+                                        fullWidth={false}
+                                    />
+                                </Group>
+                                {sortedDepartmentOverview.map((dept, index) => (
                                     <Paper key={index} p="sm" radius="sm" withBorder bg="var(--mantine-color-gray-0)">
                                         <Group justify="space-between" align="center">
                                             <Box>

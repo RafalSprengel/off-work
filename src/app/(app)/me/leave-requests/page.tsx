@@ -27,16 +27,31 @@ import { formatRequestDays } from "@/utils/leaveBalance";
 import { LEAVE_REQUEST_TYPES, getLeaveTypeLabel } from "@/constants/leaveTypes";
 import dayjs from "dayjs";
 import { useState } from "react";
+import SortableHeader from "@/app/(app)/components/SortableHeader/SortableHeader";
+import { sortItems, type SortDirection } from "@/utils/sort";
 
 const typeLabels: Record<string, string> = Object.fromEntries(
     LEAVE_REQUEST_TYPES.map((t) => [t, getLeaveTypeLabel(t)]),
 );
+
+type SortColumn = "type" | "dates" | "days" | "status" | "comment";
 
 export default function EmployeeLeaveRequestsPage() {
     const router = useRouter();
     const { requests } = useMyLeaveRequests();
     const [statusFilter, setStatusFilter] = useState<string>("All");
     const [sortDirection, setSortDirection] = useState<"newest" | "oldest">("newest");
+    const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
+    const [columnDirection, setColumnDirection] = useState<SortDirection>("asc");
+
+    function handleSort(column: SortColumn) {
+        if (sortColumn === column) {
+            setColumnDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+        } else {
+            setSortColumn(column);
+            setColumnDirection("asc");
+        }
+    }
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -58,11 +73,30 @@ export default function EmployeeLeaveRequestsPage() {
             ? requests
             : requests.filter((r) => r.status === statusFilter.toLowerCase());
 
-    const displayRequests = [...filteredRequests].sort((a, b) => {
-        const delta =
-            dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf();
-        return sortDirection === "newest" ? delta : -delta;
-    });
+    const displayRequests = sortColumn
+        ? sortItems(
+              filteredRequests,
+              (req) => {
+                  switch (sortColumn) {
+                      case "type":
+                          return typeLabels[req.type] ?? req.type;
+                      case "dates":
+                          return dayjs(req.startDate).valueOf();
+                      case "days":
+                          return req.daysRequested;
+                      case "status":
+                          return req.status;
+                      case "comment":
+                          return req.comment ?? "";
+                  }
+              },
+              columnDirection,
+          )
+        : [...filteredRequests].sort((a, b) => {
+              const delta =
+                  dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf();
+              return sortDirection === "newest" ? delta : -delta;
+          });
 
     const today = dayjs().startOf("day");
     const isPast = (item: { endDate: string }) =>
@@ -109,11 +143,12 @@ export default function EmployeeLeaveRequestsPage() {
                                 }
                                 color="blue"
                                 radius="xl"
-                                onClick={() =>
+                                onClick={() => {
+                                    setSortColumn(null);
                                     setSortDirection(
                                         sortDirection === "newest" ? "oldest" : "newest",
-                                    )
-                                }
+                                    );
+                                }}
                             >
                                 {sortDirection === "newest" ? (
                                     <IconSortDescending size={16} />
@@ -128,11 +163,21 @@ export default function EmployeeLeaveRequestsPage() {
                     <Table highlightOnHover verticalSpacing="sm">
                         <Table.Thead>
                             <Table.Tr>
-                                <Table.Th>Type</Table.Th>
-                                <Table.Th>Dates</Table.Th>
-                                <Table.Th>Days</Table.Th>
-                                <Table.Th>Status</Table.Th>
-                                <Table.Th>Comment</Table.Th>
+                                <Table.Th>
+                                    <SortableHeader label="Type" active={sortColumn === "type"} direction={columnDirection} onSort={() => handleSort("type")} />
+                                </Table.Th>
+                                <Table.Th>
+                                    <SortableHeader label="Dates" active={sortColumn === "dates"} direction={columnDirection} onSort={() => handleSort("dates")} />
+                                </Table.Th>
+                                <Table.Th>
+                                    <SortableHeader label="Days" active={sortColumn === "days"} direction={columnDirection} onSort={() => handleSort("days")} />
+                                </Table.Th>
+                                <Table.Th>
+                                    <SortableHeader label="Status" active={sortColumn === "status"} direction={columnDirection} onSort={() => handleSort("status")} />
+                                </Table.Th>
+                                <Table.Th>
+                                    <SortableHeader label="Comment" active={sortColumn === "comment"} direction={columnDirection} onSort={() => handleSort("comment")} />
+                                </Table.Th>
                             </Table.Tr>
                         </Table.Thead>
                         <Table.Tbody>

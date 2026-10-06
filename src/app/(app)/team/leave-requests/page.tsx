@@ -42,8 +42,12 @@ import {
   approveLeaveRequestAsAdmin,
   rejectLeaveRequestAsAdmin,
 } from "@/actions/admin/leave/reviewLeaveRequest";
+import SortableHeader from "@/app/(app)/components/SortableHeader/SortableHeader";
+import { sortItems, type SortDirection } from "@/utils/sort";
 
 dayjs.extend(relativeTime);
+
+type SortColumn = "employee" | "type" | "dates" | "days" | "status";
 
 const typeLabels: Record<string, string> = Object.fromEntries(
   LEAVE_REQUEST_TYPES.map((t) => [t, getLeaveTypeLabel(t)]),
@@ -62,19 +66,52 @@ export default function TeamLeaveRequestsPage() {
 
   const [statusFilter, setStatusFilter] = useState<string>("Pending");
   const [sortDirection, setSortDirection] = useState<"newest" | "oldest">("newest");
+  const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
+  const [columnDirection, setColumnDirection] = useState<SortDirection>("asc");
   const rejectReasonRef = useRef("");
+
+  function handleSort(column: SortColumn) {
+    if (sortColumn === column) {
+      setColumnDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortColumn(column);
+      setColumnDirection("asc");
+    }
+  }
 
   const filteredRequests = useMemo(() => {
     const base = requests.filter((req) => {
       if (statusFilter === "All") return true;
       return req.status === statusFilter.toLowerCase();
     });
+
+    if (sortColumn) {
+      return sortItems(
+        base,
+        (req) => {
+          switch (sortColumn) {
+            case "employee":
+              return req.employeeName ?? "";
+            case "type":
+              return typeLabels[req.type] ?? req.type;
+            case "dates":
+              return dayjs(req.startDate).valueOf();
+            case "days":
+              return req.daysRequested;
+            case "status":
+              return req.status;
+          }
+        },
+        columnDirection,
+      );
+    }
+
     return [...base].sort((a, b) => {
       const delta =
         dayjs(b.createdAt).valueOf() - dayjs(a.createdAt).valueOf();
       return sortDirection === "newest" ? delta : -delta;
     });
-  }, [requests, statusFilter, sortDirection]);
+  }, [requests, statusFilter, sortDirection, sortColumn, columnDirection]);
 
   const pendingCount = requests.filter((r) => r.status === "pending").length;
 
@@ -216,11 +253,12 @@ export default function TeamLeaveRequestsPage() {
                   variant={sortDirection === "newest" ? "light" : "subtle"}
                   color="blue"
                   radius="xl"
-                  onClick={() =>
+                  onClick={() => {
+                    setSortColumn(null);
                     setSortDirection(
                       sortDirection === "newest" ? "oldest" : "newest",
-                    )
-                  }
+                    );
+                  }}
                 >
                   {sortDirection === "newest" ? (
                     <IconSortDescending size={16} />
@@ -246,11 +284,21 @@ export default function TeamLeaveRequestsPage() {
                 <Table verticalSpacing="sm" highlightOnHover>
                   <Table.Thead>
                     <Table.Tr>
-                      <Table.Th>Employee</Table.Th>
-                      <Table.Th>Type</Table.Th>
-                      <Table.Th>Dates</Table.Th>
-                      <Table.Th>Days</Table.Th>
-                      <Table.Th>Status</Table.Th>
+                      <Table.Th>
+                        <SortableHeader label="Employee" active={sortColumn === "employee"} direction={columnDirection} onSort={() => handleSort("employee")} />
+                      </Table.Th>
+                      <Table.Th>
+                        <SortableHeader label="Type" active={sortColumn === "type"} direction={columnDirection} onSort={() => handleSort("type")} />
+                      </Table.Th>
+                      <Table.Th>
+                        <SortableHeader label="Dates" active={sortColumn === "dates"} direction={columnDirection} onSort={() => handleSort("dates")} />
+                      </Table.Th>
+                      <Table.Th>
+                        <SortableHeader label="Days" active={sortColumn === "days"} direction={columnDirection} onSort={() => handleSort("days")} />
+                      </Table.Th>
+                      <Table.Th>
+                        <SortableHeader label="Status" active={sortColumn === "status"} direction={columnDirection} onSort={() => handleSort("status")} />
+                      </Table.Th>
                       <Table.Th>Actions</Table.Th>
                     </Table.Tr>
                   </Table.Thead>
