@@ -49,6 +49,14 @@ const closureDotStyle: React.CSSProperties = {
   background: "var(--mantine-color-gray-6)",
 };
 
+const bankHolidayDotStyle: React.CSSProperties = {
+  width: 6,
+  height: 6,
+  borderRadius: "50%",
+  flexShrink: 0,
+  background: "var(--mantine-color-red-6)",
+};
+
 // Dostepne widoki harmonogramu — bez "day"
 type CalendarView = "week" | "month" | "year";
 
@@ -218,6 +226,16 @@ export default function TeamCalendarPage() {
     });
   }, [requests, selectedDepartment, selectedTypes]);
 
+  const holidayEvents: ScheduleEventData[] = useMemo(() => {
+    return Array.from(bankHolidaysMap, ([date, title]) => ({
+      id: `holiday-${date}`,
+      title,
+      start: `${date} 00:00:00`,
+      end: `${date} 23:59:59`,
+      color: "red",
+    }));
+  }, [bankHolidaysMap]);
+
   const closureEvents: ScheduleEventData[] = useMemo(() => {
     return Array.from(closuresMap, ([date, title]) => ({
       id: `closure-${date}`,
@@ -272,8 +290,8 @@ export default function TeamCalendarPage() {
       }));
     });
 
-    return [...closureEvents, ...leaveEvents];
-  }, [filteredRequests, closureEvents, nonWorkingDates]);
+    return [...holidayEvents, ...closureEvents, ...leaveEvents];
+  }, [filteredRequests, holidayEvents, closureEvents, nonWorkingDates]);
 //===================================================================================
   // Dynamiczna wysokosc komorek dni: tyle wierszy, ile wynosi najwieksza liczba
   // zdarzen w pojedynczym dniu wyswietlanego miesiaca (max 6). Dzieki temu
@@ -306,6 +324,7 @@ export default function TeamCalendarPage() {
   const handleEventClick = (event: ScheduleEventData) => {
     const rawId = String(event.id);
     if (rawId.startsWith("closure-")) return;
+    if (rawId.startsWith("holiday-")) return;
     // id ma format `${requestId}#${segmentIndex}` - bierzemy sam identyfikator wniosku
     const leaveRequestId = rawId.split("#")[0];
     router.push(`/team/leave-requests/${leaveRequestId}`);
@@ -489,6 +508,13 @@ export default function TeamCalendarPage() {
                 { withHeader: false, onEventClick: undefined } as never
               }
             />
+          </Paper>
+
+          <Paper p="sm" radius="md" withBorder>
+            <Group gap="xs" align="center">
+              <span style={bankHolidayDotStyle} />
+              <Text size="sm">Bank holidays</Text>
+            </Group>
           </Paper>
 
           <Paper p="sm" radius="md" withBorder>

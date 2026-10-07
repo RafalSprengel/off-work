@@ -208,8 +208,8 @@ export default function FactoryClosuresPage() {
                             paddingLeft: 1,
                             paddingRight: 1,
                             color: isHol
-                                ? "var(--mantine-color-green-9)"
-                                : "var(--mantine-color-orange-9)",
+                                ? "var(--mantine-color-red-9)"
+                                : "var(--mantine-color-gray-8)",
                         }}
                         title={displayTitle}
                     >
@@ -228,8 +228,8 @@ export default function FactoryClosuresPage() {
             return {
                 disabled: isWeekend(date),
                 style: {
-                    backgroundColor: "var(--mantine-color-green-1)",
-                    color: "var(--mantine-color-green-9)",
+                    backgroundColor: "var(--mantine-color-red-1)",
+                    color: "var(--mantine-color-red-9)",
                     fontWeight: "bold",
                     borderRadius: "8px",
                 },
@@ -240,8 +240,8 @@ export default function FactoryClosuresPage() {
             return {
                 disabled: isWeekend(date),
                 style: {
-                    backgroundColor: "var(--mantine-color-orange-1)",
-                    color: "var(--mantine-color-orange-9)",
+                    backgroundColor: "var(--mantine-color-gray-2)",
+                    color: "var(--mantine-color-gray-8)",
                     fontWeight: "bold",
                     borderRadius: "8px",
                 },
@@ -262,8 +262,8 @@ export default function FactoryClosuresPage() {
             return {
                 disabled: true,
                 style: {
-                    backgroundColor: "var(--mantine-color-green-1)",
-                    color: "var(--mantine-color-green-9)",
+                    backgroundColor: "var(--mantine-color-red-1)",
+                    color: "var(--mantine-color-red-9)",
                     fontWeight: "bold",
                     borderRadius: "8px",
                 },
@@ -274,8 +274,8 @@ export default function FactoryClosuresPage() {
             return {
                 disabled: true,
                 style: {
-                    backgroundColor: "var(--mantine-color-orange-1)",
-                    color: "var(--mantine-color-orange-9)",
+                    backgroundColor: "var(--mantine-color-gray-2)",
+                    color: "var(--mantine-color-gray-8)",
                     fontWeight: "bold",
                     borderRadius: "8px",
                 },
@@ -329,7 +329,7 @@ export default function FactoryClosuresPage() {
                                     width: 12,
                                     height: 12,
                                     borderRadius: 3,
-                                    backgroundColor: "var(--mantine-color-green-3)",
+                                    backgroundColor: "var(--mantine-color-red-3)",
                                     flexShrink: 0,
                                 }}
                             />
@@ -343,7 +343,7 @@ export default function FactoryClosuresPage() {
                                     width: 12,
                                     height: 12,
                                     borderRadius: 3,
-                                    backgroundColor: "var(--mantine-color-orange-3)",
+                                    backgroundColor: "var(--mantine-color-gray-4)",
                                     flexShrink: 0,
                                 }}
                             />

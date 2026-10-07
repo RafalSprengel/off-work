@@ -134,13 +134,13 @@ export default function NewEmployeeLeaveRequestPage() {
 
     const style: React.CSSProperties = {};
     if (isBankHoliday) {
-      style.backgroundColor = "var(--mantine-color-green-1)";
-      style.color = "var(--mantine-color-green-9)";
+      style.backgroundColor = "var(--mantine-color-red-1)";
+      style.color = "var(--mantine-color-red-9)";
       style.fontWeight = 700;
       style.borderRadius = "8px";
     } else if (isClosure) {
-      style.backgroundColor = "var(--mantine-color-orange-1)";
-      style.color = "var(--mantine-color-orange-9)";
+      style.backgroundColor = "var(--mantine-color-gray-2)";
+      style.color = "var(--mantine-color-gray-8)";
       style.fontWeight = 700;
       style.borderRadius = "8px";
     } else if (isLeave) {
@@ -188,7 +188,7 @@ export default function NewEmployeeLeaveRequestPage() {
               <span
                 style={{
                   ...dotStyle,
-                  background: "var(--mantine-color-green-6)",
+                  background: "var(--mantine-color-red-6)",
                 }}
               />
             )}
@@ -196,7 +196,7 @@ export default function NewEmployeeLeaveRequestPage() {
               <span
                 style={{
                   ...dotStyle,
-                  background: "var(--mantine-color-orange-6)",
+                  background: "var(--mantine-color-gray-6)",
                 }}
               />
             )}
@@ -339,7 +339,7 @@ export default function NewEmployeeLeaveRequestPage() {
                         <span
                           style={{
                             ...dotStyle,
-                            background: "var(--mantine-color-green-6)",
+                            background: "var(--mantine-color-red-6)",
                           }}
                         />
                         <Text size="xs" c="dimmed">
@@ -350,7 +350,7 @@ export default function NewEmployeeLeaveRequestPage() {
                         <span
                           style={{
                             ...dotStyle,
-                            background: "var(--mantine-color-orange-6)",
+                            background: "var(--mantine-color-gray-6)",
                           }}
                         />
                         <Text size="xs" c="dimmed">

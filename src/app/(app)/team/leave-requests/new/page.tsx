@@ -190,8 +190,8 @@ export default function NewLeaveRequestAsAdminPage() {
                     return {
                       style: {
                         backgroundColor:
-                          "var(--mantine-color-green-1)",
-                        color: "var(--mantine-color-green-9)",
+                          "var(--mantine-color-red-1)",
+                        color: "var(--mantine-color-red-9)",
                         fontWeight: "bold",
                         borderRadius: "8px",
                       },
@@ -202,8 +202,8 @@ export default function NewLeaveRequestAsAdminPage() {
                     return {
                       style: {
                         backgroundColor:
-                          "var(--mantine-color-orange-1)",
-                        color: "var(--mantine-color-orange-9)",
+                          "var(--mantine-color-gray-2)",
+                        color: "var(--mantine-color-gray-8)",
                         fontWeight: "bold",
                         borderRadius: "8px",
                       },
