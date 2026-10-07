@@ -20,7 +20,7 @@ import {
 import { DatePicker } from "@mantine/dates";
 import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
-import { IconPlus, IconTrash } from "@tabler/icons-react";
+import { IconPencil, IconPlus, IconTrash } from "@tabler/icons-react";
 import dayjs from "dayjs";
 
 import { getClosureDays } from "@/actions/admin/closureDays/getClosureDays";
@@ -28,6 +28,7 @@ import type { ClosureDayItem } from "@/types/closureDay";
 import { createClosureDay } from "@/actions/admin/closureDays/createClosureDay";
 import { toggleClosureDay } from "@/actions/admin/closureDays/toggleClosureDay";
 import { deleteClosureDay } from "@/actions/admin/closureDays/deleteClosureDay";
+import { updateClosureDay } from "@/actions/admin/closureDays/updateClosureDay";
 import { isWeekend } from "@/utils/workingDays";
 
 export default function FactoryClosuresPage() {
@@ -38,6 +39,10 @@ export default function FactoryClosuresPage() {
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [title, setTitle] = useState("");
     const [saving, setSaving] = useState(false);
+    const [editModalOpened, setEditModalOpened] = useState(false);
+    const [editingClosure, setEditingClosure] = useState<ClosureDayItem | null>(null);
+    const [editTitle, setEditTitle] = useState("");
+    const [editSaving, setEditSaving] = useState(false);
     const [isPending, startTransition] = useTransition();
 
     const isMobile = useMatches({ base: true, sm: false });
@@ -172,6 +177,49 @@ export default function FactoryClosuresPage() {
                 });
             },
         });
+    };
+
+    const openEditModal = (closure: ClosureDayItem) => {
+        setEditingClosure(closure);
+        setEditTitle(closure.title);
+        setEditModalOpened(true);
+    };
+
+    const handleEditSave = async () => {
+        if (!editingClosure) return;
+
+        if (!editTitle.trim()) {
+            notifications.show({
+                color: "red",
+                title: "Error",
+                message: "Please enter a title.",
+            });
+            return;
+        }
+
+        setEditSaving(true);
+        const res = await updateClosureDay(editingClosure.id, editTitle.trim());
+        setEditSaving(false);
+
+        if (res.success) {
+            setClosures((prev) =>
+                prev.map((c) =>
+                    c.id === editingClosure.id ? { ...c, title: editTitle.trim() } : c,
+                ),
+            );
+            notifications.show({
+                color: "green",
+                title: "Closure day updated",
+                message: editTitle.trim(),
+            });
+            setEditModalOpened(false);
+        } else {
+            notifications.show({
+                color: "red",
+                title: "Failed",
+                message: res.error ?? "Unknown error",
+            });
+        }
     };
 
     const renderDayCell = (date: Date | string) => {
@@ -398,6 +446,15 @@ export default function FactoryClosuresPage() {
                                         size={isMobile ? "xs" : "sm"}
                                     />
                                     <ActionIcon
+                                        color="blue"
+                                        variant="subtle"
+                                        onClick={() => openEditModal(c)}
+                                        size={isMobile ? "sm" : "md"}
+                                        aria-label="Edit closure day"
+                                    >
+                                        <IconPencil size={isMobile ? 14 : 16} />
+                                    </ActionIcon>
+                                    <ActionIcon
                                         color="red"
                                         variant="subtle"
                                         onClick={() => handleDelete(c.id, c.title)}
@@ -470,6 +527,62 @@ export default function FactoryClosuresPage() {
                             fullWidth={isMobile}
                         >
                             Add Closure Day
+                        </Button>
+                    </Group>
+                </Stack>
+            </Modal>
+
+            <Modal
+                opened={editModalOpened}
+                onClose={() => setEditModalOpened(false)}
+                title="Edit Closure Day"
+                centered
+                padding={isMobile ? "sm" : "lg"}
+                radius={isMobile ? 0 : "md"}
+                fullScreen={isMobile}
+                transitionProps={{
+                    transition: isMobile ? "slide-up" : "fade",
+                }}
+            >
+                <Stack gap="md" align="stretch">
+                    {editingClosure && (
+                        <Text size="xs" c="dimmed" fw={500}>
+                            {dayjs(editingClosure.date).format(
+                                isMobile ? "D MMM YYYY (ddd)" : "D MMMM YYYY (dddd)"
+                            )}
+                        </Text>
+                    )}
+
+                    <TextInput
+                        label="Closure Title"
+                        placeholder="e.g. Annual maintenance shutdown"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.currentTarget.value)}
+                        size={isMobile ? "sm" : "md"}
+                        required
+                        data-autofocus
+                    />
+
+                    <Group
+                        justify="flex-end"
+                        gap="xs"
+                        mt="xs"
+                        wrap={isMobile ? "wrap-reverse" : "nowrap"}
+                    >
+                        <Button
+                            variant="light"
+                            onClick={() => setEditModalOpened(false)}
+                            disabled={editSaving}
+                            fullWidth={isMobile}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleEditSave}
+                            loading={editSaving}
+                            fullWidth={isMobile}
+                        >
+                            Save Changes
                         </Button>
                     </Group>
                 </Stack>

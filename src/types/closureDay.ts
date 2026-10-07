@@ -27,6 +27,11 @@ export interface CreateClosureDayResult {
     error: string | null;
 }
 
+export interface UpdateClosureDayResult {
+    success: boolean;
+    error: string | null;
+}
+
 export interface ClearBankHolidaysResult {
     success: boolean;
     deletedCount: number;
