@@ -212,8 +212,8 @@ export default function AdminDashboard() {
         : data.departmentOverview
     return (
         <Stack gap="lg">
-            <Paper p="lg" radius="md" withBorder style={{ background: "var(--mantine-color-dark-8)", color: "var(--mantine-color-white)" }}>
-                <Group justify="space-between" align="center" wrap="wrap">
+            <Paper p="lg" radius="md" withBorder style={{ background: "var(--mantine-color-dark-8)", color: "var(--mantine-color-white)" , display: 'none'}} > //temporary hidden
+                <Group justify="space-between" align="center" wrap="wrap" >
                     <Box>
                         <Title order={2} size="h3" style={{ color: "var(--mantine-color-white)" }}>
                             Admin & HR Overview ⚙️
