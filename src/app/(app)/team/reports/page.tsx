@@ -25,7 +25,11 @@ import {
     IconCalendarDue,
 } from "@tabler/icons-react";
 import { getReportData } from "@/actions/manager/reports/getReportData";
-import type { ReportDataItem, EmployeeReportItem } from "@/actions/manager/reports/getReportData";
+import type {
+    ReportDataItem,
+    AbsenceReportItem,
+    EmployeeReportItem,
+} from "@/actions/manager/reports/getReportData";
 import SortableHeader from "@/app/(app)/components/SortableHeader/SortableHeader";
 import { sortItems, type SortDirection } from "@/utils/sort";
 
@@ -33,7 +37,12 @@ dayjs.extend(isoWeek);
 
 function monthKey(d: string) { return dayjs(d).format("YYYY-MM"); }
 function monthLabel(key: string) { return dayjs(key + "-01").format("MMM YY"); }
-function isoWeekKey(d: string) { return dayjs(d).format("GGGG-[W]WW"); }
+function isoWeekKey(d: string) {
+    // Uwaga: plugin isoWeek NIE rejestruje tokenow formatu "GGGG"/"WW",
+    // dlatego budujemy etykiete z metod isoWeekYear()/isoWeek().
+    const dj = dayjs(d);
+    return `${dj.isoWeekYear()}-W${String(dj.isoWeek()).padStart(2, "0")}`;
+}
 function formatTenure(days: number): string {
     const years = Math.floor(days / 365);
     const months = Math.floor((days % 365) / 30);
@@ -46,6 +55,7 @@ interface TopEmployee { name: string; days: number; department?: string; }
 interface DepartmentSick { department: string; days: number; }
 interface EmployeeTenure { _id: string; name: string; departmentName?: string; employmentDate: string; tenureDays: number; }
 interface DepartmentTurnover { department: string; active: number; inactive: number; total: number; turnoverRate: number; }
+interface SickEntry { key: string; name: string; department?: string; days: number; startDate: string; }
 
 interface ReportColumn<T> {
     key: string;
@@ -117,6 +127,7 @@ function SortableReportTable<T>({
 export default function ReportsPage() {
     const [loading, setLoading] = useState(true);
     const [requests, setRequests] = useState<ReportDataItem[]>([]);
+    const [absences, setAbsences] = useState<AbsenceReportItem[]>([]);
     const [employees, setEmployees] = useState<EmployeeReportItem[]>([]);
 
     useEffect(() => {
@@ -125,6 +136,7 @@ export default function ReportsPage() {
             const res = await getReportData();
             if (res.success && res.data) {
                 setRequests(res.data.leaveRequests);
+                setAbsences(res.data.absences);
                 setEmployees(res.data.employees);
             }
             setLoading(false);
@@ -138,16 +150,44 @@ export default function ReportsPage() {
             </Center>
         );
     }
-    // ---- 1. Monthly chart data ----
-    const monthlyMap = new Map<string, { sick: number; annual: number; unpaid: number; bereavement: number }>();
+    // ---- 0. Combined sick leave source ----
+    // Sick leave pochodzi z dwoch miejsc: zatwierdzonych wnioskow urlopowych (type "sick")
+    // oraz recznie rejestrowanych nieobecnosci (absences type "sick"). Oba zrodla musza
+    // trafic do kafelkow dotyczacych zwolnien lekarskich.
+    const sickByEmployee = new Map<string, { name: string; days: number; dept?: string }>();
+    const sickEntries: SickEntry[] = [];
+
+    const addSickEntry = (key: string, name: string, dept: string | undefined, days: number, startDate: string) => {
+        sickEntries.push({ key, name, department: dept, days, startDate });
+    };
+
     for (const r of requests) {
-        const mk = monthKey(r.startDate);
-        if (!monthlyMap.has(mk)) monthlyMap.set(mk, { sick: 0, annual: 0, unpaid: 0, bereavement: 0 });
-        const m = monthlyMap.get(mk)!;
+        if (r.type !== "sick") continue;
+        addSickEntry(r.employee || r.employeeName || "unknown", r.employeeName || "Unknown", r.departmentName, r.daysRequested, r.startDate);
+    }
+    for (const a of absences) {
+        if (a.type !== "sick") continue;
+        addSickEntry(a.employee || a.employeeName || "unknown", a.employeeName || "Unknown", a.departmentName, a.daysRequested, a.startDate);
+    }
+
+    // ---- 1. Monthly chart data ----
+    const monthlyMap = new Map<string, { sick: number; annual: number; unpaid: number; other: number }>();
+    const ensureMonth = (mk: string) => {
+        if (!monthlyMap.has(mk)) monthlyMap.set(mk, { sick: 0, annual: 0, unpaid: 0, other: 0 });
+        return monthlyMap.get(mk)!;
+    };
+    for (const r of requests) {
+        const m = ensureMonth(monthKey(r.startDate));
         if (r.type === "sick") m.sick += r.daysRequested;
         else if (r.type === "annual") m.annual += r.daysRequested;
         else if (r.type === "unpaid") m.unpaid += r.daysRequested;
-        else if (r.type === "bereavement") m.bereavement += r.daysRequested;
+        else m.other += r.daysRequested; // bereavement + inne
+    }
+    // Nieobecnosci (absences) doliczamy do miesiecy wg ich typu.
+    for (const a of absences) {
+        const m = ensureMonth(monthKey(a.startDate));
+        if (a.type === "sick") m.sick += a.daysRequested;
+        else m.other += a.daysRequested; // other/unauthorised -> bucket "Other"
     }
     const sortedMonths = Array.from(monthlyMap.keys()).sort();
     const monthlyChartData = sortedMonths.map((mk) => ({
@@ -155,15 +195,14 @@ export default function ReportsPage() {
         "Sick Leave": monthlyMap.get(mk)!.sick,
         "Annual Leave": monthlyMap.get(mk)!.annual,
         Unpaid: monthlyMap.get(mk)!.unpaid,
-        Bereavement: monthlyMap.get(mk)!.bereavement,
+        Other: monthlyMap.get(mk)!.other,
     }));
 
     // ---- 2. Weekly sick ----
     const weeklyMap = new Map<string, number>();
-    for (const r of requests) {
-        if (r.type !== "sick") continue;
-        const wk = isoWeekKey(r.startDate);
-        weeklyMap.set(wk, (weeklyMap.get(wk) || 0) + r.daysRequested);
+    for (const e of sickEntries) {
+        const wk = isoWeekKey(e.startDate);
+        weeklyMap.set(wk, (weeklyMap.get(wk) || 0) + e.days);
     }
     const topWeeks = Array.from(weeklyMap.entries())
         .sort((a, b) => b[1] - a[1])
@@ -171,12 +210,9 @@ export default function ReportsPage() {
         .map(([week, days]) => ({ week, days }));
 
     // ---- 3. Top sick employees ----
-    const sickByEmployee = new Map<string, { name: string; days: number; dept?: string }>();
-    for (const r of requests) {
-        if (r.type !== "sick") continue;
-        const key = r.employee || r.employeeName || "unknown";
-        if (!sickByEmployee.has(key)) sickByEmployee.set(key, { name: r.employeeName || "Unknown", days: 0, dept: r.departmentName });
-        sickByEmployee.get(key)!.days += r.daysRequested;
+    for (const e of sickEntries) {
+        if (!sickByEmployee.has(e.key)) sickByEmployee.set(e.key, { name: e.name, days: 0, dept: e.department });
+        sickByEmployee.get(e.key)!.days += e.days;
     }
     const topSickEmployees: TopEmployee[] = Array.from(sickByEmployee.values())
         .sort((a, b) => b.days - a.days).slice(0, 10);
@@ -194,10 +230,9 @@ export default function ReportsPage() {
 
     // ---- 5. Sick by dept ----
     const sickByDept = new Map<string, number>();
-    for (const r of requests) {
-        if (r.type !== "sick") continue;
-        const dept = r.departmentName || "No Department";
-        sickByDept.set(dept, (sickByDept.get(dept) || 0) + r.daysRequested);
+    for (const e of sickEntries) {
+        const dept = e.department || "No Department";
+        sickByDept.set(dept, (sickByDept.get(dept) || 0) + e.days);
     }
     const deptSickList: DepartmentSick[] = Array.from(sickByDept.entries())
         .map(([department, days]) => ({ department, days }))
@@ -205,7 +240,9 @@ export default function ReportsPage() {
     // ---- 6. Tenure ----
     const now = dayjs();
     const tenureList: EmployeeTenure[] = employees
-        .filter((e) => e.employmentDate && e.status === "active")
+        // "Working employees" = aktualnie zatrudnieni (aktywni + zaproszeni, ktorzy
+        // dopiero dolaczyli), z pominieciem nieaktywnych (byli pracownicy).
+        .filter((e) => e.employmentDate && e.status !== "inactive")
         .map((e) => {
             const start = dayjs(e.employmentDate);
             return {

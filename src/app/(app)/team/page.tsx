@@ -184,7 +184,6 @@ export default function AdminDashboard() {
         )
     }
 
-    const todayStr = dayjs().format("DD-MM-YYYY")
     const todayAbsences = data.todayAbsences || []
     const upcomingAbsences = data.upcomingAbsences || []
     const pendingRequests = data.pendingRequests || []
@@ -194,22 +193,26 @@ export default function AdminDashboard() {
     const validTodayAbsences = todayAbsences.filter((req) => req.employeeName)
     const validUpcomingAbsences = upcomingAbsences.filter((req) => req.employeeName)
 
-    const sortedDepartmentOverview = deptSortColumn
-        ? sortItems(
-              data.departmentOverview,
-              (dept) => {
-                  switch (deptSortColumn) {
-                      case "name":
-                          return dept.name;
-                      case "count":
-                          return dept.count;
-                      case "onLeave":
-                          return dept.onLeave;
-                  }
-              },
-              deptSortDirection,
-          )
-        : data.departmentOverview
+    // Department Status pokazuje wylacznie dzialy, w ktorych co najmniej jedna
+    // osoba jest aktualnie na urlopie (onLeave > 0).
+    const sortedDepartmentOverview = (
+        deptSortColumn
+            ? sortItems(
+                  data.departmentOverview,
+                  (dept) => {
+                      switch (deptSortColumn) {
+                          case "name":
+                              return dept.name;
+                          case "count":
+                              return dept.count;
+                          case "onLeave":
+                              return dept.onLeave;
+                      }
+                  },
+                  deptSortDirection,
+              )
+            : data.departmentOverview
+    ).filter((dept) => dept.onLeave > 0)
     return (
         <Stack gap="lg">
             <Paper p="lg" radius="md" withBorder style={{ background: "var(--mantine-color-dark-8)", color: "var(--mantine-color-white)" , display: 'none'}} > //temporary hidden
@@ -484,9 +487,9 @@ export default function AdminDashboard() {
                             Active absences proportion per department.
                         </Text>
 
-                        {data.departmentOverview.length === 0 ? (
+                        {sortedDepartmentOverview.length === 0 ? (
                             <Text ta="center" py="xl" c="dimmed" size="sm">
-                                No departments found
+                                No departments with active leave
                             </Text>
                         ) : (
                             <Stack gap="md">
@@ -543,7 +546,7 @@ export default function AdminDashboard() {
                     <Group gap="xs" align="center">
                         <IconCalendar size={22} />
                         <Title order={3} size="h4" fw={700}>
-                            Absences for {todayStr}
+                            Absences Today
                         </Title>
                     </Group>
                     <Badge variant="light" color="blue" size="lg" leftSection={<IconUsers size={14} />}>

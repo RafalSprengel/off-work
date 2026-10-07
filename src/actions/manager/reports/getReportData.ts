@@ -3,6 +3,7 @@
 import connectDB from "@/db/connection";
 import LeaveRequest from "@/db/models/LeaveRequest";
 import Employee from "@/db/models/Employee";
+import Absence, { type AbsenceType } from "@/db/models/Absence";
 import { getOrganizationId } from "@/utils/getOrganizationId";
 import { getNonWorkingDays } from "@/utils/nonWorkingDays";
 import { computeLeaveDaysRequested } from "@/utils/workingDays";
@@ -22,6 +23,18 @@ export interface ReportDataItem {
     createdAt: string;
 }
 
+export interface AbsenceReportItem {
+    _id: string;
+    employee?: string;
+    startDate: string;
+    endDate: string;
+    daysRequested: number;
+    type: AbsenceType;
+    employeeName?: string;
+    departmentName?: string;
+    createdAt: string;
+}
+
 export interface EmployeeReportItem {
     _id: string;
     firstName: string;
@@ -35,6 +48,7 @@ export interface EmployeeReportItem {
 
 export interface ReportData {
     leaveRequests: ReportDataItem[];
+    absences: AbsenceReportItem[];
     employees: EmployeeReportItem[];
 }
 
@@ -58,6 +72,12 @@ export async function getReportData(): Promise<{
             .sort({ createdAt: -1 })
             .lean();
 
+        const absences = await Absence.find({
+            organizationId: orgId,
+        })
+            .sort({ startDate: -1 })
+            .lean();
+
         const employees = await Employee.find({
             organizationId: orgId,
         })
@@ -66,17 +86,20 @@ export async function getReportData(): Promise<{
             .lean();
 
         // daysRequested jest wartoscia pochodna - liczymy z aktualnych dni nieroboczych.
+        // Zakres obejmuje zarowno wnioski urlopowe, jak i nieobecnosci (absences),
+        // bo oba zrodla sa prezentowane w raportach.
+        const rangeItems = [...leaveRequests, ...absences];
         const nonWorkingDates =
-            leaveRequests.length > 0
+            rangeItems.length > 0
                 ? await getNonWorkingDays(
                       orgId,
-                      leaveRequests.reduce(
-                          (min, lr) => (lr.startDate < min ? lr.startDate : min),
-                          leaveRequests[0].startDate
+                      rangeItems.reduce(
+                          (min, r) => (r.startDate < min ? r.startDate : min),
+                          rangeItems[0].startDate
                       ),
-                      leaveRequests.reduce(
-                          (max, lr) => (lr.endDate > max ? lr.endDate : max),
-                          leaveRequests[0].endDate
+                      rangeItems.reduce(
+                          (max, r) => (r.endDate > max ? r.endDate : max),
+                          rangeItems[0].endDate
                       )
                   )
                 : new Set<string>();
@@ -101,6 +124,25 @@ export async function getReportData(): Promise<{
             createdAt: lr.createdAt ? lr.createdAt.toISOString() : "",
         }));
 
+        const mappedAbsences: AbsenceReportItem[] = absences.map((a) => ({
+            _id: String(a._id),
+            employee: a.employee ? String(a.employee) : undefined,
+            startDate: a.startDate,
+            endDate: a.endDate,
+            daysRequested: computeLeaveDaysRequested(
+                a.startDate,
+                a.endDate,
+                false,
+                false,
+                nonWorkingDates
+            ),
+            // Starsze/niekompletne wpisy moga nie miec typu - traktujemy je jako "other".
+            type: a.type ?? "other",
+            employeeName: a.employeeName,
+            departmentName: a.departmentName,
+            createdAt: a.createdAt ? a.createdAt.toISOString() : "",
+        }));
+
         const mappedEmployees: EmployeeReportItem[] = employees.map((emp) => {
             const dept = emp.department as unknown as
                 | { _id: string; name: string }
@@ -123,6 +165,7 @@ export async function getReportData(): Promise<{
             success: true,
             data: {
                 leaveRequests: mappedRequests,
+                absences: mappedAbsences,
                 employees: mappedEmployees,
             },
         };
