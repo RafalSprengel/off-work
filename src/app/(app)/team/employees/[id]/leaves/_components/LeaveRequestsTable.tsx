@@ -10,9 +10,14 @@ import {
   Text,
   Tooltip,
 } from "@mantine/core";
+import { modals } from "@mantine/modals";
+import { notifications } from "@mantine/notifications";
 import {
+  IconCheck,
   IconSortAscending,
   IconSortDescending,
+  IconTrash,
+  IconX,
 } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -20,6 +25,7 @@ import dayjs from "dayjs";
 import type { TeamLeaveRequestItem } from "@/types/leaveRequest";
 import { formatRequestDays } from "@/utils/leaveBalance";
 import { LEAVE_REQUEST_TYPES, getLeaveTypeLabel } from "@/constants/leaveTypes";
+import { deleteLeaveRequestAsAdmin } from "@/actions/admin/leave/deleteLeaveRequest";
 import SortableHeader from "@/app/(app)/components/SortableHeader/SortableHeader";
 import { sortItems, type SortDirection } from "@/utils/sort";
 
@@ -94,6 +100,40 @@ export function LeaveRequestsTable({
   const currentRequests = sortedRequests.filter((r) => !isPast(r));
   const pastRequests = sortedRequests.filter((r) => isPast(r));
 
+  const handleRemove = (req: TeamLeaveRequestItem) => {
+    modals.openConfirmModal({
+      title: "Remove Leave Request",
+      children: (
+        <Text size="sm">
+          Are you sure you want to remove this leave request for{" "}
+          {req.employeeName || "this employee"}? This action cannot be undone.
+        </Text>
+      ),
+      labels: { confirm: "Remove", cancel: "Cancel" },
+      confirmProps: { color: "red" },
+      onConfirm: async () => {
+        const result = await deleteLeaveRequestAsAdmin(req._id);
+
+        if (result.success) {
+          notifications.show({
+            title: "Removed",
+            message: "Leave request has been removed.",
+            color: "green",
+            icon: <IconCheck size={16} />,
+          });
+          router.refresh();
+        } else {
+          notifications.show({
+            title: "Error",
+            message: result.error || "Failed to remove leave request",
+            color: "red",
+            icon: <IconX size={16} />,
+          });
+        }
+      },
+    });
+  };
+
   return (
     <Paper withBorder radius="md">
       <Group justify="space-between" px="sm" py="xs">
@@ -141,12 +181,13 @@ export function LeaveRequestsTable({
             <Table.Th>
               <SortableHeader label="Status" active={sortColumn === "status"} direction={columnDirection} onSort={() => handleSort("status")} />
             </Table.Th>
+            <Table.Th>Actions</Table.Th>
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
           {currentRequests.length === 0 && pastRequests.length === 0 ? (
             <Table.Tr>
-              <Table.Td colSpan={4}>
+              <Table.Td colSpan={5}>
                 <Text size="sm" c="dimmed">
                   No leave requests for this employee yet.
                 </Text>
@@ -175,12 +216,27 @@ export function LeaveRequestsTable({
                       {statusLabels[req.status] ?? req.status}
                     </Badge>
                   </Table.Td>
+                  <Table.Td>
+                    <Tooltip label="Delete request">
+                      <ActionIcon
+                        variant="subtle"
+                        color="red"
+                        radius="xl"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemove(req);
+                        }}
+                      >
+                        <IconTrash size={16} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Table.Td>
                 </Table.Tr>
               ))}
               {pastRequests.length > 0 && (
                 <>
                   <Table.Tr>
-                    <Table.Td colSpan={4}>
+                    <Table.Td colSpan={5}>
                       <Divider label="Past Leaves" labelPosition="left" my="xs" />
                     </Table.Td>
                   </Table.Tr>
@@ -204,6 +260,21 @@ export function LeaveRequestsTable({
                         >
                           {statusLabels[req.status] ?? req.status}
                         </Badge>
+                      </Table.Td>
+                      <Table.Td>
+                        <Tooltip label="Remove request">
+                          <ActionIcon
+                            variant="subtle"
+                            color="red"
+                            radius="xl"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemove(req);
+                            }}
+                          >
+                            <IconTrash size={16} />
+                          </ActionIcon>
+                        </Tooltip>
                       </Table.Td>
                     </Table.Tr>
                   ))}

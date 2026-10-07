@@ -27,6 +27,7 @@ import {
   IconDotsVertical,
   IconSortAscending,
   IconSortDescending,
+  IconTrash,
   IconX,
 } from "@tabler/icons-react";
 import dayjs from "dayjs";
@@ -42,6 +43,7 @@ import {
   approveLeaveRequestAsAdmin,
   rejectLeaveRequestAsAdmin,
 } from "@/actions/admin/leave/reviewLeaveRequest";
+import { deleteLeaveRequestAsAdmin } from "@/actions/admin/leave/deleteLeaveRequest";
 import SortableHeader from "@/app/(app)/components/SortableHeader/SortableHeader";
 import { sortItems, type SortDirection } from "@/utils/sort";
 
@@ -194,6 +196,40 @@ export default function TeamLeaveRequestsPage() {
           notifications.show({
             title: "Error",
             message: result.error || "Failed to reject leave request",
+            color: "red",
+            icon: <IconX size={16} />,
+          });
+        }
+      },
+    });
+  };
+
+  const handleRemove = (req: TeamLeaveRequestItem) => {
+    modals.openConfirmModal({
+      title: "Remove Leave Request",
+      children: (
+        <Text size="sm">
+          Are you sure you want to remove this leave request for{" "}
+          {req.employeeName || "this employee"}? This action cannot be undone.
+        </Text>
+      ),
+      labels: { confirm: "Remove", cancel: "Cancel" },
+      confirmProps: { color: "red" },
+      onConfirm: async () => {
+        const result = await deleteLeaveRequestAsAdmin(req._id);
+
+        if (result.success) {
+          notifications.show({
+            title: "Removed",
+            message: `Leave request for ${req.employeeName || "employee"} has been removed.`,
+            color: "green",
+            icon: <IconCheck size={16} />,
+          });
+          await refetch();
+        } else {
+          notifications.show({
+            title: "Error",
+            message: result.error || "Failed to remove leave request",
             color: "red",
             icon: <IconX size={16} />,
           });
@@ -410,11 +446,28 @@ export default function TeamLeaveRequestsPage() {
                                 <Menu.Item
                                   component={Link}
                                   href={`/team/leave-requests/${req._id}`}
+                                  onClick={(e) => e.stopPropagation()}
                                 >
                                   View Details
                                 </Menu.Item>
-                                <Menu.Item color="blue">
-                                  Adjust Balance
+                                {req.employee && (
+                                  <Menu.Item
+                                    component={Link}
+                                    href={`/team/employees/${req.employee}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    Employee Details
+                                  </Menu.Item>
+                                )}
+                                <Menu.Item
+                                  color="red"
+                                  leftSection={<IconTrash size={16} />}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemove(req);
+                                  }}
+                                >
+                                  Delete Request
                                 </Menu.Item>
                               </Menu.Dropdown>
                             </Menu>
@@ -543,10 +596,29 @@ export default function TeamLeaveRequestsPage() {
                           <Menu.Item
                             component={Link}
                             href={`/team/leave-requests/${req._id}`}
+                            onClick={(e) => e.stopPropagation()}
                           >
                             View Details
                           </Menu.Item>
-                          <Menu.Item color="blue">Adjust Balance</Menu.Item>
+                          {req.employee && (
+                            <Menu.Item
+                              component={Link}
+                              href={`/team/employees/${req.employee}`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Employee Details
+                            </Menu.Item>
+                          )}
+                          <Menu.Item
+                            color="red"
+                            leftSection={<IconTrash size={16} />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemove(req);
+                            }}
+                          >
+                            Remove Request
+                          </Menu.Item>
                         </Menu.Dropdown>
                       </Menu>
                     </Group>

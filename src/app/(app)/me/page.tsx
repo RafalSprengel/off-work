@@ -39,12 +39,22 @@ import { useTeamLeaveRequests } from "@/hooks/useTeamLeaveRequests";
 import { sumAnnualDaysUsed } from "@/utils/leaveBalance";
 import { LEAVE_REQUEST_TYPES, getLeaveTypeLabel } from "@/constants/leaveTypes";
 import { getMySickDaysThisYear } from "@/actions/employee/absences/getMySickDaysThisYear";
+import { getAbsences } from "@/actions/admin/absences/getAbsences";
+import type { IAbsenceItem } from "@/types/absence";
 import SortableHeader from "@/app/(app)/components/SortableHeader/SortableHeader";
 import { sortItems, type SortDirection } from "@/utils/sort";
 
 dayjs.extend(relativeTime);
 
 type SortColumn = "type" | "dates" | "days" | "status" | "submitted";
+
+// Labels for recorded absence types (see Absence model). Reuses the wording
+// from the /team/absences page so the two views stay consistent.
+const ABSENCE_TYPE_LABELS: Record<string, string> = {
+  sick: "Sick Leave",
+  unauthorised: "Unauthorised",
+  other: "Other",
+};
 
 export default function EmployeeDashboard() {
   const router = useRouter();
@@ -55,6 +65,8 @@ export default function EmployeeDashboard() {
     useTeamLeaveRequests();
 
   const [sickDaysThisYear, setSickDaysThisYear] = useState(0);
+  const [absences, setAbsences] = useState<IAbsenceItem[]>([]);
+  const [absencesLoading, setAbsencesLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -62,6 +74,16 @@ export default function EmployeeDashboard() {
       if (res.success) {
         setSickDaysThisYear(res.days);
       }
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      const res = await getAbsences();
+      if (res.success) {
+        setAbsences(res.data);
+      }
+      setAbsencesLoading(false);
     })();
   }, []);
 
@@ -113,8 +135,10 @@ export default function EmployeeDashboard() {
       )
     : recentRequests;
 
-  // Pracownicy z mojego dzialu (bez mnie) z zatwierdzonym urlopem
-  const colleaguesOnLeave = useMemo(() => {
+  // Koledzy z mojego dzialu (bez mnie), ktorzy sa offline w ciagu najbliszych 7 dni.
+  // Laczymy zatwierdzone wnioski urlopowe ORAZ zarejestrowane nieobecnosci
+  // (np. sick leave), zeby w tym miejscu bylo widac wszystkie typy nieobecnosci.
+  const colleaguesOff = useMemo(() => {
     if (!employee) return [];
 
     const myDeptId =
@@ -137,19 +161,58 @@ export default function EmployeeDashboard() {
         .map((emp) => emp._id),
     );
 
-    return teamRequests
+    // Only show entries that overlap the next 7 days (from today).
+    const windowStart = dayjs().startOf("day");
+    const windowEnd = dayjs().startOf("day").add(7, "day");
+
+    const overlapsWindow = (startDate: string, endDate: string) => {
+      const start = dayjs(startDate).startOf("day");
+      const end = dayjs(endDate).startOf("day");
+      return !start.isAfter(windowEnd) && !end.isBefore(windowStart);
+    };
+
+    const fromLeave = teamRequests
       .filter(
         (req) =>
           req.status === "approved" &&
-          req.employee &&
-          colleagueIds.has(req.employee),
+          !!req.employee &&
+          colleagueIds.has(req.employee) &&
+          overlapsWindow(req.startDate, req.endDate),
       )
-      .sort(
-        (a, b) => dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf(),
-      );
-  }, [employee, employees, teamRequests]);
+      .map((req) => ({
+        id: req._id,
+        employeeName: req.employeeName,
+        typeLabel: getLeaveTypeLabel(req.type),
+        startDate: req.startDate,
+        endDate: req.endDate,
+      }));
 
-  if (loading || requestsLoading || loadingEmployees || loadingTeamRequests) {
+    const fromAbsences = absences
+      .filter(
+        (a) =>
+          colleagueIds.has(a.employee) &&
+          overlapsWindow(a.startDate, a.endDate),
+      )
+      .map((a) => ({
+        id: a.id,
+        employeeName: a.employeeName,
+        typeLabel: ABSENCE_TYPE_LABELS[a.type] ?? a.type,
+        startDate: a.startDate,
+        endDate: a.endDate,
+      }));
+
+    return [...fromLeave, ...fromAbsences].sort(
+      (a, b) => dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf(),
+    );
+  }, [employee, employees, teamRequests, absences]);
+
+  if (
+    loading ||
+    requestsLoading ||
+    loadingEmployees ||
+    loadingTeamRequests ||
+    absencesLoading
+  ) {
     return (
       <Flex justify="center" align="center" py={80}>
         <Loader />
@@ -448,19 +511,20 @@ export default function EmployeeDashboard() {
             </Group>
 
             <Text size="xs" c="dimmed" mb="lg">
-              Upcoming scheduled time-off for team members in your department.
+              Leave and other absences for team members in your department over
+              the next 7 days.
             </Text>
 
             <Stack gap="md">
-              {colleaguesOnLeave.length === 0 && (
+              {colleaguesOff.length === 0 && (
                 <Text size="sm" c="dimmed">
-                  No one from your team is on leave.
+                  No one from your team is off in the next 7 days.
                 </Text>
               )}
 
-              {colleaguesOnLeave.map((req) => (
+              {colleaguesOff.map((req) => (
                 <Paper
-                  key={req._id}
+                  key={req.id}
                   p="xs"
                   radius="sm"
                   withBorder
@@ -472,7 +536,7 @@ export default function EmployeeDashboard() {
                         {req.employeeName || "Team member"}
                       </Text>
                       <Text size="xs" c="dimmed" tt="capitalize">
-                        {typeLabels[req.type] ?? req.type}
+                        {req.typeLabel}
                       </Text>
                     </Box>
                     <Badge variant="outline" color="gray" size="sm">

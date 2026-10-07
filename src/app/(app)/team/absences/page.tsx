@@ -84,12 +84,10 @@ export default function AbsencesPage() {
 
     const employeeOptions = useMemo(
         () =>
-            employees
-                .filter((e) => e.status === "active")
-                .map((e) => ({
-                    value: e._id,
-                    label: `${e.firstName} ${e.lastName}`,
-                })),
+            employees.map((e) => ({
+                value: e._id,
+                label: `${e.firstName} ${e.lastName}`,
+            })),
         [employees]
     );
 

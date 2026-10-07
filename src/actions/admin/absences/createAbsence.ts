@@ -51,6 +51,27 @@ export async function createAbsence(data: ICreateAbsenceInput): Promise<CreateAb
             };
         }
 
+        // Nie pozwalamy na nakladanie sie nieobecnosci tego samego pracownika -
+        // np. dodanie "sick leave" na dzien, ktory ma juz wpis "unauthorised".
+        const overlapping = await Absence.findOne({
+            organizationId,
+            employee: new mongoose.Types.ObjectId(data.employee),
+            startDate: { $lte: data.endDate },
+            endDate: { $gte: data.startDate },
+        }).lean();
+
+        if (overlapping) {
+            const range =
+                overlapping.startDate === overlapping.endDate
+                    ? overlapping.startDate
+                    : `${overlapping.startDate} → ${overlapping.endDate}`;
+            return {
+                success: false,
+                data: null,
+                error: `This employee already has an absence recorded on ${range}. Remove the existing record before adding a new one.`,
+            };
+        }
+
         const absence = await Absence.create({
             organizationId,
             employee: new mongoose.Types.ObjectId(data.employee),
