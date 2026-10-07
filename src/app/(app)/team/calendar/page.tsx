@@ -231,7 +231,19 @@ export default function TeamCalendarPage() {
   const scheduleEvents: ScheduleEventData[] = useMemo(() => {
     const today = dayjs().startOf("day");
 
-    const leaveEvents: ScheduleEventData[] = filteredRequests.flatMap((req) => {
+    // Sortuj zdarzenia alfabetycznie rosnaco po pracowniku. Kolejnosc zdarzen
+    // w tablicy decyduje o przypisaniu wiersza (position.row) w widoku miesiaca,
+    // a co za tym idzie o tym, ktore pozycje sa widoczne, a ktore ukryte pod
+    // "+N more" w zajetych dniach.
+    const sortedRequests = [...filteredRequests].sort((a, b) =>
+      formatShortName(a.employeeName).localeCompare(
+        formatShortName(b.employeeName),
+        undefined,
+        { sensitivity: "base" },
+      ),
+    );
+
+    const leaveEvents: ScheduleEventData[] = sortedRequests.flatMap((req) => {
       const shortName = formatShortName(req.employeeName);
       const name = shortName || "No name";
       const days = req.daysRequested;
@@ -262,6 +274,34 @@ export default function TeamCalendarPage() {
 
     return [...closureEvents, ...leaveEvents];
   }, [filteredRequests, closureEvents, nonWorkingDates]);
+//===================================================================================
+  // Dynamiczna wysokosc komorek dni: tyle wierszy, ile wynosi najwieksza liczba
+  // zdarzen w pojedynczym dniu wyswietlanego miesiaca (max 6). Dzieki temu
+  // miesiac z rzadszymi dniami nie rezerwuje miejsca na 6 paskow "na zapas".
+  const maxEventsPerDay = useMemo(() => {
+    const gridStart = dayjs(scheduleDate).startOf("month").startOf("isoWeek");
+    const cap = 6;
+    let busiest = 0;
+
+    // Siatka miesiaca Mantine: 6 tygodni (consistentWeeks) po 7 dni = 42 dni.
+    for (let offset = 0; offset < 42; offset += 1) {
+      const day = gridStart.add(offset, "day");
+      let count = 0;
+
+      for (const ev of scheduleEvents) {
+        const start = dayjs(ev.start).startOf("day");
+        const end = dayjs(ev.end).startOf("day");
+        if (!day.isBefore(start, "day") && !day.isAfter(end, "day")) {
+          count += 1;
+        }
+      }
+
+      if (count > busiest) busiest = count;
+    }
+
+    return Math.min(cap, Math.max(1, busiest));
+  }, [scheduleEvents, scheduleDate]);
+  //================================================================================
 
   const handleEventClick = (event: ScheduleEventData) => {
     const rawId = String(event.id);
@@ -357,6 +397,7 @@ export default function TeamCalendarPage() {
               monthViewProps={{
                 firstDayOfWeek: 1,
                 withHeader: false,
+                maxEventsPerDay,
               }}
               weekViewProps={{
                 firstDayOfWeek: 1,
@@ -436,6 +477,7 @@ export default function TeamCalendarPage() {
               monthViewProps={{
                 firstDayOfWeek: 1,
                 withHeader: false,
+                maxEventsPerDay,
               }}
               weekViewProps={{
                 firstDayOfWeek: 1,
