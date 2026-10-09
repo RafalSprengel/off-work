@@ -227,7 +227,7 @@ export default function EmployeeCalendarPage() {
       <Title order={2}>My Schedule & Calendar</Title>
 
       <Grid gap="md" align="start">
-        <Grid.Col span={{ base: 12, md: "auto" }}>
+        <Grid.Col span={{ base: 12, md: "content" }}>
           <Paper
             p="md"
             radius="md"

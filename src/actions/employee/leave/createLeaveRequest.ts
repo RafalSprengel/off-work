@@ -4,7 +4,9 @@ import connectDB from "@/db/connection";
 import LeaveRequest from "@/db/models/LeaveRequest";
 import dayjs from "dayjs";
 import { getOrganizationId } from "@/utils/getOrganizationId";
-import { countWorkingDaysForOrg } from "@/utils/nonWorkingDays";
+import { getNonWorkingDays } from "@/utils/nonWorkingDays";
+import { countWorkingDays } from "@/utils/workingDays";
+import { formatDateList } from "@/utils/formatDateList";
 import { CreateLeaveRequestInput } from "@/types/leaveRequest";
 import { getCurrentEmployeeId } from "@/actions/shared/getCurrentEmployeeId";
 import Employee from "@/db/models/Employee";
@@ -24,11 +26,21 @@ export async function createLeaveRequest(data: CreateLeaveRequestInput) {
 
     const organizationId = await getOrganizationId();
 
-    const workingDays = await countWorkingDaysForOrg(
-        organizationId,
-        start.format("YYYY-MM-DD"),
-        end.format("YYYY-MM-DD")
-    );
+    const startStr = start.format("YYYY-MM-DD");
+    const endStr = end.format("YYYY-MM-DD");
+
+    // Twarda blokada: wniosek nie moze obejmowac bank holiday ani company closure.
+    const nonWorkingDays = await getNonWorkingDays(organizationId, startStr, endStr);
+
+    if (nonWorkingDays.size > 0) {
+        return {
+            error: `Selected range includes non-working days (${formatDateList([
+                ...nonWorkingDays,
+            ])}). Please choose a range without bank holidays or company closures.`,
+        };
+    }
+
+    const workingDays = countWorkingDays(startStr, endStr, nonWorkingDays);
 
     if (workingDays === 0) {
         return { error: "Selected range contains no working days" };

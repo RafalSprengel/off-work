@@ -1,6 +1,6 @@
 import mongoose, { type Document, type Model, Schema } from "mongoose";
 
-export type ClosureDayType = "bank_holiday" | "company_closure" | "blackout_period";
+export type ClosureDayType = "bank_holiday" | "company_closure";
 export type UkBankHolidayRegion = "england-and-wales" | "scotland" | "northern-ireland";
 
 export interface IClosureDay extends Document {
@@ -30,7 +30,7 @@ const ClosureDaySchema = new Schema<IClosureDay>(
     },
     type: {
       type: String,
-      enum: ["bank_holiday", "company_closure", "blackout_period"],
+      enum: ["bank_holiday", "company_closure"],
       default: "bank_holiday",
     },
     region: {

@@ -4,6 +4,7 @@ import { createLeaveRequest } from "@/actions/admin/leave/createLeaveRequest";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useNonWorkingDays } from "@/hooks/useNonWorkingDays";
 import {
+  Alert,
   Button,
   Container,
   Divider,
@@ -19,11 +20,12 @@ import {
 import { DatePickerInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
-import { IconCalendar, IconX } from "@tabler/icons-react";
+import { IconAlertTriangle, IconCalendar, IconX } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { countWorkingDays } from "@/utils/workingDays";
+import { formatDateList } from "@/utils/formatDateList";
 import {
   LEAVE_REQUEST_TYPES,
   getLeaveTypeLabel,
@@ -71,12 +73,38 @@ export default function NewLeaveRequestAsAdminPage() {
     return set;
   }, [bankHolidaysMap, closuresMap]);
 
+  const nonWorkingInRange = useMemo(() => {
+    const dates: string[] = [];
+    if (!startDate || !endDate) return dates;
+
+    let cur = dayjs(startDate);
+    const last = dayjs(endDate);
+    while (!cur.isAfter(last, "day")) {
+      const key = cur.format("YYYY-MM-DD");
+      if (nonWorkingDates.has(key)) dates.push(key);
+      cur = cur.add(1, "day");
+    }
+    return dates;
+  }, [startDate, endDate, nonWorkingDates]);
+
+  const nonWorkingError =
+    nonWorkingInRange.length > 0
+      ? `Selected range includes non-working days (${formatDateList(
+          nonWorkingInRange
+        )}). Please choose a range without bank holidays or company closures.`
+      : null;
+
   const daysRequested =
     startDate && endDate ? countWorkingDays(startDate, endDate, nonWorkingDates) : 0;
 
   const handleSubmit = async (values: typeof form.values) => {
     const [start, end] = values.dateRange;
     if (!start || !end) return;
+
+    if (nonWorkingError) {
+      form.setFieldError("dateRange", nonWorkingError);
+      return;
+    }
 
     setSubmitting(true);
 
@@ -177,6 +205,9 @@ export default function NewLeaveRequestAsAdminPage() {
                 valueFormat="YYYY-MM-DD"
                 clearable
                 disabled={isDisabled}
+                excludeDate={(date) =>
+                  nonWorkingDates.has(dayjs(date).format("YYYY-MM-DD"))
+                }
                 getDayProps={(date) => {
                   const formattedDate = dayjs(date).format(
                     "YYYY-MM-DD"
@@ -269,6 +300,17 @@ export default function NewLeaveRequestAsAdminPage() {
                 }}
                 {...form.getInputProps("dateRange")}
               />
+
+              {nonWorkingError && (
+                <Alert
+                  icon={<IconAlertTriangle size={16} />}
+                  color="red"
+                  title="Range includes non-working days"
+                  variant="light"
+                >
+                  {nonWorkingError}
+                </Alert>
+              )}
 
               <Group grow>
                 <Checkbox
