@@ -2,7 +2,6 @@
 
 import {
   Center,
-  Flex,
   Grid,
   Group,
   Loader,
@@ -11,10 +10,16 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { DatePicker } from "@mantine/dates";
+import {
+  MobileMonthView,
+  ScheduleHeader,
+  type ScheduleEventData,
+} from "@mantine/schedule";
 import dayjs from "dayjs";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
+import { getLeaveTypeLabel } from "@/constants/leaveTypes";
 import { useCurrentEmployee } from "@/hooks/useCurrentEmployee";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useMyLeaveRequests } from "@/hooks/useMyLeaveRequests";
@@ -29,8 +34,29 @@ const dotStyle: React.CSSProperties = {
   flexShrink: 0,
 };
 
+/** Ile dni w przod pokazuje lista "Teammates on leave in next 7 days". */
+const UPCOMING_DAYS = 7;
+
+/** Kolory zdarzen = kolory kropek w legendzie pod kalendarzem. */
+const MY_LEAVE_COLOR = "green";
+const TEAM_LEAVE_COLOR = "blue";
+const CLOSURE_COLOR = "gray";
+
+/** Przesuwa miesiac wyswietlany w kalendarzu o podana liczbe miesiecy. */
+const shiftMonth = (date: Date | string, amount: number) =>
+  dayjs(date).add(amount, "month").startOf("month").format("YYYY-MM-DD");
+
 export default function EmployeeCalendarPage() {
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const router = useRouter();
+
+  // Miesiac wyswietlany w kalendarzu oraz dzien wybrany kliknieciem.
+  // Szczegoly wybranego dnia renderuje MobileMonthView (lista pod siatka miesiaca).
+  const [calendarDate, setCalendarDate] = useState(
+    dayjs().format("YYYY-MM-DD"),
+  );
+  const [selectedDate, setSelectedDate] = useState<string | null>(
+    dayjs().format("YYYY-MM-DD"),
+  );
 
   const { employee: currentEmployee, loading: loadingEmployee } =
     useCurrentEmployee();
@@ -61,21 +87,6 @@ export default function EmployeeCalendarPage() {
     loadingTeamRequests ||
     loadingClosures;
 
-  // Wszystkie moje zatwierdzone urlopy -> zielone kropki
-  const myApprovedDates = useMemo(() => {
-    const dates = new Set<string>();
-    myRequests
-      .filter((req) => req.status === "approved")
-      .forEach((req) => {
-        getWorkingDays(req.startDate, req.endDate, nonWorkingDates).forEach(
-          (day) => {
-            dates.add(day);
-          },
-        );
-      });
-    return dates;
-  }, [myRequests, nonWorkingDates]);
-
   // Pracownicy z mojego dzialu, bez mnie
   const colleagueIds = useMemo(() => {
     if (!currentEmployee) return new Set<string>();
@@ -101,36 +112,78 @@ export default function EmployeeCalendarPage() {
     );
   }, [currentEmployee, employees]);
 
-  // Zatwierdzone urlopy pracownikow z tego samego dzialu -> niebieskie kropki
-  const deptApprovedDates = useMemo(() => {
-    const dates = new Set<string>();
+  // Zdarzenia kalendarza: moje zatwierdzone urlopy (zielone), zatwierdzone urlopy
+  // kolegow z dzialu (niebieskie) oraz dni zamkniecia firmy (szare).
+  const calendarEvents: ScheduleEventData[] = useMemo(() => {
+    // Jedno zdarzenie na kazdy dzien roboczy urlopu — kropka pojawia sie wtedy w
+    // kazdym dniu urlopu, a lista pod kalendarzem pokazuje dokladnie ten dzien.
+    const toDailyEvents = (
+      startDate: string,
+      endDate: string,
+      build: (date: string) => { id: string; title: string; color: string },
+    ): ScheduleEventData[] =>
+      getWorkingDays(startDate, endDate, nonWorkingDates).map((date) => ({
+        ...build(date),
+        // 00:00:00 dla startu i konca => zdarzenie calodniowe ("All day")
+        start: `${date} 00:00:00`,
+        end: `${date} 00:00:00`,
+      }));
 
-    teamRequests
+    const myEvents = myRequests
+      .filter((req) => req.status === "approved")
+      .flatMap((req) =>
+        toDailyEvents(req.startDate, req.endDate, (date) => ({
+          id: `mine-${req._id}#${date}`,
+          title: `My ${getLeaveTypeLabel(req.type)}`,
+          color: MY_LEAVE_COLOR,
+        })),
+      );
+
+    const teamEvents = teamRequests
       .filter(
         (req) =>
           req.status === "approved" &&
           req.employee &&
           colleagueIds.has(req.employee),
       )
-      .forEach((req) => {
-        getWorkingDays(req.startDate, req.endDate, nonWorkingDates).forEach(
-          (day) => {
-            dates.add(day);
-          },
-        );
-      });
+      .flatMap((req) =>
+        toDailyEvents(req.startDate, req.endDate, (date) => ({
+          id: `team-${req._id}#${date}`,
+          title: `${req.employeeName || "Team member"} · ${getLeaveTypeLabel(
+            req.type,
+          )}`,
+          color: TEAM_LEAVE_COLOR,
+        })),
+      );
 
-    return dates;
-  }, [teamRequests, colleagueIds, nonWorkingDates]);
+    const closureEvents: ScheduleEventData[] = Array.from(
+      closuresMap,
+      ([date, title]) => ({
+        id: `closure-${date}`,
+        title,
+        start: `${date} 00:00:00`,
+        end: `${date} 00:00:00`,
+        color: CLOSURE_COLOR,
+      }),
+    );
 
-  // Zatwierdzone urlopy kolegow z dzialu (do listy w panelu)
+    return [...closureEvents, ...myEvents, ...teamEvents];
+  }, [myRequests, teamRequests, closuresMap, colleagueIds, nonWorkingDates]);
+
+  // Zatwierdzone urlopy kolegow z dzialu w najblizszych 7 dniach (do listy w panelu).
+  // Pokazujemy tylko wnioski, ktore nachodza na okno [dzisiaj, dzisiaj + 7 dni].
   const colleaguesApprovedRequests = useMemo(() => {
+    const windowStart = dayjs().startOf("day");
+    const windowEnd = windowStart.add(UPCOMING_DAYS, "day");
+
     return teamRequests
       .filter(
         (req) =>
           req.status === "approved" &&
           req.employee &&
-          colleagueIds.has(req.employee),
+          colleagueIds.has(req.employee) &&
+          !dayjs(req.endDate).isBefore(windowStart, "day") &&
+          !dayjs(req.startDate).isAfter(windowEnd, "day"),
       )
       .sort(
         (a, b) =>
@@ -138,41 +191,15 @@ export default function EmployeeCalendarPage() {
       );
   }, [teamRequests, colleagueIds]);
 
-  // Dni zamkniecia firmy (Closure days)
-  const closureDates = useMemo(() => new Set(closuresMap.keys()), [closuresMap]);
+  const handleEventClick = (event: ScheduleEventData) => {
+    const rawId = String(event.id);
+    // Klikniecie we wlasny urlop otwiera szczegoly wniosku. Zdarzenia kolegow
+    // oraz dni zamkniecia firmy nie prowadza do zadnej strony.
+    if (!rawId.startsWith("mine-")) return;
 
-  const renderDay = (date: Date | string) => {
-    const key = dayjs(date).format("YYYY-MM-DD");
-    const hasMine = myApprovedDates.has(key);
-    const hasDept = deptApprovedDates.has(key);
-    const hasClosure = closureDates.has(key);
-
-    return (
-      <Stack align="center" justify="center" gap={2} h="100%">
-        <div>{dayjs(date).date()}</div>
-        {/* Stala wysokosc slota, zeby wszystkie dni wygladaly tak samo */}
-        <Flex gap={3} align="center" style={{ height: 6 }}>
-          {hasMine && (
-            <span
-              style={{
-                ...dotStyle,
-                background: "var(--mantine-color-green-6)",
-              }}
-            />
-          )}
-          {hasDept && (
-            <span
-              style={{ ...dotStyle, background: "var(--mantine-color-blue-6)" }}
-            />
-          )}
-          {hasClosure && (
-            <span
-              style={{ ...dotStyle, background: "var(--mantine-color-gray-6)" }}
-            />
-          )}
-        </Flex>
-      </Stack>
-    );
+    // id ma format `mine-${requestId}#${date}`
+    const leaveRequestId = rawId.split("#")[0].replace("mine-", "");
+    router.push(`/me/leave-requests/${leaveRequestId}`);
   };
 
   const renderLegend = (dotColor: string, label: string) => (
@@ -206,21 +233,48 @@ export default function EmployeeCalendarPage() {
             radius="md"
             withBorder
             bg="var(--mantine-color-body)"
-            display="flex"
-            style={{ justifyContent: "center" }}
+            w={{ base: "100%", md: 420 }}
           >
-            <Stack gap="md" align="center">
-              <DatePicker
-                value={selectedDate}
-                onChange={setSelectedDate}
-                size="md"
-                renderDay={renderDay}
-              />
-              <Stack gap="xs" align="flex-start" w="100%">
-                {renderLegend("green", "My approved leave")}
-                {renderLegend("blue", "Team members on leave")}
-                {renderLegend("gray", "Closure days")}
-              </Stack>
+            <MobileMonthView
+              date={calendarDate}
+              selectedDate={selectedDate}
+              onSelectedDateChange={setSelectedDate}
+              events={calendarEvents}
+              firstDayOfWeek={1}
+              withOutsideDays
+              onEventClick={handleEventClick}
+              renderHeader={({ date }) => (
+                <Group
+                  justify="space-between"
+                  align="center"
+                  wrap="nowrap"
+                  gap="xs"
+                  w="100%"
+                >
+                  <Group gap={4} align="center" wrap="nowrap">
+                    <ScheduleHeader.Previous
+                      onClick={() => setCalendarDate(shiftMonth(date, -1))}
+                    />
+                    <ScheduleHeader.Control interactive={false}>
+                      {dayjs(date).format("MMMM YYYY")}
+                    </ScheduleHeader.Control>
+                    <ScheduleHeader.Next
+                      onClick={() => setCalendarDate(shiftMonth(date, 1))}
+                    />
+                  </Group>
+                  <ScheduleHeader.Today
+                    onClick={() =>
+                      setCalendarDate(dayjs().format("YYYY-MM-DD"))
+                    }
+                  />
+                </Group>
+              )}
+            />
+
+            <Stack gap="xs" align="flex-start" mt="md">
+              {renderLegend("green", "My approved leave")}
+              {renderLegend("blue", "Team members on leave")}
+              {renderLegend("gray", "Closure days")}
             </Stack>
           </Paper>
         </Grid.Col>
@@ -234,13 +288,13 @@ export default function EmployeeCalendarPage() {
             style={{ minHeight: 350 }}
           >
             <Title order={4} mb="md">
-              Others team members on leave
+             Upcoming Team Leave
             </Title>
 
             <Stack gap="xs">
               {colleaguesApprovedRequests.length === 0 && (
                 <Text size="sm" c="dimmed">
-                  No one from your team is on leave.
+                  No one from your team is on leave in the next 7 days.
                 </Text>
               )}
 

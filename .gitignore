@@ -41,3 +41,8 @@ yarn-error.log*
 next-env.d.ts
 
 repomix-output.xml
+
+# AI agent skills (installed globally — see README "AI-Assisted Development")
+/.agents/
+/.claude/skills/
+/skills-lock.json

@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { Stack, Group, Title, Badge, Button, Paper, Table, ActionIcon, Card, Text, useMatches, Menu, SegmentedControl } from "@mantine/core";
+import { Stack, Group, Title, Badge, Button, Paper, Table, ActionIcon, Card, Text, useMatches, Menu, SegmentedControl, Select } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { modals } from "@mantine/modals";
-import { IconEdit, IconPlus, IconKey, IconSend, IconDotsVertical, IconCheck, IconClock, IconX, IconUserOff, IconUserCheck } from "@tabler/icons-react";
+import { IconEdit, IconPlus, IconKey, IconSend, IconDotsVertical, IconCheck, IconClock, IconX, IconUserOff, IconUserCheck, IconSearch } from "@tabler/icons-react";
 import SortableHeader from "@/app/(app)/components/SortableHeader/SortableHeader";
 import { sortItems, type SortDirection } from "@/utils/sort";
 import NewEmployeeModalContent from "./NewEmployeeModalCntent";
@@ -255,10 +255,31 @@ export default function EmployeeTable({ employees }: { employees: IEmployee[] })
     });
 
     const [filter, setFilter] = useState<"active" | "inactive">("active");
+    const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
     const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
+    const employeeOptions = employees.map((empl) => {
+        const deptName =
+            typeof empl.department === "object"
+                ? empl.department?.name
+                : empl.department;
+
+        return {
+            value: empl._id,
+            label: `${empl.firstName} ${empl.lastName}`,
+            department: deptName || "No department",
+            email: empl.email,
+            role: empl.role,
+        };
+    });
+
     const filteredEmployees = employees.filter((empl) => {
+        // Wyszukiwarka ma pierwszeństwo nad zakładką Active/Deactivated,
+        // dzięki czemu wybrany pracownik jest zawsze widoczny.
+        if (selectedEmployeeId) {
+            return empl._id === selectedEmployeeId;
+        }
         if (filter === "active") {
             return empl.status === "active" || empl.status === "invited";
         } else {
@@ -448,7 +469,7 @@ export default function EmployeeTable({ employees }: { employees: IEmployee[] })
 
     return (
         <Stack gap="lg">
-            <Group justify="space-between" >
+            <Group justify="space-between" align="flex-end" wrap="wrap" gap="sm">
                 <div>
                     <Title order={2} fw='700'>Employees</Title>
                     <SegmentedControl
@@ -461,9 +482,33 @@ export default function EmployeeTable({ employees }: { employees: IEmployee[] })
                         size="xs"
                     />
                 </div>
-                <Button leftSection={<IconPlus size={16} />} onClick={openNewEmployeeModal}>
-                    Add employee
-                </Button>
+                <Group gap="sm" wrap="wrap" align="center">
+                    <Select
+                        placeholder="Search employee"
+                        data={employeeOptions}
+                        searchable
+                        clearable
+                        nothingFoundMessage="No employees found"
+                        leftSection={<IconSearch size={16} />}
+                        value={selectedEmployeeId}
+                        onChange={setSelectedEmployeeId}
+                        w={{ base: "100%", sm: 300 }}
+                        renderOption={({ option }) => {
+                            const emp = employeeOptions.find((e) => e.value === option.value);
+                            return (
+                                <div>
+                                    <Text size="sm" fw={600}>{emp?.label}</Text>
+                                    <Text size="xs" c="dimmed">🏢 {emp?.department}</Text>
+                                    <Text size="xs" c="dimmed">✉️ {emp?.email}</Text>
+                                    <Text size="xs" c="dimmed">👤 {emp?.role}</Text>
+                                </div>
+                            );
+                        }}
+                    />
+                    <Button leftSection={<IconPlus size={16} />} onClick={openNewEmployeeModal}>
+                        Add employee
+                    </Button>
+                </Group>
             </Group>
 
             {isMobile ? (
