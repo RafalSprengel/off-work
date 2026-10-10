@@ -1,17 +1,22 @@
 "use server";
 
-import connectDB from "@/db/connection";
-import LeaveRequest from "@/db/models/LeaveRequest";
 import dayjs from "dayjs";
+import mongoose from "mongoose";
+import { revalidatePath } from "next/cache";
+import { getCurrentEmployeeId } from "@/actions/shared/getCurrentEmployeeId";
+import connectDB from "@/db/connection";
+import Employee from "@/db/models/Employee";
+import LeaveRequest from "@/db/models/LeaveRequest";
+import {
+    buildNewLeaveRequestEmail,
+    toLeaveRequestEmailData,
+} from "@/lib/emails/leaveRequestEmails";
+import { sendEmail } from "@/lib/sendEmail";
+import type { CreateLeaveRequestInput } from "@/types/leaveRequest";
+import { formatDateList } from "@/utils/formatDateList";
 import { getOrganizationId } from "@/utils/getOrganizationId";
 import { getNonWorkingDays } from "@/utils/nonWorkingDays";
 import { countWorkingDays } from "@/utils/workingDays";
-import { formatDateList } from "@/utils/formatDateList";
-import { CreateLeaveRequestInput } from "@/types/leaveRequest";
-import { getCurrentEmployeeId } from "@/actions/shared/getCurrentEmployeeId";
-import Employee from "@/db/models/Employee";
-import mongoose from "mongoose";
-import { revalidatePath } from "next/cache";
 
 export async function createLeaveRequest(data: CreateLeaveRequestInput) {
     await connectDB();
@@ -62,11 +67,13 @@ export async function createLeaveRequest(data: CreateLeaveRequestInput) {
 
     const employeeDoc = await Employee.findById(employee)
         .populate("department", "name")
-        .populate("managerId", "firstName lastName")
+        .populate("managerId", "firstName lastName email")
         .lean();
 
     const dept = employeeDoc?.department as { name?: string } | undefined;
-    const mgr = employeeDoc?.managerId as { firstName?: string; lastName?: string } | undefined;
+    const mgr = employeeDoc?.managerId as
+        | { _id?: unknown; firstName?: string; lastName?: string; email?: string }
+        | undefined;
 
     const employeeInfo = {
         employeeName: employeeDoc ? `${employeeDoc.firstName} ${employeeDoc.lastName}` : "Unknown",
@@ -93,6 +100,29 @@ export async function createLeaveRequest(data: CreateLeaveRequestInput) {
     revalidatePath("/team/leave-requests");
     revalidatePath("/me/calendar");
     revalidatePath("/team/calendar");
+
+    // Notify the manager — best-effort, the request is already persisted.
+    const managerEmail = mgr?.email?.trim();
+    const managerIsRequester = String(mgr?._id ?? "") === String(employee);
+
+    if (!managerEmail) {
+        console.log("[createLeaveRequest] No manager email — skipping notification");
+    } else if (managerIsRequester) {
+        console.log("[createLeaveRequest] Manager is the requester — skipping notification");
+    } else {
+        try {
+            await sendEmail({
+                to: managerEmail,
+                ...buildNewLeaveRequestEmail(toLeaveRequestEmailData(newRequest)),
+            });
+            console.log(`[createLeaveRequest] Manager notification sent for request ${newRequest._id}`);
+        } catch (emailError) {
+            console.error(
+                "[createLeaveRequest] Failed to send manager notification email:",
+                emailError instanceof Error ? emailError.message : emailError
+            );
+        }
+    }
 
     return { success: true, requestId: newRequest._id.toString() };
 }

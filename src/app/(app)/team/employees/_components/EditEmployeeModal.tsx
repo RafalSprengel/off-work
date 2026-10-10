@@ -9,6 +9,7 @@ import { getDepartments } from "@/actions/manager/employees/getDepartments";
 import { getRoles } from "@/actions/public/roles/getRoles";
 import { getManagers } from "@/actions/manager/employees/getManagers";
 import { updateEmployee } from "@/actions/admin/employees/updateEmployee";
+import { formatManagerLabel } from "@/utils/formatManagerLabel";
 import type { IEmployee, IManager } from "@/types/employees";
 import type { IDepartment } from "@/types/department";
 import { notifications } from "@mantine/notifications";
@@ -213,7 +214,7 @@ export default function EditEmployeeModal({
                     disabled={isLoadingManagers || loading || form.values.role === "Manager"}
                     data={managersList.map((manager) => ({
                         value: manager._id,
-                        label: manager.firstName + " " + manager.lastName,
+                        label: formatManagerLabel(manager),
                     }))}
                     {...form.getInputProps("managerId")}
                     flex={1}

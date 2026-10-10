@@ -1,12 +1,18 @@
 "use server";
 
 import mongoose from "mongoose";
-import connectDB from "@/db/connection";
-import LeaveRequest from "@/db/models/LeaveRequest";
-import Employee from "@/db/models/Employee";
-import { getOrganizationId } from "@/utils/getOrganizationId";
-import { getCurrentEmployeeId } from "@/actions/shared/getCurrentEmployeeId";
 import { revalidatePath } from "next/cache";
+import { getCurrentEmployeeId } from "@/actions/shared/getCurrentEmployeeId";
+import connectDB from "@/db/connection";
+import Employee from "@/db/models/Employee";
+import LeaveRequest from "@/db/models/LeaveRequest";
+import {
+    buildLeaveRequestApprovedEmail,
+    buildLeaveRequestRejectedEmail,
+    toLeaveRequestEmailData,
+} from "@/lib/emails/leaveRequestEmails";
+import { sendEmail } from "@/lib/sendEmail";
+import { getOrganizationId } from "@/utils/getOrganizationId";
 
 async function getCurrentEmployee() {
     const employeeId = await getCurrentEmployeeId();
@@ -54,6 +60,28 @@ export async function approveLeaveRequestAsAdmin(id: string) {
         revalidatePath(`/team/leave-requests/${id}`);
         revalidatePath(`/me/leave-requests/${id}`);
 
+        // Best-effort notification — the status change is already persisted.
+        // Idempotency comes from the guards above: an already approved request
+        // returns early, so this e-mail is only sent on a real transition.
+        const employeeEmail = request.employeeEmail?.trim();
+
+        if (!employeeEmail) {
+            console.log("[approveLeaveRequestAsAdmin] No employee email — skipping notification");
+        } else {
+            try {
+                await sendEmail({
+                    to: employeeEmail,
+                    ...buildLeaveRequestApprovedEmail(toLeaveRequestEmailData(request)),
+                });
+                console.log(`[approveLeaveRequestAsAdmin] Approval email sent for request ${id}`);
+            } catch (emailError) {
+                console.error(
+                    "[approveLeaveRequestAsAdmin] Failed to send approval email:",
+                    emailError instanceof Error ? emailError.message : emailError
+                );
+            }
+        }
+
         return { success: true, error: null };
     } catch (error: unknown) {
         console.error("Error approving leave request as admin:", error);
@@ -100,6 +128,28 @@ export async function rejectLeaveRequestAsAdmin(id: string, rejectionReason?: st
         revalidatePath("/me/leave-requests");
         revalidatePath(`/team/leave-requests/${id}`);
         revalidatePath(`/me/leave-requests/${id}`);
+
+        // Best-effort notification — the status change is already persisted.
+        // Idempotency comes from the guards above: an already rejected request
+        // returns early, so this e-mail is only sent on a real transition.
+        const employeeEmail = request.employeeEmail?.trim();
+
+        if (!employeeEmail) {
+            console.log("[rejectLeaveRequestAsAdmin] No employee email — skipping notification");
+        } else {
+            try {
+                await sendEmail({
+                    to: employeeEmail,
+                    ...buildLeaveRequestRejectedEmail(toLeaveRequestEmailData(request)),
+                });
+                console.log(`[rejectLeaveRequestAsAdmin] Rejection email sent for request ${id}`);
+            } catch (emailError) {
+                console.error(
+                    "[rejectLeaveRequestAsAdmin] Failed to send rejection email:",
+                    emailError instanceof Error ? emailError.message : emailError
+                );
+            }
+        }
 
         return { success: true, error: null };
     } catch (error: unknown) {

@@ -11,6 +11,7 @@ import { useDepartments } from "@/hooks/useDepartments";
 import { useRoles } from "@/hooks/useRoles";
 import { useManagers } from "@/hooks/useManagers";
 import { getOrgSettings } from "@/actions/admin/settings/getOrgSettings";
+import { formatManagerLabel } from "@/utils/formatManagerLabel";
 import {
     DEFAULT_LEAVE_ALLOWANCE_DAYS,
     LEAVE_ALLOWANCE_TYPES,
@@ -206,7 +207,7 @@ export default function NewEmployeeModalContent() {
                     placeholder={isLoadingManagers ? "Loading managers..." : "Select manager"}
                     loading={isLoadingManagers}
                     disabled={isFormDisabled || form.values.role === "Manager"}
-                    data={managers.map((m) => ({ value: m._id, label: `${m.firstName} ${m.lastName}` }))}
+                    data={managers.map((m) => ({ value: m._id, label: formatManagerLabel(m) }))}
                     {...form.getInputProps("managerId")}
                     flex={1}
                     clearable

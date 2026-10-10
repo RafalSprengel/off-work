@@ -1,6 +1,16 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Created lazily: `new Resend()` throws when RESEND_API_KEY is missing, which
+// would break the dev fallback below (and every import of this module).
+let resend: Resend | undefined;
+
+function getResend(): Resend {
+    if (!resend) {
+        resend = new Resend(process.env.RESEND_API_KEY);
+    }
+
+    return resend;
+}
 
 type SendEmailArgs = {
     to: string;
@@ -16,7 +26,7 @@ export async function sendEmail({ to, subject, html }: SendEmailArgs) {
     }
 
     try {
-        const { data, error } = await resend.emails.send({
+        const { data, error } = await getResend().emails.send({
             from: process.env.EMAIL_FROM ?? "Off Work <onboarding@resend.dev>",
             to,
             subject,

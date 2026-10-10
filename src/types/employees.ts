@@ -29,4 +29,6 @@ export type IManager = {
     _id: string;
     firstName: string;
     lastName: string;
+    /** Names of the departments this manager is assigned to (may be empty). */
+    departments?: string[];
 };

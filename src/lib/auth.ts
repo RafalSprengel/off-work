@@ -85,6 +85,26 @@ function createAuth(db: Db) {
                 sendInvitationEmail: async (data) => {
                     const inviteUrl = `${process.env.BETTER_AUTH_URL ?? "http://localhost:3000"}/accept-invitation/${data.id}`;
                     const expiresAt = dayjs().add(7, "day").format("MMMM D, YYYY");
+
+                    // Greet the invitee by name. The "invited" Employee record is created
+                    // before the invitation is sent (see createEmployee.ts), so the first
+                    // name can be looked up by email; otherwise fall back to a generic greeting.
+                    let firstName: string | undefined;
+                    try {
+                        await dbConnect();
+                        const employee = await Employee.findOne({
+                            email: data.email.toLowerCase(),
+                            organizationId: data.organization.id,
+                        })
+                            .select("firstName")
+                            .lean();
+                        firstName = employee?.firstName;
+                    } catch (employeeError) {
+                        console.error("[auth:sendInvitationEmail] Failed to look up the invitee:", employeeError instanceof Error ? employeeError.message : employeeError);
+                    }
+
+                    const greeting = firstName ? `Hi ${firstName},` : "Hi,";
+
                     try {
                         await sendEmail({
                             to: data.email,
@@ -100,8 +120,9 @@ function createAuth(db: Db) {
                                                 <table width="480" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
                                                     <tr>
                                                         <td style="padding: 40px 48px 32px;">
-                                                            <h1 style="font-size: 24px; font-weight: 700; color: #1a1a2e; margin: 0 0 8px;">You're invited! 🎉</h1>
-                                                            <p style="font-size: 16px; color: #64748b; line-height: 1.5; margin: 0 0 24px;">${data.inviter.user.name || data.inviter.user.email} invited you to join <strong>${data.organization.name}</strong> on <strong>Off Work</strong> — the simplest way to manage your team's leave and holidays.</p>
+                                                            <h1 style="font-size: 24px; font-weight: 700; color: #1a1a2e; margin: 0 0 8px;">You have been invited! 🎉</h1>
+                                                            <p style="font-size: 16px; color: #64748b; line-height: 1.5; margin: 0 0 8px;">${greeting}</p>
+                                                            <p style="font-size: 16px; color: #64748b; line-height: 1.5; margin: 0 0 24px;">You have been invited to join <strong>${data.organization.name}</strong> on <strong>Off Work</strong>. Click the button below to create your employee account.</p>
                                                             <p style="font-size: 14px; color: #64748b; line-height: 1.5; margin: 0 0 24px;">This invitation is valid until <strong>${expiresAt}</strong>.</p>
                                                             <table cellpadding="0" cellspacing="0">
                                                                 <tr>
