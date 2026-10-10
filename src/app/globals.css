@@ -15,3 +15,14 @@
     background: transparent;
     pointer-events: none;
 }
+
+/* Hand ("rączka") cursor over Switch tracks — the switch is clickable */
+.mantine-Switch-track {
+    cursor: pointer;
+}
+
+/* Keep the "not-allowed" cursor when the switch is disabled */
+.mantine-Switch-input:disabled + .mantine-Switch-track,
+.mantine-Switch-input[data-disabled] + .mantine-Switch-track {
+    cursor: not-allowed;
+}
