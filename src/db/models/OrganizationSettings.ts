@@ -1,5 +1,7 @@
 import mongoose, { type Document, type Model, Schema } from "mongoose";
 
+import { DEFAULT_LEAVE_ALLOWANCE_DAYS } from "@/constants/leaveAllowanceTypes";
+
 export interface IOrganizationSettings extends Document {
     organizationId: string;
 
@@ -59,12 +61,7 @@ const OrganizationSettingsSchema = new Schema<IOrganizationSettings>(
         defaultAllowances: {
             type: Map,
             of: Number,
-            default: () => new Map([
-                ["annual", 26],
-                ["sick", 10],
-                ["unpaid", 0],
-                ["bereavement", 5],
-            ]),
+            default: () => new Map(Object.entries(DEFAULT_LEAVE_ALLOWANCE_DAYS)),
         },
     },
     { timestamps: true }

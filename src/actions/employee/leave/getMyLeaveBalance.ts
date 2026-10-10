@@ -9,6 +9,7 @@ import { getOrganizationId } from "@/utils/getOrganizationId";
 import { getNonWorkingDays } from "@/utils/nonWorkingDays";
 import { countWorkingDays } from "@/utils/workingDays";
 import { LEAVE_REQUEST_TYPES, type LeaveRequestType } from "@/constants/leaveTypes";
+import { DEFAULT_LEAVE_ALLOWANCE_DAYS } from "@/constants/leaveAllowanceTypes";
 import mongoose from "mongoose";
 import dayjs from "dayjs";
 
@@ -22,13 +23,6 @@ export interface LeaveBalanceItem {
 export type GetMyLeaveBalanceResult =
     | { success: true; data: LeaveBalanceItem[]; error: null }
     | { success: false; data: null; error: string };
-
-const DEFAULT_ALLOWANCES: Record<LeaveRequestType, number> = {
-    annual: 26,
-    sick: 10,
-    unpaid: 0,
-    bereavement: 5,
-};
 
 export async function getMyLeaveBalance(): Promise<GetMyLeaveBalanceResult> {
     try {
@@ -100,7 +94,7 @@ export async function getMyLeaveBalance(): Promise<GetMyLeaveBalanceResult> {
             const allowance: number =
                 perEmployeeMap.has(type)
                     ? (perEmployeeMap.get(type) as number)
-                    : (rawDefaultAllowances[type] ?? DEFAULT_ALLOWANCES[type]);
+                    : (rawDefaultAllowances[type] ?? DEFAULT_LEAVE_ALLOWANCE_DAYS[type]);
 
             const used = usedByType.get(type) ?? 0;
             return {

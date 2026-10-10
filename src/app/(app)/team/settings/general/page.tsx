@@ -24,6 +24,7 @@ import { getOrgSettings } from "@/actions/admin/settings/getOrgSettings";
 import { updateOrgSettings } from "@/actions/admin/settings/updateOrgSettings";
 import type { IOrgSettings } from "@/types/orgSettings";
 import {
+    DEFAULT_LEAVE_ALLOWANCE_DAYS,
     LEAVE_ALLOWANCE_TYPES,
     getLeaveAllowanceLabel,
 } from "@/constants/leaveAllowanceTypes";
@@ -92,7 +93,10 @@ function settingsToForm(s: IOrgSettings): FormValues {
         endMonth: String(Number(endM)),
         endDay: String(Number(endD)),
         defaultAllowances: Object.fromEntries(
-            LEAVE_ALLOWANCE_TYPES.map((t) => [t, s.defaultAllowances?.[t] ?? 0]),
+            LEAVE_ALLOWANCE_TYPES.map((t) => [
+                t,
+                s.defaultAllowances?.[t] ?? DEFAULT_LEAVE_ALLOWANCE_DAYS[t],
+            ]),
         ),
     };
 }
@@ -113,7 +117,7 @@ export default function GeneralSettingsPage() {
             endMonth: "12",
             endDay: "31",
             defaultAllowances: Object.fromEntries(
-                LEAVE_ALLOWANCE_TYPES.map((t) => [t, 0]),
+                LEAVE_ALLOWANCE_TYPES.map((t) => [t, DEFAULT_LEAVE_ALLOWANCE_DAYS[t]]),
             ),
         },
         validate: {

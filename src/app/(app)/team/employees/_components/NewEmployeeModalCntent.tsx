@@ -12,6 +12,7 @@ import { useRoles } from "@/hooks/useRoles";
 import { useManagers } from "@/hooks/useManagers";
 import { getOrgSettings } from "@/actions/admin/settings/getOrgSettings";
 import {
+    DEFAULT_LEAVE_ALLOWANCE_DAYS,
     LEAVE_ALLOWANCE_TYPES,
     getLeaveAllowanceLabel,
 } from "@/constants/leaveAllowanceTypes";
@@ -32,7 +33,7 @@ export default function NewEmployeeModalContent() {
             department: "",
             managerId: "",
             allowances: Object.fromEntries(
-                LEAVE_ALLOWANCE_TYPES.map((t) => [t, t === "annual" ? 24 : 0]),
+                LEAVE_ALLOWANCE_TYPES.map((t) => [t, DEFAULT_LEAVE_ALLOWANCE_DAYS[t]]),
             ) as Record<string, number>,
             employmentDate: null as Date | null,
         },
@@ -62,8 +63,9 @@ export default function NewEmployeeModalContent() {
             for (const type of LEAVE_ALLOWANCE_TYPES) {
                 const fallback =
                     type === "annual"
-                        ? res.data.defaultAnnualLeaveDays ?? 24
-                        : 0;
+                        ? (res.data.defaultAnnualLeaveDays ??
+                          DEFAULT_LEAVE_ALLOWANCE_DAYS.annual)
+                        : DEFAULT_LEAVE_ALLOWANCE_DAYS[type];
                 next[type] = defaults[type] ?? fallback;
             }
             form.setFieldValue("allowances", next);
