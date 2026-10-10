@@ -5,6 +5,7 @@ import dbConnect from "@/db/connection";
 import Employee from "@/db/models/Employee";
 import { getAuth } from "@/lib/auth";
 import { getOrganizationId } from "@/utils/getOrganizationId";
+import { getAppBaseUrl } from "@/utils/getBaseUrl";
 
 export async function sendPasswordReset(
   employeeId: string,
@@ -27,7 +28,7 @@ export async function sendPasswordReset(
 
     // Build a proper Request object so Better Auth can resolve baseURL
     // from the host header and pass it through origin checks.
-    const baseUrl = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
+    const baseUrl = getAppBaseUrl(reqHeaders);
     const requestUrl = `${baseUrl}/api/auth/request-password-reset`;
 
     const redirectTo = `${baseUrl}/reset-password`;

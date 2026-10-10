@@ -5,6 +5,7 @@ import Employee from "@/db/models/Employee";
 import { getAuth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { getOrganizationId } from "@/utils/getOrganizationId";
+import { getAppBaseUrl } from "@/utils/getBaseUrl";
 import { revalidatePath } from "next/cache";
 import dayjs from "dayjs";
 import { sendEmail } from "@/lib/sendEmail";
@@ -40,7 +41,8 @@ export async function resendInvitation(employeeId: string): Promise<{ success: b
 
         // Send the invitation email directly (reliable fallback)
         if (invitation?.id) {
-            const inviteUrl = `${process.env.BETTER_AUTH_URL ?? "http://localhost:3000"}/accept-invitation/${invitation.id}`;
+            const baseUrl = getAppBaseUrl(await headers());
+            const inviteUrl = `${baseUrl}/accept-invitation/${invitation.id}`;
             const expiresAt = dayjs().add(7, "day").format("MMMM D, YYYY");
             try {
                 await sendEmail({

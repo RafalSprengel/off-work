@@ -1,7 +1,9 @@
 "use server";
 
+import { headers } from "next/headers";
 import dbConnect from "@/db/connection";
 import OrganizationSettings from "@/db/models/OrganizationSettings";
+import { getAuth } from "@/lib/auth";
 import { getOrganizationId } from "@/utils/getOrganizationId";
 import { revalidatePath } from "next/cache";
 import type { IOrgSettings, UpdateOrgSettingsResult } from "@/types/orgSettings";
@@ -18,6 +20,30 @@ export async function updateOrgSettings(
             { $set: { ...data, organizationId } },
             { upsert: true, new: true, runValidators: true }
         );
+
+        // Keep the Better Auth organization name in sync with the company name.
+        // `organization.name` is what the invitation email uses (see
+        // src/lib/auth.ts), so without this it would keep showing the name that
+        // was set once during onboarding.
+        if (data.companyName) {
+            try {
+                const auth = await getAuth();
+                await auth.api.updateOrganization({
+                    body: {
+                        organizationId,
+                        data: { name: data.companyName },
+                    },
+                    headers: await headers(),
+                });
+            } catch (syncError) {
+                // Non-fatal: the settings are saved either way and the name is
+                // pushed to Better Auth on the next successful save.
+                console.error(
+                    "[updateOrgSettings] Failed to sync the organization name with Better Auth:",
+                    syncError instanceof Error ? syncError.message : syncError
+                );
+            }
+        }
 
         revalidatePath("/team/settings");
 

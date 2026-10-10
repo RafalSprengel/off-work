@@ -8,6 +8,7 @@ import { Db } from "mongodb";
 import dayjs from "dayjs";
 import Employee from "@/db/models/Employee";
 import Department from "@/db/models/Department";
+import { getAppBaseUrl, getNextRequestHeaders } from "@/utils/getBaseUrl";
 
 function createAuth(db: Db) {
     return betterAuth({
@@ -82,8 +83,12 @@ function createAuth(db: Db) {
             organization({
                 creatorRole: "owner",
                 invitationExpiresIn: 3600 * 24 * 7, // 7 days invitation expire time
-                sendInvitationEmail: async (data) => {
-                    const inviteUrl = `${process.env.BETTER_AUTH_URL ?? "http://localhost:3000"}/accept-invitation/${data.id}`;
+                sendInvitationEmail: async (data, request) => {
+                    // Prefer the host the admin is actually using (e.g. localhost:3001 in
+                    // dev or the production domain) over BETTER_AUTH_URL, which is a
+                    // single static value and may point to another port/environment.
+                    const baseUrl = getAppBaseUrl(await getNextRequestHeaders(), request?.headers);
+                    const inviteUrl = `${baseUrl}/accept-invitation/${data.id}`;
                     const expiresAt = dayjs().add(7, "day").format("MMMM D, YYYY");
 
                     // Greet the invitee by name. The "invited" Employee record is created
@@ -122,7 +127,7 @@ function createAuth(db: Db) {
                                                         <td style="padding: 40px 48px 32px;">
                                                             <h1 style="font-size: 24px; font-weight: 700; color: #1a1a2e; margin: 0 0 8px;">You have been invited! 🎉</h1>
                                                             <p style="font-size: 16px; color: #64748b; line-height: 1.5; margin: 0 0 8px;">${greeting}</p>
-                                                            <p style="font-size: 16px; color: #64748b; line-height: 1.5; margin: 0 0 24px;">You have been invited to join <strong>${data.organization.name}</strong> on <strong>Off Work</strong>. Click the button below to create your employee account.</p>
+                                                            <p style="font-size: 16px; color: #64748b; line-height: 1.5; margin: 0 0 24px;"><strong>${data.organization.name}</strong> has invited you to create your employee account on <strong>Off Work</strong> (leave management system).</p>
                                                             <p style="font-size: 14px; color: #64748b; line-height: 1.5; margin: 0 0 24px;">This invitation is valid until <strong>${expiresAt}</strong>.</p>
                                                             <table cellpadding="0" cellspacing="0">
                                                                 <tr>
